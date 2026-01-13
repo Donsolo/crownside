@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  STYLIST
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  PAST_DUE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+  
+  // Relations
+  stylistProfile StylistProfile?
+  clientBookings Booking[] @relation("ClientBookings")
+}
+
+model StylistProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  
+  businessName     String
+  bio              String?
+  locationType     String   // 'HOME', 'SALON', 'MOBILE'
+  profileImage     String?
+  bannerImage      String?
+  specialties      String[] @default(["hair"])
+  
+  stripeCustomerId String?
+  subscriptionStatus SubscriptionStatus @default(INACTIVE)
+  
+  services         Service[]
+  stylistBookings  Booking[] @relation("StylistBookings")
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  portfolioImages  PortfolioImage[]
+  subscription     ProfessionalSubscription?
+  
+  registrationIpHash String? 
+}
+
+model TrialUsage {
+  id        String   @id @default(uuid())
+  ipHash    String   @unique
+  email     String?
+  createdAt DateTime @default(now())
+}
+
+model PortfolioImage {
+  id        String   @id @default(uuid())
+  stylistId String
+  stylist   StylistProfile @relation(fields: [stylistId], references: [id])
+  imageUrl  String
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  stylistId   String
+  stylist     StylistProfile @relation(fields: [stylistId], references: [id])
+  
+  name        String
+  price       Decimal
+  duration    Int      // in minutes
+  category    String   @default("hair") // 'hair', 'nails'
+  deposit     Decimal  @default(0.0)
+  
+  bookings    Booking[]
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      User     @relation("ClientBookings", fields: [clientId], references: [id])
+  
+  stylistId   String
+  stylist     StylistProfile @relation("StylistBookings", fields: [stylistId], references: [id])
+  
+  serviceId   String
+  service     Service @relation(fields: [serviceId], references: [id])
+  
+  appointmentDate DateTime
+  status      BookingStatus @default(PENDING)
+  notes       String?
+  
+  reviews     Review[]
+  
+  createdAt   DateTime @default(now())
+}
+
+
+
+model Review {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  
+  rating      Int
+  comment     String?
+  reply       String?
+  
+  createdAt   DateTime @default(now())
+}
+
+model PageHero {
+  id              String   @id @default(uuid())
+  pageKey         String   @unique
+  desktopImageUrl String?
+  mobileImageUrl  String?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id             String   @id @default(uuid())
+  key            String   @unique // "pro", "elite"
+  name           String
+  price          Decimal
+  description    String?
+  freeTrialDays  Int      @default(30)
+  freeSlotsLimit Int      @default(30)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum SubStatus {
+  TRIAL
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PAST_DUE
+}
+
+model ProfessionalSubscription {
+  id                   String    @id @default(uuid())
+  stylistId            String    @unique
+  stylist              StylistProfile @relation(fields: [stylistId], references: [id])
+  
+  planKey              String
+  status               SubStatus @default(TRIAL)
+  
+  trialEndsAt          DateTime?
+  billingStartsAt      DateTime?
+  
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
