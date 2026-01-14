@@ -8,6 +8,9 @@ const path = require('path');
 const app = express();
 
 // Middleware
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 app.use(helmet({
     crossOriginResourcePolicy: false,
 }));
