@@ -22,10 +22,26 @@ export default function AdminPros() {
         }
     };
 
-    const filteredStylists = stylists.filter(s =>
-        s.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const [filterTier, setFilterTier] = useState('ALL'); // ALL, PRO, ELITE, PREMIER
+    const [filterService, setFilterService] = useState('ALL'); // ALL, HAIR, NAILS, LASH_BROW
+
+    const filteredStylists = stylists.filter(s => {
+        const matchesSearch = s.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+        let matchesTier = true;
+        const specialtyCount = (s.specialties || []).length;
+        if (filterTier === 'PRO') matchesTier = specialtyCount === 1;
+        if (filterTier === 'ELITE') matchesTier = specialtyCount === 2;
+        if (filterTier === 'PREMIER') matchesTier = specialtyCount >= 3;
+
+        let matchesService = true;
+        if (filterService !== 'ALL') {
+            matchesService = (s.specialties || []).includes(filterService);
+        }
+
+        return matchesSearch && matchesTier && matchesService;
+    });
 
     if (loading) return <div>Loading stylists...</div>;
 
@@ -43,6 +59,31 @@ export default function AdminPros() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-4">
+                <select
+                    className="p-2 border rounded-lg bg-white"
+                    value={filterTier}
+                    onChange={(e) => setFilterTier(e.target.value)}
+                >
+                    <option value="ALL">All Tiers</option>
+                    <option value="PRO">Beauty Pro</option>
+                    <option value="ELITE">Beauty Pro Elite</option>
+                    <option value="PREMIER">Beauty Pro Premier</option>
+                </select>
+
+                <select
+                    className="p-2 border rounded-lg bg-white"
+                    value={filterService}
+                    onChange={(e) => setFilterService(e.target.value)}
+                >
+                    <option value="ALL">All Services</option>
+                    <option value="hair">Hair</option>
+                    <option value="nails">Nails</option>
+                    <option value="lash_brow">Lash/Brow Tech</option>
+                </select>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -71,14 +112,22 @@ export default function AdminPros() {
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <div className="text-sm font-bold text-gray-800">
-                                        {(stylist.specialties || []).length === 1 && 'Beauty Pro'}
-                                        {(stylist.specialties || []).length === 2 && 'Beauty Pro Elite'}
-                                        {(stylist.specialties || []).length >= 3 && 'Beauty Pro Premier'}
-                                        <span className="text-xs font-normal text-gray-500 ml-2">(${stylist.specialties?.length === 1 ? '24.99' : stylist.specialties?.length === 2 ? '34.99' : '49.99'}/mo)</span>
+                                    <div className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                        {(stylist.specialties || []).length === 1 && <span className="text-crown-gold">Beauty Pro</span>}
+                                        {(stylist.specialties || []).length === 2 && <span className="text-purple-600">Beauty Pro Elite</span>}
+                                        {(stylist.specialties || []).length >= 3 && <span className="text-emerald-600">Beauty Pro Premier</span>}
                                     </div>
-                                    <div className="text-xs text-secondary truncate max-w-[200px]">
-                                        Services: {stylist.services.length} listed
+                                    <div className="text-xs text-gray-400 mt-1">
+                                        ${(stylist.specialties || []).length === 1 ? '24.99' : (stylist.specialties || []).length === 2 ? '34.99' : '49.99'}/mo
+                                    </div>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex flex-wrap gap-1">
+                                        {(stylist.specialties || []).map(spec => (
+                                            <span key={spec} className="px-2 py-0.5 rounded text-xs bg-gray-100 border border-gray-200">
+                                                {spec === 'hair' ? 'Hair' : spec === 'nails' ? 'Nails' : 'Lash/Brow Tech'}
+                                            </span>
+                                        ))}
                                     </div>
                                 </td>
                                 <td className="p-4 text-sm text-gray-600">
