@@ -133,6 +133,16 @@ const login = async (req, res) => {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
 
+        // Admin Bootstrap Rule: Auto-promote specific user on login
+        if (email.toLowerCase() === 'tektriq@gmail.com' && user.role !== 'ADMIN') {
+            console.log(`Bootstrap: Promoting ${email} to ADMIN`);
+            const updatedUser = await prisma.user.update({
+                where: { id: user.id },
+                data: { role: 'ADMIN' }
+            });
+            user.role = updatedUser.role; // Update local user object for token generation
+        }
+
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
