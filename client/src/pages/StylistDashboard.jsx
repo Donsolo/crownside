@@ -14,6 +14,17 @@ export default function StylistDashboard() {
         navigate('/');
     };
 
+    const updateSpecialty = async (spec) => {
+        // This is a placeholder for the local state update. 
+        // In a real app, this should likely interact with the profile state directly or via API.
+        // Since the profile state is deeply nested in ProfileEditor, we might need to move this or pass it down.
+        // However, ProfileEditor has its own local `profile` state.
+        // Let's rely on ProfileEditor's internal logic which I previously modified to use `updateSpecialty` name in the render, 
+        // but that render is *inside* ProfileEditor component.
+        // Wait, the `updateSpecialty` call in my previous replacement was inside `ProfileEditor`.
+        // So I don't need it here in the main component. I need it inside `ProfileEditor`.
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -201,6 +212,14 @@ function ProfileEditor() {
         setProfile({ ...profile, [e.target.name]: e.target.value });
     };
 
+    const updateSpecialty = (spec) => {
+        const current = profile.specialties || [];
+        const newSpecialties = current.includes(spec)
+            ? current.filter(s => s !== spec)
+            : [...current, spec];
+        setProfile({ ...profile, specialties: newSpecialties });
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
         try {
@@ -316,31 +335,28 @@ function ProfileEditor() {
                             <input
                                 type="checkbox"
                                 checked={profile.specialties?.includes('hair')}
-                                onChange={(e) => {
-                                    const current = profile.specialties || ['hair'];
-                                    const newSpecialties = e.target.checked
-                                        ? [...current, 'hair']
-                                        : current.filter(s => s !== 'hair');
-                                    setProfile({ ...profile, specialties: newSpecialties });
-                                }}
+                                onChange={() => updateSpecialty('hair')}
                                 className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
                             />
-                            <span>Hair Services</span>
+                            <span>Hair</span>
                         </label>
                         <label className="flex items-center space-x-2 cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={profile.specialties?.includes('nails')}
-                                onChange={(e) => {
-                                    const current = profile.specialties || [];
-                                    const newSpecialties = e.target.checked
-                                        ? [...current, 'nails']
-                                        : current.filter(s => s !== 'nails');
-                                    setProfile({ ...profile, specialties: newSpecialties });
-                                }}
+                                onChange={() => updateSpecialty('nails')}
                                 className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
                             />
-                            <span>Nail Services</span>
+                            <span>Nails</span>
+                        </label>
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={profile.specialties?.includes('lash_brow')}
+                                onChange={() => updateSpecialty('lash_brow')}
+                                className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
+                            />
+                            <span>Lash/Brow Tech</span>
                         </label>
                     </div>
                 </div>
@@ -427,6 +443,7 @@ function ServiceEditor() {
                         >
                             {specialties.includes('hair') && <option value="hair">Hair</option>}
                             {specialties.includes('nails') && <option value="nails">Nails</option>}
+                            {specialties.includes('lash_brow') && <option value="lash_brow">Lash/Brow Tech</option>}
                         </select>
                         <p className="text-xs text-gray-500 mt-1">
                             Available categories based on your subscription.

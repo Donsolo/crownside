@@ -71,11 +71,14 @@ export default function AdminPros() {
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <div className="text-sm">
-                                        {stylist.services.length} services listed
+                                    <div className="text-sm font-bold text-gray-800">
+                                        {(stylist.specialties || []).length === 1 && 'Beauty Pro'}
+                                        {(stylist.specialties || []).length === 2 && 'Beauty Pro Elite'}
+                                        {(stylist.specialties || []).length >= 3 && 'Beauty Pro Premier'}
+                                        <span className="text-xs font-normal text-gray-500 ml-2">(${stylist.specialties?.length === 1 ? '24.99' : stylist.specialties?.length === 2 ? '34.99' : '49.99'}/mo)</span>
                                     </div>
-                                    <div className="text-xs text-gray-400 truncate max-w-[200px]">
-                                        {stylist.services.map(s => s.name).join(', ')}
+                                    <div className="text-xs text-secondary truncate max-w-[200px]">
+                                        Services: {stylist.services.length} listed
                                     </div>
                                 </td>
                                 <td className="p-4 text-sm text-gray-600">

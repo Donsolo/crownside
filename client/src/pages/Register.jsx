@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import PlanSelection from '../components/subscription/PlanSelection';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
@@ -36,32 +35,13 @@ export default function Register() {
         return true;
     };
 
-    const handlePlanSelect = (key) => {
-        let newSpecialties = [];
-        // If Elite, auto-select both
-        if (key === 'elite') {
-            newSpecialties = ['hair', 'nails'];
-        }
-        // If switching to Pro, reset specialties to force selection? Or keep if just one?
-        // Let's reset to ensure they pick one explicitly to avoid "Hair + Nails" on Pro.
-        if (key === 'pro') {
-            newSpecialties = [];
-        }
-        setFormData({ ...formData, planKey: key, specialties: newSpecialties });
-    };
+    // Plan selection logic removed - auto-derived from specialties
 
     const toggleSpecialty = (spec) => {
-        // Validation for Pro plan (Single specialty)
-        if (formData.planKey === 'pro') {
-            // If they click one, it becomes the only one
-            setFormData({ ...formData, specialties: [spec] });
+        if (formData.specialties.includes(spec)) {
+            setFormData({ ...formData, specialties: formData.specialties.filter(s => s !== spec) });
         } else {
-            // Standard toggle (though Elite is fixed, maybe prevent changes?)
-            if (formData.specialties.includes(spec)) {
-                setFormData({ ...formData, specialties: formData.specialties.filter(s => s !== spec) });
-            } else {
-                setFormData({ ...formData, specialties: [...formData.specialties, spec] });
-            }
+            setFormData({ ...formData, specialties: [...formData.specialties, spec] });
         }
     };
 
@@ -75,11 +55,7 @@ export default function Register() {
 
         // Validation before submit
         if (role === 'STYLIST') {
-            if (!formData.planKey) {
-                setError('Please select a subscription plan.');
-                setIsSubmitting(false);
-                return;
-            }
+            // planKey is now auto-derived on backend based on count
             if (formData.specialties.length === 0) {
                 setError('Please select your specialty.');
                 setIsSubmitting(false);
@@ -235,51 +211,74 @@ export default function Register() {
                         </div>
                     )}
 
-                    {/* STEP 2: Plan & Specialties (Stylist Only) */}
+                    {/* STEP 2: Service Selection (Stylist Only) */}
                     {step === 2 && role === 'STYLIST' && (
                         <div className="animate-fade-in space-y-8">
 
-                            {/* Plan Selection */}
-                            <PlanSelection
-                                selectedPlan={formData.planKey}
-                                onSelect={handlePlanSelect}
-                            />
+                            <div className="text-center space-y-2">
+                                <h3 className="text-xl font-bold font-serif text-crown-dark">Select Your Services</h3>
+                                <p className="text-gray-500 text-sm">Select the services you offer. Your plan is automatically calculated based on your selection.</p>
+                            </div>
 
-                            {/* Specialties Logic */}
-                            {formData.planKey && (
-                                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 animate-slide-up">
-                                    <h4 className="font-serif text-lg text-crown-dark mb-2">Confirm Your Expertise</h4>
-                                    <p className="text-sm text-gray-500 mb-4">
-                                        {formData.planKey === 'elite'
-                                            ? 'The Elite plan includes access to both Hair and Nail services.'
-                                            : 'The Beauty Pro plan allows you to specialize in one category.'}
-                                    </p>
+                            {/* Service Toggles */}
+                            <div className="grid gap-3">
+                                {[
+                                    { id: 'hair', label: 'Hair', desc: 'Silk press, braids, styling' },
+                                    { id: 'nails', label: 'Nails', desc: 'Manicures, pedicures, acrylics' },
+                                    { id: 'lash_brow', label: 'Lash/Brow Tech', desc: 'Extensions, tinting, waxing' }
+                                ].map((service) => (
+                                    <label
+                                        key={service.id}
+                                        className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.specialties.includes(service.id)
+                                            ? 'border-crown-gold bg-crown-soft/30 shadow-sm'
+                                            : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                                            }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.specialties.includes(service.id)}
+                                            onChange={() => toggleSpecialty(service.id)}
+                                            className="rounded text-crown-gold focus:ring-crown-gold h-5 w-5 mr-4"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-bold text-gray-900">{service.label}</div>
+                                            <div className="text-xs text-gray-500">{service.desc}</div>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
 
-                                    <div className="flex gap-4">
-                                        <label className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer flex-1 transition-all ${formData.specialties.includes('hair') ? 'border-crown-gold bg-white shadow-sm' : 'border-gray-200'}`}>
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.specialties.includes('hair')}
-                                                onChange={() => toggleSpecialty('hair')}
-                                                disabled={formData.planKey === 'elite'} // Locked for Elite
-                                                className="rounded text-crown-gold focus:ring-crown-gold h-5 w-5"
-                                            />
-                                            <span className="font-medium text-gray-800">Hair Services</span>
-                                        </label>
-
-                                        <label className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer flex-1 transition-all ${formData.specialties.includes('nails') ? 'border-crown-gold bg-white shadow-sm' : 'border-gray-200'}`}>
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.specialties.includes('nails')}
-                                                onChange={() => toggleSpecialty('nails')}
-                                                disabled={formData.planKey === 'elite'} // Locked for Elite
-                                                className="rounded text-crown-gold focus:ring-crown-gold h-5 w-5"
-                                            />
-                                            <span className="font-medium text-gray-800">Nail Services</span>
-                                        </label>
+                            {/* Dynamic Plan Display */}
+                            <div className="bg-crown-dark text-white p-6 rounded-xl shadow-lg relative overflow-hidden transition-all duration-300">
+                                <div className="relative z-10 flex justify-between items-center">
+                                    <div>
+                                        <div className="text-crown-gold text-xs font-bold tracking-widest uppercase mb-1">Your Plan</div>
+                                        <h4 className="text-2xl font-serif font-bold">
+                                            {formData.specialties.length === 0 && 'Select a Service'}
+                                            {formData.specialties.length === 1 && 'Beauty Pro'}
+                                            {formData.specialties.length === 2 && 'Beauty Pro Elite'}
+                                            {formData.specialties.length === 3 && 'Beauty Pro Premier'}
+                                        </h4>
+                                        <p className="text-white/60 text-sm mt-1">
+                                            {formData.specialties.length === 0 ? 'Start by selecting a service above.' :
+                                                formData.specialties.length === 1 ? 'Perfect for single-specialty pros.' :
+                                                    formData.specialties.length === 2 ? 'For dual-specialty professionals.' :
+                                                        'The ultimate suite for full-service pros.'}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl font-bold">
+                                            {formData.specialties.length === 0 ? '$0' :
+                                                formData.specialties.length === 1 ? '$24.99' :
+                                                    formData.specialties.length === 2 ? '$34.99' :
+                                                        '$49.99'}
+                                        </div>
+                                        <div className="text-xs text-white/50">/month</div>
                                     </div>
                                 </div>
-                            )}
+                                {/* Background decorative circle */}
+                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-crown-gold/20 rounded-full blur-2xl"></div>
+                            </div>
 
                             <div className="flex gap-4 pt-4">
                                 <button
@@ -291,7 +290,7 @@ export default function Register() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={!formData.planKey || formData.specialties.length === 0 || isSubmitting}
+                                    disabled={formData.specialties.length === 0 || isSubmitting}
                                     className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? 'Creating Account...' : 'Complete Registration'}

@@ -28,18 +28,16 @@ export default function Home() {
                         Beauty, Booked <br /> <span className="text-crown-gold">Beautifully.</span>
                     </h1>
                     <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-10 drop-shadow-sm font-medium">
-                        Detroit’s premier beauty booking platform connecting you with top-tier hair & nail professionals.
+                        Detroit’s premier beauty booking platform connecting you with top-tier hair, nail, & lash/brow professionals.
                         Discover talent, book appointments, and elevate your crown.
                     </p>
                     <div className="flex flex-col md:flex-row justify-center gap-4">
                         <Link to="/explore" className="btn-primary text-center shadow-lg border-none">
                             Find a Beauty Pro
                         </Link>
-                        {user?.role !== 'STYLIST' && (
-                            <Link to="/register" className="btn-secondary text-center bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white hover:text-crown-dark transition-all shadow-lg">
-                                Register as Client/Beauty Pro
-                            </Link>
-                        )}
+                        <Link to="/register" className="px-6 py-3 rounded-full font-medium text-center bg-crown-dark/80 backdrop-blur-sm border border-white text-white hover:bg-crown-dark hover:text-crown-gold transition-all shadow-lg active:scale-95">
+                            Register as Client/Beauty Pro
+                        </Link>
                     </div>
                 </div>
             </Hero>
@@ -48,8 +46,8 @@ export default function Home() {
             <section className="bg-white py-16">
                 <div className="container mx-auto px-4 grid md:grid-cols-3 gap-8">
                     <div className="text-center p-6 bg-crown-cream rounded-2xl">
-                        <h3 className="text-xl font-bold mb-3">Hair & Nail Professionals</h3>
-                        <p className="text-crown-gray">Vetted professionals dedicated to beauty services including silk presses, braids, manicures & pedicures.</p>
+                        <h3 className="text-xl font-bold mb-3">Hair, Nail & Lash Pros</h3>
+                        <p className="text-crown-gray">Vetted professionals dedicated to beauty services including silk presses, braids, manicures, pedicures & lash extensions.</p>
                     </div>
                     <div className="text-center p-6 bg-crown-cream rounded-2xl">
                         <h3 className="text-xl font-bold mb-3">Seamless Booking</h3>

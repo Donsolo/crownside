@@ -20,14 +20,14 @@ Our goal is to make booking beauty services seamless while giving Beauty Pros re
 ## ✨ Core Features (MVP)
 
 ### Client Experience
-- Browse Beauty Pros (Hair & Nails)
+- Browse Beauty Pros (Hair, Nails, & Lash/Brow Tech)
 - View professional storefronts
 - Book appointments
 - Leave reviews and ratings
 - Mobile-first experience
 
 ### Beauty Pro Experience
-- Register as a Beauty Pro (Hair, Nails, or Elite)
+- Register as a Beauty Pro (Select services: Hair, Nails, Lash/Brow Tech)
 - 30-day free trial (payment method required)
 - Custom storefront with:
   - Profile photo
@@ -49,13 +49,17 @@ Our goal is to make booking beauty services seamless while giving Beauty Pros re
 
 ## 💳 Subscription Model
 
-- **Beauty Pro (Hair OR Nails)**  
+- **Beauty Pro (1 Service)**  
   $24.99 / month  
-  *First 30 days free (payment method required)*
+  *Includes access to Hair OR Nails OR Lash/Brow Tech.*
 
-- **Beauty Pro Elite (Hair + Nails)**  
+- **Beauty Pro Elite (2 Services)**  
   $34.99 / month  
-  *First 30 days free (payment method required)*
+  *Includes access to any two services (e.g. Hair + Nails).*
+
+- **Beauty Pro Premier (3 Services)**  
+  $49.99 / month  
+  *Includes access to all services (Hair, Nails, and Lash/Brow Tech).*
 
 > Pricing and trial settings are fully configurable from the Admin Panel.
 

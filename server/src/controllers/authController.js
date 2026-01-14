@@ -66,12 +66,18 @@ const register = async (req, res) => {
                     }
                 });
 
-                // Subscription Logic (Simplified duplication of selectPlan Logic for now)
-                const plan = await tx.subscriptionPlan.findUnique({ where: { key: planKey } });
-                if (!plan) throw new Error('Invalid plan selected');
+                // Auto-derive plan based on specialty count
+                const count = (specialties || []).length;
+                let derivedPlanKey = 'pro';
+                if (count === 2) derivedPlanKey = 'elite';
+                if (count >= 3) derivedPlanKey = 'premier';
+
+                // Subscription Logic
+                const plan = await tx.subscriptionPlan.findUnique({ where: { key: derivedPlanKey } });
+                if (!plan) throw new Error(`Invalid derived plan: ${derivedPlanKey}`);
 
                 const existingCount = await tx.professionalSubscription.count({
-                    where: { planKey, status: { not: 'CANCELED' } }
+                    where: { planKey: derivedPlanKey, status: { not: 'CANCELED' } }
                 });
 
                 const isFreeTrial = existingCount < plan.freeSlotsLimit;
@@ -93,7 +99,7 @@ const register = async (req, res) => {
                 await tx.professionalSubscription.create({
                     data: {
                         stylistId: profile.id,
-                        planKey,
+                        planKey: derivedPlanKey,
                         status: subStatus,
                         trialEndsAt: trialEnds,
                         billingStartsAt: trialEnds // Billing starts when trial ends
