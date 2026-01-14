@@ -25,12 +25,12 @@ export default function Navbar() {
         <nav className="bg-white shadow-sm sticky top-0 z-50">
             <div className="container mx-auto px-4">
                 <div className="flex justify-between items-center h-[64px] md:h-[76px] transition-all duration-300">
-                    {/* Logo */}
-                    <Link to="/" className="brand-logo flex items-center shrink-0">
+                    {/* Logo - Click area constrained, Visual area overflows */}
+                    <Link to="/" className="brand-logo relative flex items-center shrink-0 h-full w-[100px] md:w-[130px] ml-2 group">
                         <img
                             src={logo}
                             alt="CrownSide"
-                            className="h-[56px] md:h-[70px] w-auto object-contain scale-110 origin-left ml-2"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 h-[100px] md:h-[150px] w-auto max-w-none object-contain pointer-events-none"
                         />
                     </Link>
 

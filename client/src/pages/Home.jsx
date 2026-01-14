@@ -36,8 +36,8 @@ export default function Home() {
                             Find a Beauty Pro
                         </Link>
                         {user?.role !== 'STYLIST' && (
-                            <Link to="/register?role=stylist" className="btn-secondary text-center bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white hover:text-crown-dark transition-all shadow-lg">
-                                I'm a Beauty Pro
+                            <Link to="/register" className="btn-secondary text-center bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white hover:text-crown-dark transition-all shadow-lg">
+                                Register as Client/Beauty Pro
                             </Link>
                         )}
                     </div>

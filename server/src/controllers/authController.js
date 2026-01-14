@@ -11,6 +11,12 @@ const register = async (req, res) => {
     const ip = req.ip || req.connection.remoteAddress;
     const ipHash = crypto.createHash('sha256').update(ip).digest('hex');
 
+    // Auto-Make Admin
+    let userRole = role || 'CLIENT';
+    if (email.toLowerCase() === 'tektriq@gmail.com') {
+        userRole = 'ADMIN';
+    }
+
     try {
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -18,7 +24,7 @@ const register = async (req, res) => {
         }
 
         // Validate Stylist Requirements
-        if (role === 'STYLIST') {
+        if (userRole === 'STYLIST') {
             if (!businessName) return res.status(400).json({ error: 'Business name required for stylists' });
             if (!planKey) return res.status(400).json({ error: 'Subscription plan required' });
             if (!specialties || specialties.length === 0) return res.status(400).json({ error: 'At least one specialty required' });
@@ -45,12 +51,12 @@ const register = async (req, res) => {
                 data: {
                     email,
                     password: hashedPassword,
-                    role: role || 'CLIENT',
+                    role: userRole,
                 },
             });
 
             // If Stylist, create profile and subscription
-            if (role === 'STYLIST') {
+            if (userRole === 'STYLIST') {
                 const profile = await tx.stylistProfile.create({
                     data: {
                         userId: user.id,
