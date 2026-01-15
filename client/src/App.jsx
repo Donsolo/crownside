@@ -31,9 +31,12 @@ import AdminSubscriptions from './pages/admin/AdminSubscriptions';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY || 'pk_test_12345');
 
+import ScrollToTop from './components/ScrollToTop';
+
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AuthProvider>
         <Elements stripe={stripePromise}>
           <div className="min-h-screen flex flex-col">
