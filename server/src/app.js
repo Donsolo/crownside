@@ -16,11 +16,13 @@ app.use(helmet({
 }));
 
 // CORS Configuration
+// CORS Configuration
 const allowedOrigins = [
     process.env.APP_URL,
     process.env.CLIENT_URL,
-    'http://localhost:5173', // Vite default
-    'http://localhost:3000' // React default
+    'https://crownside-lovat.vercel.app', // Explicitly allow production frontend
+    'http://localhost:5173',
+    'http://localhost:3000'
 ].filter(Boolean);
 
 app.use(cors({

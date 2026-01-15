@@ -11,8 +11,17 @@ const getHeroes = async (req, res) => {
         res.json(heroes);
     } catch (error) {
         console.error('getHeroes Error Details:', error);
-        console.error('Stack:', error.stack);
-        res.status(500).json({ error: 'Failed to fetch heroes', details: error.message });
+
+        // Safe Default for Mobile/Frontend fallback
+        const defaultHero = [{
+            pageKey: 'home',
+            enabled: true,
+            desktopImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80',
+            mobileImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80'
+        }];
+
+        // Return default instead of 500 to prevent mobile crash
+        res.json(defaultHero);
     }
 };
 
