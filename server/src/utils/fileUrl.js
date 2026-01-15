@@ -8,7 +8,9 @@ const getFileUrl = (req, file) => {
     let baseUrl = process.env.APP_URL || process.env.API_URL;
 
     if (!baseUrl) {
-        baseUrl = `${req.protocol}://${req.get('host')}`;
+        // Trust proxy headers if available, or fallback to protocol
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        baseUrl = `${protocol}://${req.get('host')}`;
     }
 
     // Ensure no trailing slash

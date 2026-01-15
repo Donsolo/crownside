@@ -20,10 +20,20 @@ const s3Config = {
     }
 };
 
-const isS3Configured = s3Config.credentials.accessKeyId &&
-    s3Config.credentials.secretAccessKey &&
-    s3Config.region &&
+const isS3Configured = process.env.AWS_ACCESS_KEY_ID &&
+    process.env.AWS_SECRET_ACCESS_KEY &&
+    process.env.AWS_REGION &&
     process.env.AWS_S3_BUCKET_NAME;
+
+if (!isS3Configured && process.env.NODE_ENV === 'production') {
+    console.error('CRITICAL: AWS S3 Credentials missing in production. Uploads will fallback to ephemeral disk storage and fail.');
+    console.log('Missing vars:', {
+        key: !!process.env.AWS_ACCESS_KEY_ID,
+        secret: !!process.env.AWS_SECRET_ACCESS_KEY,
+        region: !!process.env.AWS_REGION,
+        bucket: !!process.env.AWS_S3_BUCKET_NAME
+    });
+}
 
 let storage;
 

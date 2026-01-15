@@ -38,10 +38,6 @@ const updateHero = async (req, res) => {
 
     const { getFileUrl } = require('../utils/fileUrl');
 
-    // Use APP_URL if set (Production), otherwise fallback to request header origin or localhost
-    // Note: getFileUrl handles base URL logic for uploads, but we might need it for other things?
-    // Actually, getFileUrl is sufficient for the uploads part.
-
     if (req.files && req.files['desktopImage']) {
         updateData.desktopImageUrl = getFileUrl(req, req.files['desktopImage'][0]);
     }
