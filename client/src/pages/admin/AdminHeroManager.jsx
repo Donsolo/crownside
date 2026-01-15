@@ -62,6 +62,8 @@ export default function AdminHeroManager() {
 function HeroEditor({ page, existingConfig, onUpdate }) {
     const [enabled, setEnabled] = useState(existingConfig ? existingConfig.enabled : true);
     const [uploading, setUploading] = useState(false);
+    const [desktopPreview, setDesktopPreview] = useState(null);
+    const [mobilePreview, setMobilePreview] = useState(null);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -108,26 +110,44 @@ function HeroEditor({ page, existingConfig, onUpdate }) {
             <form onSubmit={handleSave} className="grid md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-bold mb-2">Desktop Image (Landscape)</label>
-                    <div className="h-40 bg-gray-100 rounded-lg mb-2 overflow-hidden border border-gray-300">
-                        {existingConfig?.desktopImageUrl ? (
-                            <img src={existingConfig.desktopImageUrl} className="w-full h-full object-cover" />
+                    <div className="h-40 bg-gray-100 rounded-lg mb-2 overflow-hidden border border-gray-300 relative group">
+                        {desktopPreview || existingConfig?.desktopImageUrl ? (
+                            <img src={desktopPreview || existingConfig.desktopImageUrl} className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                         )}
                     </div>
-                    <input type="file" name="desktopImage" accept="image/*" className="text-sm" />
+                    <input
+                        type="file"
+                        name="desktopImage"
+                        accept="image/*"
+                        className="text-sm"
+                        onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) setDesktopPreview(URL.createObjectURL(file));
+                        }}
+                    />
                 </div>
 
                 <div>
                     <label className="block text-sm font-bold mb-2">Mobile Image (Portrait)</label>
-                    <div className="h-40 w-24 mx-auto bg-gray-100 rounded-lg mb-2 overflow-hidden border border-gray-300">
-                        {existingConfig?.mobileImageUrl ? (
-                            <img src={existingConfig.mobileImageUrl} className="w-full h-full object-cover" />
+                    <div className="h-40 w-24 mx-auto bg-gray-100 rounded-lg mb-2 overflow-hidden border border-gray-300 relative group">
+                        {mobilePreview || existingConfig?.mobileImageUrl ? (
+                            <img src={mobilePreview || existingConfig.mobileImageUrl} className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                         )}
                     </div>
-                    <input type="file" name="mobileImage" accept="image/*" className="text-sm" />
+                    <input
+                        type="file"
+                        name="mobileImage"
+                        accept="image/*"
+                        className="text-sm"
+                        onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) setMobilePreview(URL.createObjectURL(file));
+                        }}
+                    />
                 </div>
 
                 <div className="md:col-span-2 text-right">

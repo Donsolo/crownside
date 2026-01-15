@@ -36,7 +36,18 @@ const updateHero = async (req, res) => {
         updateData.enabled = enabled === 'true' || enabled === true;
     }
 
-    const baseUrl = process.env.API_URL || 'http://localhost:3000';
+    // Use APP_URL if set (Production), otherwise fallback to request header origin or localhost
+    let baseUrl = process.env.APP_URL || process.env.API_URL;
+
+    if (!baseUrl) {
+        if (process.env.NODE_ENV === 'production') {
+            console.warn('WARNING: APP_URL not set in production. Image URLs may be broken.');
+        }
+        baseUrl = req.protocol + '://' + req.get('host'); // Fallback to request host
+    }
+
+    // Ensure no trailing slash
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
     if (req.files && req.files['desktopImage']) {
         updateData.desktopImageUrl = `${baseUrl}/uploads/${req.files['desktopImage'][0].filename}`;

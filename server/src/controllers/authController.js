@@ -57,12 +57,23 @@ const register = async (req, res) => {
 
             // If Stylist, create profile and subscription
             if (userRole === 'STYLIST') {
+                // Create Stripe Customer (Safe Mock if keys missing)
+                let stripeCustomerId = null;
+                try {
+                    const customer = await createCustomer(email, paymentMethodId);
+                    stripeCustomerId = customer.id;
+                } catch (e) {
+                    console.warn("Stripe Customer Creation Warning:", e.message);
+                    // Non-blocking failure for MVP/Pre-live
+                }
+
                 const profile = await tx.stylistProfile.create({
                     data: {
                         userId: user.id,
                         businessName,
                         locationType: 'HOME',
-                        specialties: specialties || ['hair']
+                        specialties: specialties || ['hair'],
+                        stripeCustomerId: stripeCustomerId
                     }
                 });
 
