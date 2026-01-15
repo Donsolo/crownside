@@ -28,15 +28,13 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) { // rudimentary loose match or strict? Strict is better but loose helps dev.
-            // Let's stick to strict inclusion + localhost check logic if needed, but for now simple includes
+        if (allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) {
             callback(null, true);
         } else {
-            // For production safety with new "credentials: true", we must be explicit.
-            // If we want to be permissive for dev but strict for prod:
             if (process.env.NODE_ENV === 'development') {
                 callback(null, true);
             } else {
+                console.error(`CORS Blocked: Origin ${origin} not allowed. Allowed: ${allowedOrigins.join(', ')}`);
                 callback(new Error('Not allowed by CORS'));
             }
         }
