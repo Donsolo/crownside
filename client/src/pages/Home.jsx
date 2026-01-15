@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import badge from '../assets/badge.png';
-import heroMobile from '../assets/hero-mobile.jpg';
-import heroDesktop from '../assets/hero-desktop.jpg';
 import Hero from '../components/Hero';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,8 +11,6 @@ export default function Home() {
             {/* Hero Section */}
             <Hero
                 pageKey="home"
-                defaultDesktop={heroDesktop}
-                defaultMobile={heroMobile}
                 className="h-[90vh] md:h-[80vh] flex items-center justify-center text-center"
             >
                 {/* Content */}

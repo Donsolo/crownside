@@ -21,27 +21,40 @@ const Hero = ({ pageKey, defaultDesktop, defaultMobile, children, className = ""
         fetchConfig();
     }, [pageKey]);
 
-    // Defaults
-    const desktopSrc = config?.desktopImageUrl || defaultDesktop;
-    const mobileSrc = config?.mobileImageUrl || defaultMobile;
-    const isEnabled = config ? config.enabled : true; // Default to enabled if no config found yet? Or default to true.
+    // Loading State: Render neutral fallback (prevent flash of old placeholder)
+    if (loading) {
+        return (
+            <section className={`relative w-full overflow-hidden bg-crown-dark ${className}`}>
+                <div className="absolute inset-0 bg-neutral-900 animate-pulse" />
+                {/* Optional: Render children (text) immediately if safe, or wait? 
+                    User requested "clean initial render". Layout needs to hold. 
+                    Let's render children to minimize LCP delay, but background is neutral.
+                */}
+                {/* Content */}
+                <div className="relative z-10 w-full h-full opacity-0 animate-fade-in-fast">
+                    {children}
+                </div>
+            </section>
+        );
+    }
+
+    // Defaults (only applied AFTER loading, if config missing)
+    const desktopSrc = config?.desktopImageUrl; // No longer falling back to props 'defaultImage' to avoid legacy flash
+    const mobileSrc = config?.mobileImageUrl;
+    const isEnabled = config ? config.enabled : true;
 
     if (!isEnabled) return null;
-
-    // If no images at all (no config, no defaults), what to do?
-    // Maybe render a fallback colored background if specified, or nothing.
-    if (!desktopSrc && !mobileSrc && !className) return null;
 
     return (
         <section className={`relative w-full overflow-hidden ${className}`}>
             {/* Background Images */}
             <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat md:hidden"
-                style={{ backgroundImage: mobileSrc ? `url(${mobileSrc})` : 'none', backgroundColor: '#333' }}
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat md:hidden transition-opacity duration-700 ease-in-out"
+                style={{ backgroundImage: mobileSrc ? `url(${mobileSrc})` : 'none', backgroundColor: '#1a1a1a' }}
             />
             <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden md:block"
-                style={{ backgroundImage: desktopSrc ? `url(${desktopSrc})` : 'none', backgroundColor: '#333' }}
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden md:block transition-opacity duration-700 ease-in-out"
+                style={{ backgroundImage: desktopSrc ? `url(${desktopSrc})` : 'none', backgroundColor: '#1a1a1a' }}
             />
 
             {/* Overlay - Optional, passed via children or always present? */}
