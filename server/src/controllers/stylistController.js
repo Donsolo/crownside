@@ -51,12 +51,14 @@ const updateProfile = async (req, res) => {
     }
 };
 
+const { getFileUrl } = require('../utils/fileUrl');
+
 const uploadProfileImage = async (req, res) => {
     const userId = req.user.id;
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
 
     try {
-        const imageUrl = `${process.env.API_URL || 'http://localhost:3000'}/uploads/${req.file.filename}`;
+        const imageUrl = getFileUrl(req, req.file);
 
         const updated = await prisma.stylistProfile.update({
             where: { userId },
@@ -75,7 +77,7 @@ const uploadBannerImage = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
 
     try {
-        const imageUrl = `${process.env.API_URL || 'http://localhost:3000'}/uploads/${req.file.filename}`;
+        const imageUrl = getFileUrl(req, req.file);
 
         const updated = await prisma.stylistProfile.update({
             where: { userId },

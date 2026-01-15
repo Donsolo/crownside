@@ -36,24 +36,17 @@ const updateHero = async (req, res) => {
         updateData.enabled = enabled === 'true' || enabled === true;
     }
 
+    const { getFileUrl } = require('../utils/fileUrl');
+
     // Use APP_URL if set (Production), otherwise fallback to request header origin or localhost
-    let baseUrl = process.env.APP_URL || process.env.API_URL;
-
-    if (!baseUrl) {
-        if (process.env.NODE_ENV === 'production') {
-            console.warn('WARNING: APP_URL not set in production. Image URLs may be broken.');
-        }
-        baseUrl = req.protocol + '://' + req.get('host'); // Fallback to request host
-    }
-
-    // Ensure no trailing slash
-    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+    // Note: getFileUrl handles base URL logic for uploads, but we might need it for other things?
+    // Actually, getFileUrl is sufficient for the uploads part.
 
     if (req.files && req.files['desktopImage']) {
-        updateData.desktopImageUrl = `${baseUrl}/uploads/${req.files['desktopImage'][0].filename}`;
+        updateData.desktopImageUrl = getFileUrl(req, req.files['desktopImage'][0]);
     }
     if (req.files && req.files['mobileImage']) {
-        updateData.mobileImageUrl = `${baseUrl}/uploads/${req.files['mobileImage'][0].filename}`;
+        updateData.mobileImageUrl = getFileUrl(req, req.files['mobileImage'][0]);
     }
 
     try {

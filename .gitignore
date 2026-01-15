@@ -8,8 +8,11 @@ build/
 
 # Env
 .env
+.env.*
 .env.local
 .env.production
+server/.env
+server/.env.*
 
 # Logs
 *.log

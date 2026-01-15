@@ -5,8 +5,10 @@ const addPortfolioImage = async (req, res) => {
     let { imageUrl } = req.body;
 
     // Handle File Upload
+    const { getFileUrl } = require('../utils/fileUrl');
+
     if (req.file) {
-        imageUrl = `${process.env.API_URL || 'http://localhost:3000'}/uploads/${req.file.filename}`;
+        imageUrl = getFileUrl(req, req.file);
     }
 
     if (!imageUrl) return res.status(400).json({ error: 'Image is required' });
