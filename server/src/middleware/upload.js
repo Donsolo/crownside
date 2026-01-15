@@ -44,16 +44,16 @@ if (isS3Configured) {
     storage = multerS3({
         s3: s3,
         bucket: process.env.AWS_S3_BUCKET_NAME,
-        acl: 'public-read', // Ensure files are publicly accessible
+        // acl: 'public-read', // REMOVED: Bucket does not support ACLs
         contentType: multerS3.AUTO_CONTENT_TYPE,
         metadata: function (req, file, cb) {
             cb(null, { fieldName: file.fieldname });
         },
         key: function (req, file, cb) {
-            // folder/timestamp-random-filename.ext
+            // public/timestamp-random-filename.ext
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
             const fileName = uniqueSuffix + path.extname(file.originalname);
-            cb(null, `crownside-uploads/${fileName}`);
+            cb(null, `public/${fileName}`);
         }
     });
 } else {
