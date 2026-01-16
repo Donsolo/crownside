@@ -199,16 +199,17 @@ function LandingPage() {
     return (
         <div className="bg-crown-cream min-h-[80vh]">
             {/* Hero Section */}
+            {/* Hero Section */}
             <Hero
                 pageKey="home"
-                className="h-[90vh] md:h-[80vh] flex items-center justify-center text-center"
+                className="min-h-[90vh] md:h-[80vh] flex items-center justify-center text-center py-20 md:py-0"
             >
                 {/* Content */}
-                <div className="relative z-10 container mx-auto px-4 mt-16 md:mt-0">
+                <div className="relative z-10 container mx-auto px-4">
                     <img
                         src={badge}
                         alt="CrownSide brand badge"
-                        className="mx-auto mb-12 max-h-[240px] md:max-h-[320px] w-auto pointer-events-none drop-shadow-2xl"
+                        className="mx-auto mb-8 md:mb-12 max-h-[180px] md:max-h-[320px] w-auto pointer-events-none drop-shadow-2xl"
                     />
                     <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-6 leading-tight drop-shadow-md">
                         Beauty, Booked <br /> <span className="text-crown-gold">Beautifully.</span>
