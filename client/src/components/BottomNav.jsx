@@ -26,7 +26,7 @@ export default function BottomNav() {
         }] : []),
         {
             label: isLoggedIn ? (isStylist ? 'Dashboard' : 'Profile') : 'Log In',
-            path: isLoggedIn ? (isStylist ? '/dashboard' : '/my-bookings') : '/login',
+            path: isLoggedIn ? (isStylist ? '/dashboard' : '/profile') : '/login',
             icon: isLoggedIn ? User : LogIn
         }
     ];

@@ -7,10 +7,36 @@ const listStylists = async (req, res) => {
                 services: true,
                 user: { select: { email: true } }
             }
+            // Contact info is included by default in Prisma unless explicitly selected.
+            // Goal: Do NOT include in list/search.
+            // Since we are using detailed 'include', we can't easily use 'select' to exclude just a few without listing ALL fields.
+            // Strategy: Map the result to strip sensitive fields.
         });
-        res.json(stylists);
+
+        const sanitized = stylists.map(s => {
+            const { phoneNumber, instagramHandle, tiktokHandle, websiteUrl, contactPreference, ...publicData } = s;
+            return publicData;
+        });
+
+        res.json(sanitized);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch stylists' });
+    }
+};
+
+const adminListStylists = async (req, res) => {
+    try {
+        const stylists = await prisma.stylistProfile.findMany({
+            include: {
+                services: true,
+                user: { select: { email: true } },
+                subscription: true,
+                portfolioImages: true
+            }
+        });
+        res.json(stylists); // Return raw data including contact info
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch stylists for admin' });
     }
 };
 
@@ -39,10 +65,32 @@ const getStylistById = async (req, res) => {
 const updateProfile = async (req, res) => {
     const userId = req.user.id; // From token
     try {
-        // Update logic assuming the profile exists (created at register)
+        const { phoneNumber, instagramHandle, tiktokHandle, websiteUrl, contactPreference, ...otherData } = req.body;
+
+        // Data Validation / Sanitization
+        let cleanData = { ...otherData };
+
+        if (contactPreference) {
+            const validPrefs = ['BOOKINGS_ONLY', 'CALL_OR_TEXT', 'SOCIAL_DM'];
+            if (validPrefs.includes(contactPreference)) {
+                cleanData.contactPreference = contactPreference;
+            }
+        }
+
+        if (phoneNumber !== undefined) cleanData.phoneNumber = phoneNumber; // Allow clearing string
+        if (websiteUrl !== undefined) cleanData.websiteUrl = websiteUrl;
+
+        // Strip @ from handles if present
+        if (instagramHandle !== undefined) {
+            cleanData.instagramHandle = instagramHandle ? instagramHandle.replace('@', '').trim() : null;
+        }
+        if (tiktokHandle !== undefined) {
+            cleanData.tiktokHandle = tiktokHandle ? tiktokHandle.replace('@', '').trim() : null;
+        }
+
         const updatedProfile = await prisma.stylistProfile.update({
             where: { userId },
-            data: req.body
+            data: cleanData
         });
         res.json(updatedProfile);
     } catch (error) {
@@ -91,4 +139,4 @@ const uploadBannerImage = async (req, res) => {
     }
 };
 
-module.exports = { listStylists, getStylistById, updateProfile, uploadProfileImage, uploadBannerImage };
+module.exports = { listStylists, getStylistById, updateProfile, uploadProfileImage, uploadBannerImage, adminListStylists };

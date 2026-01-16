@@ -41,7 +41,10 @@ export default function Navbar() {
                         {user ? (
                             <>
                                 {user.role === 'CLIENT' && (
-                                    <Link to="/my-bookings" className="text-crown-gray hover:text-crown-gold font-medium transition">My Bookings</Link>
+                                    <>
+                                        <Link to="/my-bookings" className="text-crown-gray hover:text-crown-gold font-medium transition">My Bookings</Link>
+                                        <Link to="/profile" className="text-crown-gray hover:text-crown-gold font-medium transition">Profile</Link>
+                                    </>
                                 )}
                                 {user.role === 'STYLIST' && (
                                     <Link to="/dashboard" className="text-crown-gray hover:text-crown-gold font-medium transition">Dashboard</Link>
@@ -111,7 +114,10 @@ export default function Navbar() {
                                 <Link to="/" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Home</Link>
                                 <Link to="/explore" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Explore</Link>
                                 {user?.role === 'CLIENT' && (
-                                    <Link to="/my-bookings" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Bookings</Link>
+                                    <>
+                                        <Link to="/my-bookings" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Bookings</Link>
+                                        <Link to="/profile" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Profile</Link>
+                                    </>
                                 )}
                                 <Link to="/about" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">About Us</Link>
                                 <Link to="/contact" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Contact</Link>

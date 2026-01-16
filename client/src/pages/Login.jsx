@@ -29,7 +29,7 @@ export default function Login() {
 
     return (
         <div className="container mx-auto px-4 py-16 flex justify-center">
-            <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-crown-soft">
+            <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-crown-soft animate-enter">
                 <h2 className="text-3xl font-serif text-center mb-8">Welcome Back</h2>
                 {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">

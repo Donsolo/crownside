@@ -9,7 +9,8 @@ const PAGES = [
     { key: 'about', label: 'About Us' },
     { key: 'contact', label: 'Contact Us' },
     { key: 'faq', label: 'FAQ' },
-    { key: 'bookings', label: 'Client Bookings' } // Optional
+    { key: 'bookings', label: 'My Bookings Page' },
+    { key: 'profile', label: 'Client Profile Dashboard' }
 ];
 
 export default function AdminHeroManager() {

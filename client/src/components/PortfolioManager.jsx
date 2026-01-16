@@ -10,7 +10,7 @@ const PortfolioManager = () => {
     const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     // State to store the fetched stylist ID
-    const [stylistId, setStylistId] = useState(null);
+    const [planKey, setPlanKey] = useState('PRO'); // Default to PRO
 
     useEffect(() => {
         fetchStylistAndImages();
@@ -26,6 +26,16 @@ const PortfolioManager = () => {
                 // Then get images
                 const response = await api.get(`/portfolio/stylist/${id}`);
                 setImages(response.data);
+
+                // Fetch subscription status to know limits
+                try {
+                    const subRes = await api.get('/subscriptions/status');
+                    if (subRes.data.plan) {
+                        setPlanKey(subRes.data.plan.key.toUpperCase());
+                    }
+                } catch (subErr) {
+                    console.warn("Could not fetch subscription status, using defaults");
+                }
             }
         } catch (err) {
             console.error("Failed to fetch portfolio images", err);
@@ -53,7 +63,7 @@ const PortfolioManager = () => {
             });
             setImages([response.data, ...images]);
         } catch (err) {
-            setError('Failed to upload image.');
+            setError(err.response?.data?.error || 'Failed to upload image.');
             console.error(err);
         } finally {
             setSubmitting(false);
@@ -73,7 +83,7 @@ const PortfolioManager = () => {
             setImages([response.data, ...images]);
             setNewImageUrl('');
         } catch (err) {
-            setError('Failed to add image. Please check the URL and try again.');
+            setError(err.response?.data?.error || 'Failed to add image.');
         } finally {
             setSubmitting(false);
         }
@@ -90,46 +100,74 @@ const PortfolioManager = () => {
         }
     };
 
+    const { SUBSCRIPTION_TIERS } = require('../config/constants');
+    const currentTier = SUBSCRIPTION_TIERS[planKey] || SUBSCRIPTION_TIERS.PRO;
+    const isLimitReached = images.length >= currentTier.photoLimit;
+
     if (loading) return <div>Loading portfolio...</div>;
 
     return (
         <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
-                <h3 className="text-xl font-body font-semibold text-primary-900 mb-4">Add to Portfolio</h3>
-                <div className="flex gap-4 items-center">
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="bg-crown-gold text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors flex items-center gap-2"
-                        disabled={submitting}
-                    >
-                        <Upload size={20} /> Upload Photo
-                    </button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                    />
-                    <span className="text-gray-400">or add via URL:</span>
+                <div className="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 className="text-xl font-body font-semibold text-primary-900">Add to Portfolio</h3>
+                        <span className="text-xs text-crown-gold font-bold uppercase tracking-wider">{currentTier.label} Plan</span>
+                    </div>
+                    <span className={`text-sm font-bold ${isLimitReached ? 'text-red-500' : 'text-gray-500'}`}>
+                        {images.length} / {currentTier.photoLimit} items
+                    </span>
                 </div>
 
-                <form onSubmit={handleAddImage} className="flex gap-4 mt-2">
-                    <input
-                        type="url"
-                        placeholder="https://example.com/image.jpg"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        className="flex-1 p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
-                    />
-                    <button
-                        type="submit"
-                        disabled={submitting || !newImageUrl.trim()}
-                        className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black transition-colors flex items-center gap-2"
-                    >
-                        {submitting ? 'Adding...' : <><Plus size={20} /> Add URL</>}
-                    </button>
-                </form>
+                {isLimitReached ? (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                        <div className="flex">
+                            <div className="ml-3">
+                                <p className="text-sm text-yellow-700">
+                                    You have reached the limit of {currentTier.photoLimit} items.
+                                    {currentTier.key === 'pro' && ' Upgrade to Elite for more space!'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex gap-4 items-center mb-4">
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-crown-gold text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors flex items-center gap-2"
+                                disabled={submitting}
+                            >
+                                <Upload size={20} /> Upload Photo {currentTier.videoAllowed && '/ Video'}
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept={currentTier.videoAllowed ? "image/*,video/*" : "image/*"}
+                                onChange={handleFileSelect}
+                            />
+                            <span className="text-gray-400">or add via URL:</span>
+                        </div>
+
+                        <form onSubmit={handleAddImage} className="flex gap-4">
+                            <input
+                                type="url"
+                                placeholder="https://example.com/image.jpg"
+                                value={newImageUrl}
+                                onChange={(e) => setNewImageUrl(e.target.value)}
+                                className="flex-1 p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500"
+                            />
+                            <button
+                                type="submit"
+                                disabled={submitting || !newImageUrl.trim()}
+                                className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-black transition-colors flex items-center gap-2"
+                            >
+                                {submitting ? 'Adding...' : <><Plus size={20} /> Add URL</>}
+                            </button>
+                        </form>
+                    </>
+                )}
                 {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
             </div>
 

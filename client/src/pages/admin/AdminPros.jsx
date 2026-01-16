@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { Search, MapPin } from 'lucide-react';
+import { SERVICE_CATEGORIES, getCategoryLabel } from '../../config/categories';
 
 export default function AdminPros() {
     const [stylists, setStylists] = useState([]);
@@ -13,7 +14,7 @@ export default function AdminPros() {
 
     const fetchStylists = async () => {
         try {
-            const res = await api.get('/stylists'); // Public endpoint returns list
+            const res = await api.get('/stylists/admin/all'); // Admin endpoint returns full data
             setStylists(res.data);
         } catch (err) {
             console.error("Failed to fetch stylists", err);
@@ -80,9 +81,9 @@ export default function AdminPros() {
                     onChange={(e) => setFilterService(e.target.value)}
                 >
                     <option value="ALL">All Services</option>
-                    <option value="hair">Hair</option>
-                    <option value="nails">Nails</option>
-                    <option value="lash_brow">Lash/Brow Tech</option>
+                    {SERVICE_CATEGORIES.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.shortLabel}</option>
+                    ))}
                 </select>
             </div>
 
@@ -94,6 +95,7 @@ export default function AdminPros() {
                             <th className="p-4 font-semibold text-gray-600">Services</th>
                             <th className="p-4 font-semibold text-gray-600">Location</th>
                             <th className="p-4 font-semibold text-gray-600">Status</th>
+                            <th className="p-4 font-semibold text-gray-600">Portfolio</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -113,19 +115,28 @@ export default function AdminPros() {
                                 </td>
                                 <td className="p-4">
                                     <div className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                        {(stylist.specialties || []).length === 1 && <span className="text-crown-gold">Beauty Pro</span>}
-                                        {(stylist.specialties || []).length === 2 && <span className="text-purple-600">Beauty Pro Elite</span>}
-                                        {(stylist.specialties || []).length >= 3 && <span className="text-emerald-600">Beauty Pro Premier</span>}
+                                        {(() => {
+                                            const planKey = (stylist.subscription?.planKey || 'PRO').toUpperCase();
+                                            // Fallback for safe display
+                                            if (planKey === 'PREMIER') return <span className="text-emerald-600">Beauty Pro Premier</span>;
+                                            if (planKey === 'ELITE') return <span className="text-purple-600">Beauty Pro Elite</span>;
+                                            return <span className="text-crown-gold">Beauty Pro</span>;
+                                        })()}
                                     </div>
                                     <div className="text-xs text-gray-400 mt-1">
-                                        ${(stylist.specialties || []).length === 1 ? '24.99' : (stylist.specialties || []).length === 2 ? '34.99' : '49.99'}/mo
+                                        {(() => {
+                                            const planKey = (stylist.subscription?.planKey || 'PRO').toUpperCase();
+                                            if (planKey === 'PREMIER') return '$49.99/mo';
+                                            if (planKey === 'ELITE') return '$34.99/mo';
+                                            return '$24.99/mo';
+                                        })()}
                                     </div>
                                 </td>
                                 <td className="p-4">
                                     <div className="flex flex-wrap gap-1">
                                         {(stylist.specialties || []).map(spec => (
                                             <span key={spec} className="px-2 py-0.5 rounded text-xs bg-gray-100 border border-gray-200">
-                                                {spec === 'hair' ? 'Hair' : spec === 'nails' ? 'Nails' : 'Lash/Brow Tech'}
+                                                {getCategoryLabel(spec)}
                                             </span>
                                         ))}
                                     </div>
@@ -138,6 +149,13 @@ export default function AdminPros() {
                                 </td>
                                 <td className="p-4">
                                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Active</span>
+                                </td>
+                                <td className="p-4 text-sm text-gray-600">
+                                    {(() => {
+                                        const planKey = (stylist.subscription?.planKey || 'PRO').toUpperCase();
+                                        const limit = planKey === 'PRO' ? 8 : 20;
+                                        return `${(stylist.portfolioImages || []).length} / ${limit}`;
+                                    })()}
                                 </td>
                             </tr>
                         ))}

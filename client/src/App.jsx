@@ -13,7 +13,8 @@ import Register from './pages/Register';
 import StylistDashboard from './pages/StylistDashboard';
 import Explore from './pages/Explore';
 import StylistProfile from './pages/StylistProfile';
-import ClientBookings from './pages/ClientBookings';
+import MyBookings from './pages/MyBookings';
+import ClientProfile from './pages/ClientProfile';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Contact from './pages/Contact';
@@ -28,6 +29,7 @@ import AdminBookings from './pages/admin/AdminBookings';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminSubscriptions from './pages/admin/AdminSubscriptions';
+import AccountSettings from './pages/AccountSettings';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY || 'pk_test_12345');
 
@@ -46,7 +48,9 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/stylist/:id" element={<StylistProfile />} />
-                <Route path="/my-bookings" element={<ClientBookings />} />
+                <Route path="/my-bookings" element={<MyBookings />} />
+                <Route path="/profile" element={<ClientProfile />} />
+                <Route path="/account-settings" element={<AccountSettings />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<StylistDashboard />} />

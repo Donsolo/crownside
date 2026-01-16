@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { createCustomer } = require('../services/stripeService');
 
 const register = async (req, res) => {
-    const { email, password, role, businessName, specialties, planKey, paymentMethodId } = req.body;
+    const { email, password, role, businessName, specialties, planKey, paymentMethodId, displayName } = req.body;
 
     // IP Capture & Hashing
     const ip = req.ip || req.connection.remoteAddress;
@@ -46,74 +46,58 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Transaction to ensure atomic creation
+        // Transaction to ensure atomicity
         const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
                 data: {
                     email,
                     password: hashedPassword,
-                    role: userRole,
-                },
+                    role,
+                    displayName: displayName || (role === 'STYLIST' ? businessName : 'Client'),
+                }
             });
 
-            // If Stylist, create profile and subscription
-            if (userRole === 'STYLIST') {
-                // Create Stripe Customer (Safe Mock if keys missing)
-                let stripeCustomerId = null;
-                try {
-                    const customer = await createCustomer(email, paymentMethodId);
-                    stripeCustomerId = customer.id;
-                } catch (e) {
-                    console.warn("Stripe Customer Creation Warning:", e.message);
-                    // Non-blocking failure for MVP/Pre-live
-                }
-
+            if (role === 'STYLIST') {
                 const profile = await tx.stylistProfile.create({
                     data: {
                         userId: user.id,
-                        businessName,
-                        locationType: 'HOME',
-                        specialties: specialties || ['hair'],
-                        stripeCustomerId: stripeCustomerId
+                        businessName: businessName || 'My Business',
+                        locationType: locationType || 'HOME',
+                        specialties: specialties || [],
+                        subscriptionStatus: 'ACTIVE' // Will be managed by subscription relation
                     }
                 });
 
-                // Auto-derive plan based on specialty count
-                const count = (specialties || []).length;
-                let derivedPlanKey = 'pro';
-                if (count === 2) derivedPlanKey = 'elite';
-                if (count >= 3) derivedPlanKey = 'premier';
+                // Using explicit planKey passed from frontend
+                const derivedPlanKey = (planKey || 'pro').toLowerCase();
 
-                // Subscription Logic
+                // Subscription Logic & Early Access Check
                 const plan = await tx.subscriptionPlan.findUnique({ where: { key: derivedPlanKey } });
-                if (!plan) throw new Error(`Invalid derived plan: ${derivedPlanKey}`);
+                if (!plan) throw new Error(`Invalid plan selected: ${derivedPlanKey}`);
 
-                const existingCount = await tx.professionalSubscription.count({
-                    where: { planKey: derivedPlanKey, status: { not: 'CANCELED' } }
+                // Check active count for Early Access
+                const activeSubsCount = await tx.professionalSubscription.count({
+                    where: { status: { in: ['ACTIVE', 'TRIAL'] } }
                 });
 
-                const isFreeTrial = existingCount < plan.freeSlotsLimit;
-                let subStatus = isFreeTrial ? 'TRIAL' : 'INACTIVE'; // 'INACTIVE' implies payment needed
+                let subStatus = 'ACTIVE';
+                let trialEndsAt = null;
 
-                let trialEnds = null;
-                if (isFreeTrial) {
+                // First 30 Users get 30 Days Free
+                if (activeSubsCount < 30) {
+                    subStatus = 'TRIAL';
                     const endDate = new Date();
-                    endDate.setDate(endDate.getDate() + plan.freeTrialDays);
-                    trialEnds = endDate;
-
-                    // Auto-activate subscription status on profile for trial
-                    await tx.stylistProfile.update({
-                        where: { id: profile.id },
-                        data: { subscriptionStatus: 'ACTIVE' }
-                    });
+                    endDate.setDate(endDate.getDate() + 30);
+                    trialEndsAt = endDate;
                 }
 
                 await tx.professionalSubscription.create({
                     data: {
                         stylistId: profile.id,
-                        planKey: derivedPlanKey,
+                        planKey: plan.key,
                         status: subStatus,
-                        trialEndsAt: trialEnds,
-                        billingStartsAt: trialEnds // Billing starts when trial ends
+                        trialEndsAt: trialEndsAt,
+                        billingStartsAt: trialEndsAt // Billing starts when trial ends
                     }
                 });
             }
@@ -156,7 +140,7 @@ const login = async (req, res) => {
 
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+        res.json({ token, user: { id: user.id, email: user.email, role: user.role, displayName: user.displayName } });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -167,7 +151,7 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, createdAt: true, stylistProfile: true }
+            select: { id: true, email: true, role: true, displayName: true, createdAt: true, stylistProfile: true }
         });
         res.json(user);
     } catch (error) {
@@ -176,4 +160,21 @@ const getMe = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getMe };
+const updateMe = async (req, res) => {
+    try {
+        const { displayName } = req.body;
+        const updated = await prisma.user.update({
+            where: { id: req.user.id },
+            data: {
+                displayName: displayName ? displayName.trim() : undefined
+            },
+            select: { id: true, email: true, role: true, displayName: true, createdAt: true }
+        });
+        res.json(updated);
+    } catch (error) {
+        console.error('updateMe Error:', error);
+        res.status(500).json({ error: 'Failed to update user' });
+    }
+};
+
+module.exports = { register, login, getMe, updateMe };

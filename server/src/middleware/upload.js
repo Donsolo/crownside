@@ -72,10 +72,10 @@ if (isS3Configured) {
 
 // File Filter
 const fileFilter = (req, file, cb) => {
-    // Accept images only
-    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|webp|WEBP)$/)) {
-        req.fileValidationError = 'Only image files are allowed!';
-        return cb(new Error('Only image files are allowed!'), false);
+    // Accept images and videos
+    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|webp|WEBP|mp4|MP4|mov|MOV|avi|AVI|webm|WEBM)$/)) {
+        req.fileValidationError = 'Only image and video files are allowed!';
+        return cb(new Error('Only image and video files are allowed!'), false);
     }
     cb(null, true);
 };
@@ -84,7 +84,7 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 8 * 1024 * 1024, // 8MB Max
+        fileSize: 50 * 1024 * 1024, // 50MB Max
     }
 });
 

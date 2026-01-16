@@ -3,105 +3,229 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import PortfolioManager from '../components/PortfolioManager';
+import Hero from '../components/Hero';
+import { SERVICE_CATEGORIES } from '../config/categories';
+import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt } from 'react-icons/fa';
 
 export default function StylistDashboard() {
-    const [activeTab, setActiveTab] = useState('profile');
+    const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
     const navigate = useNavigate();
     const { logout } = useAuth();
+
+    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [subscription, setSubscription] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const [meRes, subRes] = await Promise.all([
+                    api.get('/auth/me'),
+                    api.get('/subscriptions/status').catch(() => ({ data: null }))
+                ]);
+
+                if (meRes.data.role !== 'STYLIST') {
+                    navigate('/'); // Safety redirect
+                    return;
+                }
+
+                setUser(meRes.data);
+                setProfile(meRes.data.stylistProfile);
+                setSubscription(subRes.data);
+            } catch (err) {
+                console.error("Dashboard Load Error", err);
+                navigate('/login');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDashboardData();
+    }, [navigate]);
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
-    const updateSpecialty = async (spec) => {
-        // This is a placeholder for the local state update. 
-        // In a real app, this should likely interact with the profile state directly or via API.
-        // Since the profile state is deeply nested in ProfileEditor, we might need to move this or pass it down.
-        // However, ProfileEditor has its own local `profile` state.
-        // Let's rely on ProfileEditor's internal logic which I previously modified to use `updateSpecialty` name in the render, 
-        // but that render is *inside* ProfileEditor component.
-        // Wait, the `updateSpecialty` call in my previous replacement was inside `ProfileEditor`.
-        // So I don't need it here in the main component. I need it inside `ProfileEditor`.
+    if (loading) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center">Loading Studio...</div>;
+
+    // Derived Data
+    const getProLevelLabel = (key) => {
+        if (!key) return 'Pro'; // Default
+        if (key === 'elite') return 'Pro Elite';
+        if (key === 'premier') return 'Pro Premier';
+        return 'Pro';
     };
-
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-        if (!token || user.role !== 'STYLIST') {
-            navigate('/login');
-        }
-    }, [navigate]);
+    const proLevel = getProLevelLabel(subscription?.planKey);
+    const businessName = profile?.businessName || "My Beauty Business";
+    const avatarUrl = profile?.profileImage;
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            {/* Subscription Warning */}
-            {activeTab !== 'profile' && (
-                <div className="hidden md:block">
-                    {/* We need to fetch/know the status. For now assuming active unless login returns otherwise. 
-                         In a real app, useAuth would give us the full user object with profile.
-                     */}
+        <div className="min-h-screen bg-neutral-50">
+
+            {/* 1. HERO SECTION */}
+            <Hero
+                pageKey="dashboard"
+                className="h-[40vh] min-h-[300px] flex items-center justify-center relative"
+                overlayOpacity={0.7}
+            >
+                <div className="text-center text-white z-10 px-4">
+                    <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg">Pro Studio</h1>
+                    <p className="text-white/80 text-lg font-medium">Manage your services, bookings, and brand</p>
                 </div>
-            )}
+            </Hero>
 
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <h1 className="text-3xl font-serif text-crown-dark">Professional Dashboard</h1>
-                <button
-                    onClick={handleLogout}
-                    className="md:hidden text-sm bg-crown-gray text-white px-4 py-2 rounded-lg"
-                >
-                    Log Out
-                </button>
-            </div>
+            {/* 2. MAIN CONTENT (Negative Margin) */}
+            <div className="container mx-auto px-4 max-w-5xl relative z-20 -mt-24 mb-20">
 
-            <div className="flex flex-col md:flex-row gap-8">
-                {/* Sidebar Nav */}
-                <div className="w-full md:w-1/4">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {/* 3. PRO PROFILE CARD */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col md:flex-row items-center md:items-start gap-8 mb-10 animate-fade-in-up">
+
+                    {/* Avatar */}
+                    <div className="relative group cursor-pointer" onClick={() => setActiveView('profile')}>
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Pro" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="text-4xl font-serif text-crown-dark font-bold">
+                                    {businessName[0]}
+                                </div>
+                            )}
+                        </div>
+                        {/* Edit Overlay Hint */}
+                        <div className="absolute inset-0 bg-black/30 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-xs font-bold">
+                            Edit
+                        </div>
+                    </div>
+
+                    {/* Pro Details */}
+                    <div className="flex-1 text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
+                            <h2 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
+                                {businessName}
+                            </h2>
+                            {/* Pro Level Badge */}
+                            <span className="px-3 py-1 bg-crown-dark text-crown-gold text-[10px] font-bold uppercase tracking-widest rounded-full shadow-sm border border-crown-gold/30">
+                                {proLevel}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-gray-500 text-sm mb-4">
+                            <span className="flex items-center gap-1">
+                                <FaMapMarkerAlt /> {profile?.locationType === 'MOBILE' ? 'Mobile Service' : 'Detroit, MI'}
+                            </span>
+                            <span className="hidden md:inline">•</span>
+                            <span className="flex items-center gap-1 text-green-600 font-medium">
+                                <FaCheckCircle /> Accepting Bookings
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-3 min-w-[140px]">
                         <button
-                            onClick={() => setActiveTab('profile')}
-                            className={`w-full text-left px-6 py-4 font-medium transition ${activeTab === 'profile' ? 'bg-crown-gold text-white' : 'hover:bg-gray-50'}`}
+                            onClick={handleLogout}
+                            className="bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-500 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition"
                         >
-                            Profile
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('services')}
-                            className={`w-full text-left px-6 py-4 font-medium transition ${activeTab === 'services' ? 'bg-crown-gold text-white' : 'hover:bg-gray-50'}`}
-                        >
-                            Services
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('portfolio')}
-                            className={`w-full text-left px-6 py-4 font-medium transition ${activeTab === 'portfolio' ? 'bg-crown-gold text-white' : 'hover:bg-gray-50'}`}
-                        >
-                            Portfolio
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('bookings')}
-                            className={`w-full text-left px-6 py-4 font-medium transition ${activeTab === 'bookings' ? 'bg-crown-gold text-white' : 'hover:bg-gray-50'}`}
-                        >
-                            Bookings
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('billing')}
-                            className={`w-full text-left px-6 py-4 font-medium transition ${activeTab === 'billing' ? 'bg-crown-gold text-white' : 'hover:bg-gray-50'}`}
-                        >
-                            Billing
+                            Log Out
                         </button>
                     </div>
                 </div>
 
-                {/* Content Area */}
-                <div className="w-full md:w-3/4">
-                    {activeTab === 'profile' && <ProfileEditor />}
-                    {activeTab === 'services' && <ServiceEditor />}
-                    {activeTab === 'portfolio' && <PortfolioManager />}
-                    {activeTab === 'bookings' && <BookingManager />}
-                    {activeTab === 'billing' && <BillingManager />}
-                </div>
+                {/* 4. DASHBOARD VS EDITOR VIEWS */}
+                {activeView === 'home' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+
+                        {/* Bookings Card (High Priority) */}
+                        <DashboardCard
+                            title="Bookings"
+                            desc="Manage appointments & requests"
+                            icon={<FaCalendarCheck className="w-6 h-6 text-white" />}
+                            color="bg-crown-gold"
+                            onClick={() => setActiveView('bookings')}
+                        />
+
+                        {/* Services Card */}
+                        <DashboardCard
+                            title="Services"
+                            desc="Edit menu, pricing & duration"
+                            icon={<FaCut className="w-6 h-6 text-white" />}
+                            color="bg-crown-dark"
+                            onClick={() => setActiveView('services')}
+                        />
+
+                        {/* Profile Card */}
+                        <DashboardCard
+                            title="Profile & Brand"
+                            desc="Update bio, photos & contact info"
+                            icon={<FaStore className="w-6 h-6 text-white" />}
+                            color="bg-purple-600"
+                            onClick={() => setActiveView('profile')}
+                        />
+
+                        {/* Portfolio Card */}
+                        <DashboardCard
+                            title="Portfolio"
+                            desc="Upload photos of your best work"
+                            icon={<FaCamera className="w-6 h-6 text-white" />}
+                            color="bg-pink-500"
+                            onClick={() => setActiveView('portfolio')}
+                        />
+
+                        {/* Billing Card */}
+                        <DashboardCard
+                            title="Billing & Plan"
+                            desc="Subscription status & payouts"
+                            icon={<FaCreditCard className="w-6 h-6 text-white" />}
+                            color="bg-blue-600"
+                            onClick={() => setActiveView('billing')}
+                        />
+
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in">
+                        {/* Editor Header */}
+                        <div className="bg-gray-50 border-b px-6 py-4 flex items-center justify-between">
+                            <button
+                                onClick={() => setActiveView('home')}
+                                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-crown-dark transition"
+                            >
+                                <FaArrowLeft /> Back to Dashboard
+                            </button>
+                            <h3 className="font-serif font-bold text-lg capitalize">{activeView} Editor</h3>
+                        </div>
+
+                        {/* Editor Content */}
+                        <div className="p-0">
+                            {activeView === 'profile' && <ProfileEditor />}
+                            {activeView === 'services' && <ServiceEditor />}
+                            {activeView === 'portfolio' && <PortfolioManager />}
+                            {activeView === 'bookings' && <BookingManager />}
+                            {activeView === 'billing' && <BillingManager />}
+                        </div>
+                    </div>
+                )}
             </div>
         </div >
+    );
+}
+
+// Helper Component for Dashboard Cards
+function DashboardCard({ title, desc, icon, color, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            className="group bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-crown-gold/30 transition text-left flex items-start gap-4"
+        >
+            <div className={`${color} w-12 h-12 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                {icon}
+            </div>
+            <div>
+                <h3 className="font-serif font-bold text-lg text-gray-900 group-hover:text-crown-gold transition-colors">{title}</h3>
+                <p className="text-sm text-gray-500 leading-tight mt-1">{desc}</p>
+            </div>
+        </button>
     );
 }
 
@@ -314,7 +438,84 @@ function ProfileEditor() {
                         onChange={handleChange}
                     ></textarea>
                 </div>
-                {/* Add Location Type */}
+
+                {/* Contact Information */}
+                <div>
+                    <h3 className="font-bold text-lg mb-4 mt-6 border-b pb-2">Client Contact Methods</h3>
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-2">Phone Number</label>
+                            <input
+                                name="phoneNumber"
+                                type="text"
+                                placeholder="(555) 555-5555"
+                                className="w-full p-2 border rounded-lg"
+                                value={profile.phoneNumber || ''}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-2">Website</label>
+                            <input
+                                name="websiteUrl"
+                                type="url"
+                                placeholder="https://..."
+                                className="w-full p-2 border rounded-lg"
+                                value={profile.websiteUrl || ''}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-2">Instagram Handle</label>
+                            <div className="flex">
+                                <span className="p-2 bg-gray-100 border border-r-0 rounded-l-lg text-gray-500">@</span>
+                                <input
+                                    name="instagramHandle"
+                                    type="text"
+                                    placeholder="username"
+                                    className="w-full p-2 border rounded-r-lg"
+                                    value={profile.instagramHandle || ''}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-2">TikTok Handle</label>
+                            <div className="flex">
+                                <span className="p-2 bg-gray-100 border border-r-0 rounded-l-lg text-gray-500">@</span>
+                                <input
+                                    name="tiktokHandle"
+                                    type="text"
+                                    placeholder="username"
+                                    className="w-full p-2 border rounded-r-lg"
+                                    value={profile.tiktokHandle || ''}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold mb-2">Contact Preference (Public visibility)</label>
+                        <select
+                            name="contactPreference"
+                            className="w-full p-2 border rounded-lg"
+                            value={profile.contactPreference || 'BOOKINGS_ONLY'}
+                            onChange={handleChange}
+                        >
+                            <option value="BOOKINGS_ONLY">Bookings Only (Hide contact info)</option>
+                            <option value="CALL_OR_TEXT">Allow Calls/Text (Shows Phone)</option>
+                            <option value="SOCIAL_DM">Social Basics (Shows Insta/TikTok/Web)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Controls which contact buttons appear on your public profile.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Add Location Type */}\
                 <div>
                     <label className="block text-sm font-bold mb-2">Location Type</label>
                     <select
@@ -330,34 +531,18 @@ function ProfileEditor() {
                 </div>
                 <div>
                     <label className="block text-sm font-bold mb-2">My Specialties</label>
-                    <div className="flex gap-4">
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={profile.specialties?.includes('hair')}
-                                onChange={() => updateSpecialty('hair')}
-                                className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
-                            />
-                            <span>Hair</span>
-                        </label>
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={profile.specialties?.includes('nails')}
-                                onChange={() => updateSpecialty('nails')}
-                                className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
-                            />
-                            <span>Nails</span>
-                        </label>
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={profile.specialties?.includes('lash_brow')}
-                                onChange={() => updateSpecialty('lash_brow')}
-                                className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
-                            />
-                            <span>Lash/Brow Tech</span>
-                        </label>
+                    <div className="flex flex-wrap gap-4">
+                        {SERVICE_CATEGORIES.map((cat) => (
+                            <label key={cat.id} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={profile.specialties?.includes(cat.id)}
+                                    onChange={() => updateSpecialty(cat.id)}
+                                    className="rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
+                                />
+                                <span>{cat.shortLabel}</span>
+                            </label>
+                        ))}
                     </div>
                 </div>
                 <button className="btn-primary">Save Changes</button>
@@ -369,25 +554,16 @@ function ProfileEditor() {
 function ServiceEditor() {
     const [services, setServices] = useState([]);
     const [isCreating, setIsCreating] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     // New Service State
-    const [newService, setNewService] = useState({ name: '', price: '', duration: '', deposit: '', category: '' });
-    const [specialties, setSpecialties] = useState([]);
+    const [newService, setNewService] = useState({ name: '', price: '', duration: '', deposit: '', category: 'hair' });
 
-    const fetchProfileAndServices = async () => {
+    const fetchServices = async () => {
         try {
             const me = await api.get('/auth/me');
             if (me.data.stylistProfile) {
-                const profile = me.data.stylistProfile;
-                const stylistId = profile.id;
-                const userSpecialties = profile.specialties || ['hair']; // Fallback
-                setSpecialties(userSpecialties);
-
-                // Set default allowed category
-                if (userSpecialties.length > 0) {
-                    setNewService(prev => ({ ...prev, category: userSpecialties[0] }));
-                }
-
+                const stylistId = me.data.stylistProfile.id;
                 const res = await api.get(`/stylists/${stylistId}`);
                 setServices(res.data.services || []);
             }
@@ -397,81 +573,215 @@ function ServiceEditor() {
     };
 
     useEffect(() => {
-        fetchProfileAndServices();
+        fetchServices();
     }, []);
 
     const handleCreate = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             await api.post('/services', newService);
-            setNewService({ name: '', price: '', duration: '', deposit: '', category: specialties[0] || 'hair' });
+            setNewService({ name: '', price: '', duration: '', deposit: '', category: 'hair' });
             setIsCreating(false);
-            fetchProfileAndServices();
+            fetchServices();
         } catch (err) {
             alert(err.response?.data?.error || 'Failed to create service');
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!confirm("Are you sure?")) return;
+        if (!confirm("Are you sure? This will remove the service from your storefront.")) return;
         try {
             await api.delete(`/services/${id}`);
-            fetchProfileAndServices();
+            fetchServices();
         } catch (err) {
             alert('Failed to delete');
         }
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-serif">My Services</h2>
-                <button onClick={() => setIsCreating(!isCreating)} className="btn-secondary py-2 px-4 text-sm">
-                    {isCreating ? 'Cancel' : 'Add New Service'}
+        <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 className="text-2xl font-serif font-bold text-gray-900">Service Menu</h2>
+                    <p className="text-gray-500 text-sm mt-1 max-w-md">
+                        Manage the services visible on your storefront. Adding services helps clients find you in search.
+                    </p>
+                </div>
+                <button
+                    onClick={() => setIsCreating(true)}
+                    className="btn-primary bg-crown-dark text-white px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-black transition shadow-md"
+                    disabled={isCreating}
+                >
+                    <span className="text-xl leading-none font-light">+</span> Add Service
                 </button>
             </div>
 
             {isCreating && (
-                <form onSubmit={handleCreate} className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h4 className="font-bold mb-3">New Service details</h4>
-                    <div className="mb-4">
-                        <label className="block text-sm font-bold mb-1">Category</label>
-                        <select
-                            className="p-2 border rounded w-full md:w-1/2"
-                            value={newService.category}
-                            onChange={e => setNewService({ ...newService, category: e.target.value })}
+                <div className="mb-8 p-6 bg-gray-50/80 rounded-2xl border border-gray-200 shadow-inner animate-fade-in-up">
+                    <div className="flex justify-between items-center mb-6">
+                        <h4 className="font-bold text-lg text-gray-800">Add New Service</h4>
+                        <button
+                            onClick={() => setIsCreating(false)}
+                            className="text-gray-400 hover:text-gray-600 p-2"
                         >
-                            {specialties.includes('hair') && <option value="hair">Hair</option>}
-                            {specialties.includes('nails') && <option value="nails">Nails</option>}
-                            {specialties.includes('lash_brow') && <option value="lash_brow">Lash/Brow Tech</option>}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">
-                            Available categories based on your subscription.
-                        </p>
+                            ✕
+                        </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <input placeholder="Service Name" className="p-2 border rounded" required value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} />
-                        <input placeholder="Price ($)" type="number" className="p-2 border rounded" required value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} />
-                        <input placeholder="Duration (min)" type="number" className="p-2 border rounded" required value={newService.duration} onChange={e => setNewService({ ...newService, duration: e.target.value })} />
-                        <input placeholder="Deposit ($) [Optional]" type="number" className="p-2 border rounded" value={newService.deposit} onChange={e => setNewService({ ...newService, deposit: e.target.value })} />
-                    </div>
-                    <button className="bg-crown-dark text-white px-4 py-2 rounded">Save Service</button>
-                </form>
+
+                    <form onSubmit={handleCreate}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+                            {/* Category Select */}
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Service Category</label>
+                                <div className="relative">
+                                    <select
+                                        className="w-full p-3 pl-4 border border-gray-300 rounded-xl appearance-none bg-white focus:ring-2 focus:ring-crown-gold focus:border-transparent transition"
+                                        value={newService.category}
+                                        onChange={e => setNewService({ ...newService, category: e.target.value })}
+                                        required
+                                    >
+                                        {SERVICE_CATEGORIES.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Categorizing your services correctly ensures they appear in the right search filters.
+                                </p>
+                            </div>
+
+                            {/* Service Name */}
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Service Name</label>
+                                <input
+                                    placeholder="e.g. Silk Press & Trim"
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-crown-gold focus:outline-none transition"
+                                    required
+                                    value={newService.name}
+                                    onChange={e => setNewService({ ...newService, name: e.target.value })}
+                                />
+                            </div>
+
+                            {/* Details Row */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Price ($)</label>
+                                <input
+                                    placeholder="0.00"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-crown-gold focus:outline-none transition"
+                                    required
+                                    value={newService.price}
+                                    onChange={e => setNewService({ ...newService, price: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Duration (min)</label>
+                                <input
+                                    placeholder="e.g. 60"
+                                    type="number"
+                                    min="5"
+                                    step="5"
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-crown-gold focus:outline-none transition"
+                                    required
+                                    value={newService.duration}
+                                    onChange={e => setNewService({ ...newService, duration: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Required Deposit ($) <span className="font-normal text-gray-400">- Optional</span></label>
+                                <input
+                                    placeholder="0.00"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-crown-gold focus:outline-none transition"
+                                    value={newService.deposit}
+                                    onChange={e => setNewService({ ...newService, deposit: e.target.value })}
+                                />
+                                <p className="text-xs text-gray-500 mt-2">Amount clients must pay upfront to secure the booking.</p>
+                            </div>
+
+                        </div>
+
+                        <div className="flex gap-4 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsCreating(false)}
+                                className="px-6 py-3 rounded-xl border border-gray-300 text-gray-600 hover:bg-white hover:border-gray-400 transition font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="flex-1 btn-primary bg-crown-dark text-white px-6 py-3 rounded-xl hover:bg-black transition shadow-md font-bold"
+                            >
+                                {submitting ? 'Saving...' : 'Save Service'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             )}
 
             <div className="space-y-4">
-                {services.length === 0 && <p className="text-gray-500">No services added yet.</p>}
-                {services.map(s => (
-                    <div key={s.id} className="flex justify-between items-center p-4 border rounded-lg hover:border-crown-gold transition">
-                        <div>
-                            <h4 className="font-bold text-lg">{s.name}</h4>
-                            <p className="text-gray-500">{s.duration} mins • ${s.price}</p>
+                {services.length === 0 ? (
+                    <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                        <div className="text-gray-400 mb-4">
+                            <FaCut size={48} className="mx-auto opacity-20" />
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 font-medium">Delete</button>
-                        </div>
+                        <p className="text-gray-500 font-medium">No services added yet.</p>
+                        <p className="text-gray-400 text-sm mt-1">Add your first service to start accepting bookings.</p>
+                        <button onClick={() => setIsCreating(true)} className="mt-6 text-crown-gold font-bold hover:underline">
+                            + Add Service
+                        </button>
                     </div>
-                ))}
+                ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                        {services.map(s => {
+                            const category = SERVICE_CATEGORIES.find(c => c.id === s.category);
+                            return (
+                                <div key={s.id} className="group bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-crown-gold/30 transition flex justify-between items-center">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 group-hover:bg-crown-gold/10 group-hover:text-crown-gold transition">
+                                            {category ? <category.icon size={20} /> : <FaCut />}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 group-hover:text-crown-dark transition">{s.name}</h4>
+                                            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                                                <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide">
+                                                    {category ? category.shortLabel : s.category}
+                                                </span>
+                                                <span>•</span>
+                                                <span>{s.duration} min</span>
+                                                <span>•</span>
+                                                <span className="font-medium text-gray-900">${s.price}</span>
+                                                {s.deposit > 0 && <span className="text-xs text-crown-gold">• ${s.deposit} Dep.</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDelete(s.id)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition"
+                                        title="Delete Service"
+                                    >
+                                        <span className="text-xl leading-none">×</span>
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -532,13 +842,17 @@ function BillingManager() {
                         <p className="text-crown-gold font-medium text-lg">${subscription.plan?.price}/month</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${subscription.status === 'ACTIVE' || subscription.status === 'TRIAL' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {subscription.status}
+                        {subscription.status === 'TRIAL' ? 'EARLY ACCESS' : subscription.status}
                     </span>
                 </div>
 
                 {subscription.status === 'TRIAL' && (
-                    <div className="mt-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">
-                        Trial ends on: {new Date(subscription.trialEndsAt).toLocaleDateString()}
+                    <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 text-blue-800 rounded-lg text-sm flex items-start gap-3">
+                        <span className="text-xl">🎁</span>
+                        <div>
+                            <p className="font-bold">You have Early Access!</p>
+                            <p className="mt-1">Your free trial ends on <span className="font-bold">{new Date(subscription.trialEndsAt).toLocaleDateString()}</span>. You won't be charged until then.</p>
+                        </div>
                     </div>
                 )}
             </div>

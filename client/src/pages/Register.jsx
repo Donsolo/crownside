@@ -11,6 +11,7 @@ export default function Register() {
     const [step, setStep] = useState(1); // 1: Account, 2: Plan (Stylist only)
 
     const [formData, setFormData] = useState({
+        displayName: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -95,17 +96,23 @@ export default function Register() {
             setError('Business Name is required.');
             return;
         }
-        setStep(2);
+        if (step === 2) {
+            if (role === 'STYLIST' && formData.specialties.length === 0) {
+                setError('Please select at least one specialty.');
+                return;
+            }
+        }
+        setStep(step + 1);
     };
 
     const prevStep = () => {
         setError('');
-        setStep(1);
+        setStep(step - 1);
     };
 
     return (
         <div className="container mx-auto px-4 py-16 flex justify-center">
-            <div className={`w-full ${step === 2 ? 'max-w-4xl' : 'max-w-md'} bg-white p-8 rounded-2xl shadow-lg border border-crown-soft transition-all duration-500`}>
+            <div className={`w-full ${step === 2 ? 'max-w-4xl' : 'max-w-md'} bg-white p-8 rounded-2xl shadow-lg border border-crown-soft transition-all duration-500 animate-enter`}>
                 <h2 className="text-3xl font-serif text-center mb-6">
                     {step === 1 ? 'Create Account' : 'Select Your Plan'}
                 </h2>
@@ -137,6 +144,17 @@ export default function Register() {
                     {/* STEP 1: Account Info */}
                     {step === 1 && (
                         <div className="space-y-4 animate-fade-in">
+                            <div>
+                                <label className="block text-sm font-medium text-crown-gray mb-1">Display Name <span className="text-gray-400 text-xs">(Optional)</span></label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none"
+                                    placeholder="e.g. Jane Doe"
+                                    value={formData.displayName}
+                                    onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                                />
+                                <p className="text-xs text-gray-400 mt-1">This name will be visible to beauty professionals you book with.</p>
+                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-crown-gray mb-1">Email</label>
                                 <input
@@ -248,36 +266,74 @@ export default function Register() {
                                 ))}
                             </div>
 
-                            {/* Dynamic Plan Display */}
-                            <div className="bg-crown-dark text-white p-6 rounded-xl shadow-lg relative overflow-hidden transition-all duration-300">
-                                <div className="relative z-10 flex justify-between items-center">
-                                    <div>
-                                        <div className="text-crown-gold text-xs font-bold tracking-widest uppercase mb-1">Your Plan</div>
-                                        <h4 className="text-2xl font-serif font-bold">
-                                            {formData.specialties.length === 0 && 'Select a Service'}
-                                            {formData.specialties.length === 1 && 'Beauty Pro'}
-                                            {formData.specialties.length === 2 && 'Beauty Pro Elite'}
-                                            {formData.specialties.length === 3 && 'Beauty Pro Premier'}
-                                        </h4>
-                                        <p className="text-white/60 text-sm mt-1">
-                                            {formData.specialties.length === 0 ? 'Start by selecting a service above.' :
-                                                formData.specialties.length === 1 ? 'Perfect for single-specialty pros.' :
-                                                    formData.specialties.length === 2 ? 'For dual-specialty professionals.' :
-                                                        'The ultimate suite for full-service pros.'}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-3xl font-bold">
-                                            {formData.specialties.length === 0 ? '$0' :
-                                                formData.specialties.length === 1 ? '$24.99' :
-                                                    formData.specialties.length === 2 ? '$34.99' :
-                                                        '$49.99'}
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={prevStep}
+                                    className="px-6 py-3 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={18} /> Back
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={nextStep}
+                                    disabled={formData.specialties.length === 0}
+                                    className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                >
+                                    Next Step <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 3: Plan Selection (Stylist Only) */}
+                    {step === 3 && role === 'STYLIST' && (
+                        <div className="animate-fade-in space-y-6">
+                            <div className="text-center space-y-2">
+                                <h3 className="text-xl font-bold font-serif text-crown-dark">Choose Your Plan</h3>
+                                <p className="text-gray-500 text-sm">Select the plan that fits your business needs.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="bg-gradient-to-r from-crown-gold/20 to-crown-gold/5 border border-crown-gold/30 rounded-xl p-4 mb-6">
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-2xl">🎁</span>
+                                        <div>
+                                            <h4 className="font-bold text-crown-dark">Early Access Offer</h4>
+                                            <p className="text-sm text-gray-700">The first 30 Beauty Pros get <span className="font-bold">30 Days Free</span>! No commitment, cancel anytime.</p>
                                         </div>
-                                        <div className="text-xs text-white/50">/month</div>
                                     </div>
                                 </div>
-                                {/* Background decorative circle */}
-                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-crown-gold/20 rounded-full blur-2xl"></div>
+
+                                {[
+                                    { key: 'pro', label: 'Beauty Pro', price: '$15.00', desc: 'Perfect for getting started. 8 Portfolio Photos.' },
+                                    { key: 'elite', label: 'Beauty Pro Elite', price: '$25.00', desc: 'Enhanced visibility. 20 Portfolio Assets + Video.' },
+                                    { key: 'premier', label: 'Beauty Pro Premier', price: '$35.00', desc: 'Maximum exposure & priority support. 20+ Assets.' }
+                                ].map((plan) => (
+                                    <label
+                                        key={plan.key}
+                                        className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.planKey === plan.key
+                                            ? 'border-crown-gold bg-crown-soft/30 shadow-sm'
+                                            : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                                            }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="planKey"
+                                            value={plan.key}
+                                            checked={formData.planKey === plan.key}
+                                            onChange={(e) => setFormData({ ...formData, planKey: e.target.value })}
+                                            className="ml-2 text-crown-gold focus:ring-crown-gold h-5 w-5 mr-4"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center">
+                                                <div className="font-bold text-gray-900">{plan.label}</div>
+                                                <div className="font-bold text-crown-gold">{plan.price}<span className="text-gray-400 text-xs font-normal">/mo</span></div>
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1">{plan.desc}</div>
+                                        </div>
+                                    </label>
+                                ))}
                             </div>
 
                             <div className="flex gap-4 pt-4">
@@ -290,7 +346,7 @@ export default function Register() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={formData.specialties.length === 0 || isSubmitting}
+                                    disabled={!formData.planKey || isSubmitting}
                                     className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? 'Creating Account...' : 'Complete Registration'}

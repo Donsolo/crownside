@@ -38,4 +38,37 @@
   .card-premium {
     @apply bg-white rounded-2xl shadow-lg border border-crown-soft p-6;
   }
+
+  @keyframes fadeSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-enter {
+    opacity: 0;
+    animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-delay-1 {
+    animation-delay: 0.1s;
+  }
+
+  .animate-delay-2 {
+    animation-delay: 0.25s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-enter {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
 }

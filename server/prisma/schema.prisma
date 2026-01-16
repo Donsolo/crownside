@@ -24,6 +24,12 @@ enum BookingStatus {
   CANCELED
 }
 
+enum ContactPreference {
+  BOOKINGS_ONLY
+  CALL_OR_TEXT
+  SOCIAL_DM
+}
+
 enum SubscriptionStatus {
   ACTIVE
   INACTIVE
@@ -35,6 +41,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(CLIENT)
+  displayName String?
   createdAt DateTime @default(now())
   
   // Relations
@@ -53,6 +60,13 @@ model StylistProfile {
   profileImage     String?
   bannerImage      String?
   specialties      String[] @default(["hair"])
+  
+  // Contact Info
+  phoneNumber      String?
+  instagramHandle  String?
+  tiktokHandle     String?
+  websiteUrl       String?
+  contactPreference ContactPreference @default(BOOKINGS_ONLY)
   
   stripeCustomerId String?
   subscriptionStatus SubscriptionStatus @default(INACTIVE)
@@ -153,6 +167,8 @@ model SubscriptionPlan {
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  
+  subscriptions  ProfessionalSubscription[]
 }
 
 enum SubStatus {
@@ -169,6 +185,7 @@ model ProfessionalSubscription {
   stylist              StylistProfile @relation(fields: [stylistId], references: [id])
   
   planKey              String
+  plan                 SubscriptionPlan @relation(fields: [planKey], references: [key])
   status               SubStatus @default(TRIAL)
   
   trialEndsAt          DateTime?

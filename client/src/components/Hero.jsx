@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 
-const Hero = ({ pageKey, defaultDesktop, defaultMobile, children, className = "" }) => {
+const Hero = ({ pageKey, defaultDesktop, defaultMobile, children, className = "", overlayOpacity = 0.5 }) => {
     const [config, setConfig] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -57,8 +57,8 @@ const Hero = ({ pageKey, defaultDesktop, defaultMobile, children, className = ""
                 style={{ backgroundImage: desktopSrc ? `url(${desktopSrc})` : 'none', backgroundColor: '#1a1a1a' }}
             />
 
-            {/* Overlay - Optional, passed via children or always present? */}
-            <div className="absolute inset-0 bg-black/50" />
+            {/* Overlay - configurable opacity */}
+            <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
 
             {/* Content */}
             <div className="relative z-10 w-full h-full">

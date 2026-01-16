@@ -165,11 +165,7 @@ const getSubscriptionStatus = async (req, res) => {
         const stylist = await prisma.stylistProfile.findUnique({
             where: { userId },
             include: {
-                subscription: {
-                    include: {
-                        plan: true
-                    }
-                }
+                subscription: true // Don't include plain here to avoid schema mismatch crashes
             }
         });
 
@@ -177,9 +173,14 @@ const getSubscriptionStatus = async (req, res) => {
             return res.json({ status: 'NO_SUBSCRIPTION', plan: null });
         }
 
+        // Manual fetch to be safe against schema sync issues
+        const plan = await prisma.subscriptionPlan.findUnique({
+            where: { key: stylist.subscription.planKey }
+        });
+
         res.json({
             status: stylist.subscription.status,
-            plan: stylist.subscription.plan,
+            plan: plan,
             trialEndsAt: stylist.subscription.trialEndsAt,
             billingStartsAt: stylist.subscription.billingStartsAt,
             subscriptionId: stylist.subscription.id
