@@ -21,6 +21,8 @@ const allowedOrigins = [
     process.env.APP_URL,
     process.env.CLIENT_URL,
     'https://crownside-lovat.vercel.app', // Explicitly allow production frontend
+    'https://thecrownside.com', // Custom Domain
+    'https://www.thecrownside.com', // Custom Domain (www)
     'http://localhost:5173',
     'http://localhost:3000'
 ].filter(Boolean);
