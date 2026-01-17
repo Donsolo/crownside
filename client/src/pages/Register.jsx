@@ -379,49 +379,84 @@ function RegisterContent() {
                                 <p className="text-gray-500 text-sm">Select the plan that fits your business needs.</p>
                             </div>
 
-                            <div className="space-y-4">
-                                {formData.planKey === 'pro' && (
-                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
-                                        <div className="flex items-start gap-3">
-                                            <span className="text-2xl">🎁</span>
-                                            <div>
-                                                <h4 className="font-bold text-emerald-800">30-Day Free Trial!</h4>
-                                                <p className="text-sm text-emerald-700">Select the <span className="font-bold">Beauty Pro</span> plan to get your first month free.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                            <div className="flex flex-col gap-5">
+                                {Object.values(SUBSCRIPTION_TIERS).map((plan) => {
+                                    const isSelected = formData.planKey === plan.key;
+                                    const isPro = plan.key === 'pro';
+                                    const isElite = plan.key === 'elite';
+                                    const isPremier = plan.key === 'premier';
 
-                                {Object.values(SUBSCRIPTION_TIERS).map((plan) => (
-                                    <label
-                                        key={plan.key}
-                                        className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.planKey === plan.key
-                                            ? 'border-crown-gold bg-[var(--bg-tertiary)] shadow-sm'
-                                            : 'border-[var(--card-border)] hover:border-[var(--border-subtle)] bg-[var(--bg-primary)]'
-                                            }`}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="planKey"
-                                            value={plan.key}
-                                            checked={formData.planKey === plan.key}
-                                            onChange={(e) => setFormData({ ...formData, planKey: e.target.value })}
-                                            className="ml-2 text-crown-gold focus:ring-crown-gold h-5 w-5 mr-4"
-                                        />
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-center">
-                                                <div className="font-bold text-[var(--text-primary)]">{plan.label}</div>
-                                                <div className="font-bold text-crown-gold">${plan.price.toFixed(2)}<span className="text-gray-400 text-xs font-normal">/mo</span></div>
+                                    return (
+                                        <div
+                                            key={plan.key}
+                                            onClick={() => setFormData({ ...formData, planKey: plan.key })}
+                                            className={`relative group cursor-pointer rounded-2xl transition-all duration-300 border-2 overflow-hidden
+                                                ${isSelected
+                                                    ? 'border-crown-gold bg-[var(--bg-tertiary)] shadow-lg scale-[1.02]'
+                                                    : 'border-[var(--card-border)] bg-[var(--bg-primary)] hover:border-crown-gold/30 hover:shadow-md'
+                                                }
+                                            `}
+                                        >
+                                            {/* Selection Indicator (Radio Ring) */}
+                                            <div className="absolute top-6 right-6">
+                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
+                                                    ${isSelected ? 'border-crown-gold' : 'border-gray-300 group-hover:border-crown-gold/50'}`}>
+                                                    <div className={`w-3 h-3 rounded-full bg-crown-gold transition-all duration-300 ${isSelected ? 'scale-100' : 'scale-0'}`} />
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-gray-500 mt-1">
-                                                {plan.key === 'pro' && 'Perfect for getting started. 8 Portfolio Photos.'}
-                                                {plan.key === 'elite' && 'Enhanced visibility. 20 Portfolio Assets + Video.'}
-                                                {plan.key === 'premier' && 'Maximum exposure & priority support. 20+ Assets.'}
+
+                                            {/* Elite/Premier Badges */}
+                                            {isElite && (
+                                                <div className="absolute top-0 left-0 bg-crown-gold text-white text-[10px] font-bold px-3 py-1 rounded-br-xl uppercase tracking-wider shadow-sm">
+                                                    Most Popular
+                                                </div>
+                                            )}
+                                            {isPremier && (
+                                                <div className="absolute top-0 left-0 bg-crown-dark text-crown-gold text-[10px] font-bold px-3 py-1 rounded-br-xl uppercase tracking-wider shadow-sm border-r border-b border-crown-gold/20">
+                                                    Ultimate Exposure
+                                                </div>
+                                            )}
+
+                                            <div className="p-6">
+                                                {/* Header & Price */}
+                                                <div className="pr-12"> {/* Padding for radio */}
+                                                    <h4 className={`font-serif text-lg font-bold transition-colors ${isSelected ? 'text-crown-dark' : 'text-gray-600'}`}>
+                                                        {plan.label}
+                                                    </h4>
+                                                    <div className="flex items-baseline gap-1 mt-1">
+                                                        <span className="text-2xl font-bold text-crown-gold">${plan.price.toFixed(0)}</span>
+                                                        <span className="text-gray-400 text-sm">/month</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Features / Desc */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100/50 space-y-2">
+                                                    <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                                                        {isPro && "Great for getting started. Build your presence."}
+                                                        {isElite && "Grow your client base with enhanced tools."}
+                                                        {isPremier && "Maximum reach for established professionals."}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                                                        <span>✨</span>
+                                                        {isPro && "Includes 8 Portfolio Photos"}
+                                                        {isElite && "Includes 20 Photos + Video Uploads"}
+                                                        {isPremier && "Unlocks All Features + Priority Support"}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </label>
-                                ))}
+                                    );
+                                })}
                             </div>
+
+                            {/* Free Trial Note - Subtle & Integrated */}
+                            {formData.planKey === 'pro' && (
+                                <div className="text-center animate-fade-in">
+                                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100/50">
+                                        <span>🎉</span> You've selected the 30-Day Free Trial
+                                    </span>
+                                </div>
+                            )}
 
                             <div className="flex gap-4 pt-4">
                                 <button
