@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { SUBSCRIPTION_TIERS } from '../config/constants';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise } from '../lib/stripe';
 
 
@@ -93,7 +93,7 @@ function RegisterContent() {
                 return;
             }
 
-            const cardElement = elements.getElement(CardElement);
+            const cardElement = elements.getElement(CardNumberElement);
             if (!cardElement) {
                 setError('Card details not found.');
                 setIsSubmitting(false);
@@ -443,86 +443,128 @@ function RegisterContent() {
                         </div>
                     )}
 
-                    {/* STEP 4: Payment (Real Stripe Elements) */}
+                    {/* STEP 4: Payment (Split Fields Redesign) */}
                     {step === 4 && role === 'STYLIST' && (
-                        <div className="animate-fade-in space-y-6">
-                            <div className="text-center space-y-2">
-                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)]">Payment Method</h3>
-                                <p className="text-gray-500 text-sm">A valid card is required to activate your subscription.</p>
+                        <div className="animate-fade-in space-y-8">
+
+                            {/* Header Section */}
+                            <div className="text-center space-y-3">
+                                <span className="text-4xl">🔒</span>
+                                <h3 className="text-2xl font-bold font-serif text-[var(--text-primary)]">Secure Checkout</h3>
+                                <p className="text-gray-500 text-sm max-w-xs mx-auto">
+                                    Your 30-day trial is free. Cancel anytime.
+                                </p>
 
                                 {!stripePromise ? (
-                                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs font-bold flex items-center gap-2 justify-center">
+                                    <div className="mt-4 bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs font-bold flex items-center gap-2 justify-center">
                                         <span>⚠️</span>
-                                        Payments Disabled (Dev Mode: No Stripe Key)
+                                        Payments Disabled (Dev Mode)
                                     </div>
                                 ) : (
-                                    <p className="text-xs text-crown-gold font-bold bg-crown-gold/5 inline-block px-3 py-1 rounded-full border border-crown-gold/20">
-                                        Trusted: Your clients will pay YOU directly for services.
+                                    <div className="flex justify-center gap-2 mt-2">
+                                        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1">
+                                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                            Encrypted by Stripe
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Order Summary Card */}
+                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 shadow-sm">
+                                <h4 className="font-bold text-gray-400 text-xs uppercase tracking-widest mb-4">Subscription Plan</h4>
+                                <div className="flex justify-between items-baseline mb-2">
+                                    <span className="text-gray-800 font-bold text-lg">{SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.label}</span>
+                                    <span className="font-serif text-xl">${SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.price.toFixed(2)}<span className="text-sm text-gray-500 font-sans">/mo</span></span>
+                                </div>
+                                {formData.planKey === 'pro' && (
+                                    <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 px-3 py-1.5 rounded-lg w-fit">
+                                        <span>🎉 30-Day Free Trial Applied</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Payment Form */}
+                            <div className="space-y-5">
+                                <div className="space-y-4">
+                                    {/* Card Number */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Card Number</label>
+                                        <div className="bg-white border border-gray-300 rounded-lg p-3 shadow-sm focus-within:ring-2 focus-within:ring-crown-gold focus-within:border-transparent transition-all">
+                                            {stripePromise ? (
+                                                <CardNumberElement options={CARD_ELEMENT_OPTIONS} />
+                                            ) : (
+                                                <div className="text-gray-300 text-sm italic">Input Disabled</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Expiry */}
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Expiration</label>
+                                            <div className="bg-white border border-gray-300 rounded-lg p-3 shadow-sm focus-within:ring-2 focus-within:ring-crown-gold transition-all">
+                                                {stripePromise ? (
+                                                    <CardExpiryElement options={CARD_ELEMENT_OPTIONS} />
+                                                ) : (
+                                                    <div className="text-gray-300 text-sm italic">-- / --</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* CVC */}
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">CVC</label>
+                                            <div className="bg-white border border-gray-300 rounded-lg p-3 shadow-sm focus-within:ring-2 focus-within:ring-crown-gold transition-all">
+                                                {stripePromise ? (
+                                                    <CardCvcElement options={CARD_ELEMENT_OPTIONS} />
+                                                ) : (
+                                                    <div className="text-gray-300 text-sm italic">123</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Trust Footer */}
+                                <div className="bg-crown-gold/5 rounded-xl p-4 border border-crown-gold/10 text-center space-y-2">
+                                    <p className="text-xs text-crown-dark font-medium">
+                                        Clients pay you directly for services.
                                     </p>
-                                )}
-                            </div>
-
-                            {/* Order Summary */}
-                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wide mb-4">Order Summary</h4>
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-gray-600">{SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.label}</span>
-                                    <span className="font-medium">${SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.price.toFixed(2)}/mo</span>
-                                </div>
-                                {formData.planKey === 'pro' ? (
-                                    <>
-                                        <div className="flex justify-between items-center text-emerald-600 text-sm mb-4">
-                                            <span>30-Day Free Trial</span>
-                                            <span>-$15.00</span>
-                                        </div>
-                                        <div className="border-t border-gray-200 pt-3 flex justify-between items-center font-bold text-lg">
-                                            <span>Due Today</span>
-                                            <span>$0.00</span>
-                                        </div>
-                                        <p className="text-xs text-center text-gray-400 mt-2">Billing starts automatically after 30 days.</p>
-                                    </>
-                                ) : (
-                                    <div className="border-t border-gray-200 pt-3 flex justify-between items-center font-bold text-lg">
-                                        <span>Due Today</span>
-                                        <span>${SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.price.toFixed(2)}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Real Card Element */}
-                            <div className="border border-gray-300 rounded-lg p-4 bg-white">
-                                <label className="block text-xs font-semibold text-gray-400 uppercase mb-2">Card Information</label>
-                                <div className="p-1">
-                                    {stripePromise ? (
-                                        <CardElement options={CARD_ELEMENT_OPTIONS} />
-                                    ) : (
-                                        <div className="bg-gray-100 p-4 rounded text-center text-gray-400 text-sm italic">
-                                            Card Element Unavailable
-                                        </div>
-                                    )}
+                                    <p className="text-[10px] text-gray-500 leading-relaxed">
+                                        CrownSide never stores your card details. This card is strictly for your monthly hosting subscription.
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 p-3 bg-gray-50 text-gray-600 text-xs rounded border border-gray-100">
-                                <div className="font-bold">SECURE</div>
-                                <p>This card is for your CrownSide monthly subscription ONLY.</p>
-                            </div>
-
-                            <div className="flex gap-4 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={prevStep}
-                                    className="px-6 py-3 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2"
-                                >
-                                    <ChevronLeft size={18} /> Back
-                                </button>
+                            {/* Navigation */}
+                            <div className="flex flex-col gap-3 pt-2">
                                 <button
                                     type="submit"
                                     disabled={!stripe || isSubmitting || !stripePromise}
-                                    className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full btn-primary bg-crown-dark text-white py-4 rounded-full hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg font-bold text-lg flex justify-center items-center gap-2"
                                 >
-                                    {isSubmitting ? 'Processing Payment...' : (!stripePromise ? 'Payments Unavailable' : 'Confirm Subscription')}
+                                    {isSubmitting ? (
+                                        <>
+                                            <span className="animate-spin">⏳</span> Processing...
+                                        </>
+                                    ) : (
+                                        !stripePromise ? 'Payments Disabled' : (formData.planKey === 'pro' ? 'Start Free Trial' : 'Confirm Subscription')
+                                    )}
                                 </button>
+
+                                <button
+                                    type="button"
+                                    onClick={prevStep}
+                                    className="w-full py-3 text-sm text-gray-500 hover:text-gray-800 transition font-medium"
+                                >
+                                    Go Back
+                                </button>
+
+                                {formData.planKey === 'pro' && (
+                                    <p className="text-center text-[10px] text-gray-400 mt-2">
+                                        You won't be charged today.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
