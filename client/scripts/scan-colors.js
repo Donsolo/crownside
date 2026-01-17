@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SRC_IMAGE = path.join(__dirname, '../public/master-icon-v4.png');
+const SRC_IMAGE = path.join(__dirname, '../public/master-icon-v5.png');
 
 (async () => {
     const image = await Jimp.read(SRC_IMAGE);
