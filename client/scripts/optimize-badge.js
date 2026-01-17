@@ -14,10 +14,11 @@ const BG_COLORS = [
     { r: 204, g: 204, b: 204 }, // Darker Gray (common checkerboard)
     { r: 192, g: 192, b: 192 }, // Silver
     { r: 240, g: 240, b: 240 }, // Very light gray
+    { r: 0, g: 0, b: 0 } // Black (sometimes black is used as transparent background in bad conversions)
 ];
 
 // Tolerance for color matching
-const TOLERANCE = 10;
+const TOLERANCE = 30;
 
 function isBgColor(inputColor) {
     const r = (inputColor >> 24) & 0xFF;
@@ -103,6 +104,68 @@ function isBgColor(inputColor) {
         }
 
         console.log(`Background removal complete. Cleared ${pixelsRemoved} pixels.`);
+
+        // --- HALO REMOVAL PASS ---
+        // Scan for pixels that are "light" (near white) and bordering transparent pixels
+        // This removes the anti-aliased fringe from the checkerboard
+        console.log('Starting halo removal pass...');
+        const HALO_TOLERANCE = 100; // Gold has Blue ~89, so 100 is safe. White/Gray is > 100.
+
+        // We will scan the whole image. If a pixel is NOT transparent but is "light", check neighbors.
+        // If a geometric neighbor is transparent, kill this pixel.
+        // Doing this iteratively can erode the white edge.
+
+        let haloPixelsRemoved = 0;
+        const currentBitmap = image.bitmap.data; // raw buffer
+
+        // Helper to check transparency
+        const isTransparent = (idx) => currentBitmap[idx + 3] === 0;
+
+        // Iterate X times to erode the edge
+        for (let i = 0; i < 2; i++) {
+            const pixelsToClear = [];
+
+            image.scan(0, 0, width, height, (x, y, idx) => {
+                const r = currentBitmap[idx];
+                const g = currentBitmap[idx + 1];
+                const b = currentBitmap[idx + 2];
+                const a = currentBitmap[idx + 3];
+
+                if (a !== 0) {
+                    // It's visible. Is it "light"?
+                    // Simple brightness check or just check if it's kinda gray/white
+                    if (r > HALO_TOLERANCE && g > HALO_TOLERANCE && b > HALO_TOLERANCE) {
+                        // It's light. Is it next to transparent?
+                        let borderingTransparent = false;
+                        const neighbors = [
+                            { x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 }
+                        ];
+
+                        for (const n of neighbors) {
+                            if (n.x >= 0 && n.x < width && n.y >= 0 && n.y < height) {
+                                const nIdx = image.getPixelIndex(n.x, n.y);
+                                if (image.bitmap.data[nIdx + 3] === 0) {
+                                    borderingTransparent = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (borderingTransparent) {
+                            pixelsToClear.push({ x, y });
+                        }
+                    }
+                }
+            });
+
+            for (const p of pixelsToClear) {
+                image.setPixelColor(0x00000000, p.x, p.y);
+                haloPixelsRemoved++;
+            }
+        }
+
+        console.log(`Halo removal complete. Cleared ${haloPixelsRemoved} fringe pixels.`);
+
 
         // Now Autocrop to remove the transparent area padding
         console.log('Autocropping...');
