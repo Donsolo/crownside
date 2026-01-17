@@ -386,62 +386,92 @@ function RegisterContent() {
                                     const isElite = plan.key === 'elite';
                                     const isPremier = plan.key === 'premier';
 
+                                    const getCardStyle = () => {
+                                        if (isSelected) {
+                                            if (isPro) return 'border-crown-gold bg-[var(--bg-tertiary)] shadow-lg scale-[1.02]';
+                                            if (isElite) return 'border-crown-gold bg-gradient-to-br from-[var(--bg-primary)] to-[var(--crown-soft)] shadow-xl scale-[1.03] ring-1 ring-crown-gold/30';
+                                            if (isPremier) return 'border-crown-dark bg-[var(--crown-cream)] shadow-2xl scale-[1.04] ring-1 ring-crown-dark/20';
+                                        }
+                                        // Unselected States
+                                        if (isPro) return 'border-[var(--card-border)] bg-[var(--bg-primary)] hover:border-crown-gold/30 hover:shadow-md';
+                                        if (isElite) return 'border-[var(--card-border)] bg-[var(--bg-primary)] hover:border-crown-gold/50 hover:shadow-lg';
+                                        if (isPremier) return 'border-[var(--card-border)] bg-[var(--bg-primary)] hover:border-crown-dark/40 hover:shadow-xl';
+                                        return '';
+                                    };
+
                                     return (
                                         <div
                                             key={plan.key}
                                             onClick={() => setFormData({ ...formData, planKey: plan.key })}
-                                            className={`relative group cursor-pointer rounded-2xl transition-all duration-300 border-2 overflow-hidden
-                                                ${isSelected
-                                                    ? 'border-crown-gold bg-[var(--bg-tertiary)] shadow-lg scale-[1.02]'
-                                                    : 'border-[var(--card-border)] bg-[var(--bg-primary)] hover:border-crown-gold/30 hover:shadow-md'
-                                                }
-                                            `}
+                                            className={`relative group cursor-pointer rounded-2xl transition-all duration-300 border-2 overflow-hidden ${getCardStyle()}`}
                                         >
                                             {/* Selection Indicator (Radio Ring) */}
-                                            <div className="absolute top-6 right-6">
+                                            <div className="absolute top-6 right-6 z-10">
                                                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
                                                     ${isSelected ? 'border-crown-gold' : 'border-gray-300 group-hover:border-crown-gold/50'}`}>
                                                     <div className={`w-3 h-3 rounded-full bg-crown-gold transition-all duration-300 ${isSelected ? 'scale-100' : 'scale-0'}`} />
                                                 </div>
                                             </div>
 
-                                            {/* Elite/Premier Badges */}
+                                            {/* Badges */}
+                                            {isPro && (
+                                                <div className="absolute top-0 left-0 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-4 py-1.5 rounded-br-xl uppercase tracking-wider border-r border-b border-emerald-100 shadow-sm flex items-center gap-1">
+                                                    <span>💎</span> 30-Day Free Trial
+                                                </div>
+                                            )}
                                             {isElite && (
-                                                <div className="absolute top-0 left-0 bg-crown-gold text-white text-[10px] font-bold px-3 py-1 rounded-br-xl uppercase tracking-wider shadow-sm">
-                                                    Most Popular
+                                                <div className="absolute top-0 left-0 bg-crown-gold text-white text-[10px] font-bold px-4 py-1.5 rounded-br-xl uppercase tracking-wider shadow-md flex items-center gap-1">
+                                                    <span>✨</span> Most Popular
                                                 </div>
                                             )}
                                             {isPremier && (
-                                                <div className="absolute top-0 left-0 bg-crown-dark text-crown-gold text-[10px] font-bold px-3 py-1 rounded-br-xl uppercase tracking-wider shadow-sm border-r border-b border-crown-gold/20">
-                                                    Ultimate Exposure
+                                                <div className="absolute top-0 left-0 bg-crown-dark text-crown-gold text-[10px] font-bold px-5 py-1.5 rounded-br-xl uppercase tracking-widest shadow-lg border-r border-b border-crown-gold/20 flex items-center gap-1">
+                                                    <span>👑</span> Premier Access
                                                 </div>
                                             )}
 
-                                            <div className="p-6">
+                                            <div className="p-6 pt-10">
                                                 {/* Header & Price */}
-                                                <div className="pr-12"> {/* Padding for radio */}
-                                                    <h4 className={`font-serif text-lg font-bold transition-colors ${isSelected ? 'text-crown-dark' : 'text-gray-600'}`}>
+                                                <div className="pr-10">
+                                                    <h4 className={`font-serif text-xl font-bold transition-colors mb-1 ${isSelected || isPremier ? 'text-crown-dark' : 'text-gray-600'}`}>
                                                         {plan.label}
                                                     </h4>
-                                                    <div className="flex items-baseline gap-1 mt-1">
+
+                                                    {/* Pro Trial Subtitle */}
+                                                    {isPro && (
+                                                        <p className="text-xs text-emerald-600 font-bold mb-1">
+                                                            No charge today. Cancel anytime.
+                                                        </p>
+                                                    )}
+
+                                                    <div className="flex items-baseline gap-1 mt-2">
                                                         <span className="text-2xl font-bold text-crown-gold">${plan.price.toFixed(0)}</span>
                                                         <span className="text-gray-400 text-sm">/month</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Features / Desc */}
-                                                <div className="mt-4 pt-4 border-t border-gray-100/50 space-y-2">
-                                                    <p className="text-sm text-gray-600 leading-relaxed font-medium">
-                                                        {isPro && "Great for getting started. Build your presence."}
-                                                        {isElite && "Grow your client base with enhanced tools."}
-                                                        {isPremier && "Maximum reach for established professionals."}
+                                                <div className={`mt-4 pt-4 border-t space-y-2 ${isPremier ? 'border-crown-dark/10' : 'border-gray-100'}`}>
+                                                    <p className="text-sm text-gray-700 leading-relaxed font-medium">
+                                                        {isPro && "Establish your business with a professional storefront."}
+                                                        {isElite && "Expand your reach and attract more clients."}
+                                                        {isPremier && "Dominate your market with maximum exposure."}
                                                     </p>
-                                                    <p className="text-xs text-gray-400 flex items-center gap-1.5">
-                                                        <span>✨</span>
-                                                        {isPro && "Includes 8 Portfolio Photos"}
-                                                        {isElite && "Includes 20 Photos + Video Uploads"}
-                                                        {isPremier && "Unlocks All Features + Priority Support"}
-                                                    </p>
+
+                                                    <div className="space-y-1.5 pt-1">
+                                                        <p className="text-xs text-gray-500 flex items-center gap-2">
+                                                            <span className={isSelected ? "text-crown-gold" : "text-gray-400"}>✓</span>
+                                                            {isPro && "8 Portfolio Photos"}
+                                                            {isElite && "20 Portfolio Photos + Video"}
+                                                            {isPremier && "Unlimited Portfolio Assets"}
+                                                        </p>
+                                                        {isPremier && (
+                                                            <p className="text-xs text-gray-500 flex items-center gap-2">
+                                                                <span className="text-crown-gold">✓</span>
+                                                                Priority Support & Verified Badge
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

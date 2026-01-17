@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 
-const Hero = ({ pageKey, defaultDesktop, defaultMobile, children, className = "", overlayOpacity = 0.5 }) => {
+const Hero = ({ pageKey, desktopImageUrl, mobileImageUrl, children, className = "", overlayOpacity = 0.5 }) => {
     const [config, setConfig] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -39,8 +39,9 @@ const Hero = ({ pageKey, defaultDesktop, defaultMobile, children, className = ""
     }
 
     // Defaults (only applied AFTER loading, if config missing)
-    const desktopSrc = config?.desktopImageUrl; // No longer falling back to props 'defaultImage' to avoid legacy flash
-    const mobileSrc = config?.mobileImageUrl;
+    // Priority: Props (imageUrl) > Config Fetch > Defaults
+    const desktopSrc = desktopImageUrl || config?.desktopImageUrl;
+    const mobileSrc = mobileImageUrl || config?.mobileImageUrl;
     const isEnabled = config ? config.enabled : true;
 
     if (!isEnabled) return null;

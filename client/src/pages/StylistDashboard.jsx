@@ -94,12 +94,21 @@ export default function StylistDashboard() {
     const businessName = profile?.businessName || "My Beauty Business";
     const avatarUrl = profile?.profileImage;
 
+    const handleProfileUpdate = (updatedProfile) => {
+        setProfile(updatedProfile);
+        // Also update user state to keep them in sync
+        if (user) {
+            setUser({ ...user, stylistProfile: updatedProfile });
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
 
             {/* 1. HERO SECTION */}
             <Hero
                 pageKey="dashboard"
+                desktopImageUrl={profile?.bannerImage}
                 className="h-[40vh] min-h-[300px] flex items-center justify-center relative"
                 overlayOpacity={0.7}
             >
@@ -231,7 +240,7 @@ export default function StylistDashboard() {
 
                         {/* Editor Content */}
                         <div className="p-0">
-                            {activeView === 'profile' && <ProfileEditor />}
+                            {activeView === 'profile' && <ProfileEditor onUpdate={handleProfileUpdate} />}
                             {activeView === 'services' && <ServiceEditor />}
                             {activeView === 'portfolio' && <PortfolioManager />}
                             {activeView === 'bookings' && <BookingManager />}
@@ -342,7 +351,7 @@ function BookingManager() {
     );
 }
 
-function ProfileEditor() {
+function ProfileEditor({ onUpdate }) {
     const [profile, setProfile] = useState({});
     const [isLoading, setIsLoading] = useState(true);
 
@@ -380,7 +389,9 @@ function ProfileEditor() {
     const handleSave = async (e) => {
         e.preventDefault();
         try {
-            await api.put('/stylists/me', profile);
+            const res = await api.put('/stylists/me', profile);
+            setProfile(res.data);
+            if (onUpdate) onUpdate(res.data);
             alert('Profile updated!');
         } catch (err) {
             alert('Failed to update profile');
@@ -404,6 +415,7 @@ function ProfileEditor() {
             });
 
             setProfile(res.data.profile);
+            if (onUpdate) onUpdate(res.data.profile);
             alert(`${type === 'profile' ? 'Profile' : 'Banner'} image updated!`);
         } catch (err) {
             console.error(err);
@@ -867,13 +879,13 @@ function BillingManager() {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-2xl font-serif mb-6">Billing & Subscription</h2>
-            
+
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600 flex gap-3">
-                 <span className="text-xl">🤝</span>
-                 <div>
+                <span className="text-xl">🤝</span>
+                <div>
                     <p className="font-bold text-gray-800">Your Earnings are Yours.</p>
                     <p>We do not take commissions on your appointments or services. This subscription covers your platform hosting and features.</p>
-                 </div>
+                </div>
             </div>
 
             <div className="bg-gray-50 border border-crown-soft rounded-xl p-6 mb-8">
