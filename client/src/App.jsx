@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
 import CookieConsent from './components/CookieConsent';
+import InstallPrompt from './components/InstallPrompt';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -76,6 +77,7 @@ function App() {
               <BottomNav />
               <Footer />
               <CookieConsent />
+              <InstallPrompt />
             </div>
           </Elements>
         </ThemeProvider>
