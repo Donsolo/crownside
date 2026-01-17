@@ -22,22 +22,51 @@ const SIZES = [
         console.log(`Reading source image: ${SRC_IMAGE}`);
         const image = await Jimp.read(SRC_IMAGE);
 
-        // 1. Autocrop
-        console.log('Autocropping...');
-        image.autocrop();
+        console.log(`Original dimensions: ${image.bitmap.width}x${image.bitmap.height}`);
 
-        // Helper to center image in square canvas
-        // Returns a new Jimp instance (the canvas)
+        // 1. Autocrop
+        console.log('Autocropping with tolerance 0.05...');
+        image.autocrop({ tolerance: 0.05 });
+        console.log(`Cropped dimensions: ${image.bitmap.width}x${image.bitmap.height}`);
+
+        // 2. FORCE SQUARE CROP (If Rectangular)
+        const w = image.bitmap.width;
+        const h = image.bitmap.height;
+
+        if (w !== h) {
+            const minDim = Math.min(w, h);
+            const startX = (w - minDim) / 2;
+            const startY = (h - minDim) / 2;
+
+            console.log(`Image is not square (${w}x${h}). Cropping to center square: ${minDim}x${minDim} at ${startX},${startY}`);
+
+            // Ensure integers
+            const cx = Math.round(startX);
+            const cy = Math.round(startY);
+            const cw = Math.round(minDim);
+            const ch = Math.round(minDim);
+
+            image.crop({ x: cx, y: cy, w: cw, h: ch });
+            console.log(`New dimensions after square crop: ${image.bitmap.width}x${image.bitmap.height}`);
+        }
+
+        // Helper to scale image to square canvas
         const createCenteredIcon = async (size) => {
             const canvas = new Jimp({ width: size, height: size, color: 0x00000000 });
 
             // Calculate scale to fit
-            const w = image.bitmap.width;
-            const h = image.bitmap.height;
-            const scale = Math.min(size / w, size / h);
+            const currentW = image.bitmap.width;
+            const currentH = image.bitmap.height;
 
-            const newW = Math.round(w * scale);
-            const newH = Math.round(h * scale);
+            // Use 95% fill factor (nearly full bleed)
+            const targetFill = 0.95;
+            const targetSize = Math.round(size * targetFill);
+
+            // Scale factor
+            const scale = Math.min(targetSize / currentW, targetSize / currentH);
+
+            const newW = Math.round(currentW * scale);
+            const newH = Math.round(currentH * scale);
 
             // Resize cloned image
             const resized = image.clone().resize({ w: newW, h: newH });
@@ -50,7 +79,7 @@ const SIZES = [
             return canvas;
         };
 
-        // 2. Generate Icons
+        // 3. Generate Icons
         console.log('Generating icons...');
         for (const size of SIZES) {
             const icon = await createCenteredIcon(size);
@@ -60,7 +89,7 @@ const SIZES = [
             console.log(`Saved ${filename}`);
         }
 
-        // 3. Generate Favicons (Root)
+        // 4. Generate Root Favicons
         console.log('Generating root favicons...');
 
         const saveRootIcon = async (size, name) => {
@@ -73,18 +102,19 @@ const SIZES = [
         await saveRootIcon(16, 'favicon-16x16.png');
         await saveRootIcon(180, 'apple-touch-icon.png');
 
-        // Generate favicon.ico (fake ico using png buffer)
+        // Generate favicon.ico
         const icoCanvas = await createCenteredIcon(32);
         const buffer = await icoCanvas.getBuffer('image/png');
         fs.writeFileSync(path.join(PUBLIC_DIR, 'favicon.ico'), buffer);
         console.log('Saved favicon.ico (PNG format)');
 
-        // 4. Generate Social Images
+        // 5. Generate Social Images
         await saveRootIcon(512, 'social-icon.png');
 
         console.log('Done!');
 
     } catch (err) {
-        console.error('Error generating icons:', err);
+        console.log('Error generating icons (message):', err.message);
+        console.log('Error stack:', err.stack);
     }
 })();
