@@ -4,7 +4,7 @@ import tektriqIcon from '../assets/tektriq-icon.png';
 
 export default function Footer() {
     return (
-        <footer className="bg-crown-dark text-white py-12 md:pb-8 pb-24">
+        <footer className="bg-[var(--footer-bg)] text-[var(--footer-text)] py-12 md:pb-8 pb-24 transition-colors duration-300">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-4 gap-8 mb-8">
                     <div>

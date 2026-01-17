@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 const crypto = require('crypto');
-const { createCustomer } = require('../services/stripeService');
+const { createCustomer, createSubscription } = require('../services/stripeService');
 
 const register = async (req, res) => {
     const { email, password, role, businessName, specialties, planKey, paymentMethodId, displayName } = req.body;
@@ -38,7 +38,7 @@ const register = async (req, res) => {
 
                 // Require Payment Method
                 if (!paymentMethodId) {
-                    return res.status(400).json({ error: 'Payment method required for free trial.' });
+                    return res.status(400).json({ error: 'Payment method required.' });
                 }
             }
         }
@@ -46,23 +46,22 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Transaction to ensure atomic creation
-        // Transaction to ensure atomicity
         const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
                 data: {
                     email,
                     password: hashedPassword,
-                    role,
-                    displayName: displayName || (role === 'STYLIST' ? businessName : 'Client'),
+                    role: userRole, // Use userRole not role
+                    displayName: displayName || (userRole === 'STYLIST' ? businessName : 'Client'),
                 }
             });
 
-            if (role === 'STYLIST') {
+            if (userRole === 'STYLIST') {
                 const profile = await tx.stylistProfile.create({
                     data: {
                         userId: user.id,
                         businessName: businessName || 'My Business',
-                        locationType: locationType || 'HOME',
+                        locationType: 'HOME',
                         specialties: specialties || [],
                         subscriptionStatus: 'ACTIVE' // Will be managed by subscription relation
                     }
@@ -71,35 +70,50 @@ const register = async (req, res) => {
                 // Using explicit planKey passed from frontend
                 const derivedPlanKey = (planKey || 'pro').toLowerCase();
 
-                // Subscription Logic & Early Access Check
+                // Subscription Logic
                 const plan = await tx.subscriptionPlan.findUnique({ where: { key: derivedPlanKey } });
                 if (!plan) throw new Error(`Invalid plan selected: ${derivedPlanKey}`);
 
-                // Check active count for Early Access
-                const activeSubsCount = await tx.professionalSubscription.count({
-                    where: { status: { in: ['ACTIVE', 'TRIAL'] } }
-                });
+                // Real Stripe Integration
+                // 1. Create Customer & Attach Payment Method
+                const stripeCustomer = await createCustomer(email, paymentMethodId);
 
-                let subStatus = 'ACTIVE';
-                let trialEndsAt = null;
+                // 2. Create Subscription (Trial logic handled in service based on planKey)
+                const subscription = await createSubscription(stripeCustomer.id, derivedPlanKey);
 
-                // First 30 Users get 30 Days Free
-                if (activeSubsCount < 30) {
-                    subStatus = 'TRIAL';
-                    const endDate = new Date();
-                    endDate.setDate(endDate.getDate() + 30);
-                    trialEndsAt = endDate;
-                }
+                // 3. Map Stripe Status to DB Status
+                let subStatus = 'INACTIVE';
+                if (subscription.status === 'active') subStatus = 'ACTIVE';
+                else if (subscription.status === 'trialing') subStatus = 'TRIAL';
+
+                // 4. Extract Dates
+                const trialEndsAt = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+                const billingStartsAt = trialEndsAt || new Date(subscription.current_period_start * 1000);
 
                 await tx.professionalSubscription.create({
                     data: {
                         stylistId: profile.id,
                         planKey: plan.key,
                         status: subStatus,
+                        stripeCustomerId: stripeCustomer.id,
+                        stripeSubscriptionId: subscription.id,
                         trialEndsAt: trialEndsAt,
-                        billingStartsAt: trialEndsAt // Billing starts when trial ends
+                        billingStartsAt: billingStartsAt
                     }
                 });
+
+                // Record Trial Usage if applicable
+                if (subStatus === 'TRIAL') {
+                    // Start Trial logic - check if trialUsage exists again or rely on unique constraint?
+                    // We checked above, but race condition possible. 
+                    // Silent fail or atomic insert? 
+                    // upsert is safe
+                    await tx.trialUsage.upsert({
+                        where: { ipHash },
+                        update: {},
+                        create: { ipHash }
+                    });
+                }
             }
 
             return user;
@@ -151,24 +165,25 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, displayName: true, createdAt: true, stylistProfile: true }
+            select: { id: true, email: true, role: true, displayName: true, themePreference: true, createdAt: true, stylistProfile: true }
         });
         res.json(user);
     } catch (error) {
         console.error('getMe Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
 
 const updateMe = async (req, res) => {
     try {
-        const { displayName } = req.body;
+        const { displayName, themePreference } = req.body;
         const updated = await prisma.user.update({
             where: { id: req.user.id },
             data: {
-                displayName: displayName ? displayName.trim() : undefined
+                displayName: displayName ? displayName.trim() : undefined,
+                themePreference: themePreference ? themePreference : undefined
             },
-            select: { id: true, email: true, role: true, displayName: true, createdAt: true }
+            select: { id: true, email: true, role: true, displayName: true, themePreference: true, createdAt: true }
         });
         res.json(updated);
     } catch (error) {

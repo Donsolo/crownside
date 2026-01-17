@@ -75,70 +75,53 @@ export default function AdminSubscriptions() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Monthly Price</label>
-                                        {isEditing ? (
-                                            <div className="flex items-center">
-                                                <span className="mr-1 text-gray-500">$</span>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    className="w-full border rounded p-1"
-                                                    value={editForm.price}
-                                                    onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) })}
-                                                />
-                                            </div>
-                                        ) : (
+                                        <div className="flex items-center gap-2">
                                             <div className="text-2xl font-bold text-gray-800">${plan.price}</div>
-                                        )}
+                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">STRIPE LOCKED</span>
+                                        </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Free Trial Duration</label>
-                                        {isEditing ? (
-                                            <div className="flex items-center">
-                                                <input
-                                                    type="number"
-                                                    className="w-20 border rounded p-1 mr-1"
-                                                    value={editForm.freeTrialDays}
-                                                    onChange={(e) => setEditForm({ ...editForm, freeTrialDays: parseInt(e.target.value) })}
-                                                />
-                                                <span className="text-gray-500">Days</span>
-                                            </div>
-                                        ) : (
+                                        <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Trial Duration</label>
+                                        <div className="flex items-center gap-2">
                                             <div className="text-lg font-medium text-gray-800">{plan.freeTrialDays} Days</div>
-                                        )}
+                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">HARDCODED</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Free Slot Usage Visualization */}
-                                <div>
-                                    <div className="flex justify-between items-end mb-2">
-                                        <label className="block text-xs font-semibold text-gray-400 uppercase">Free Slot Utilization</label>
-                                        {isEditing ? (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">Limit:</span>
-                                                <input
-                                                    type="number"
-                                                    className="w-20 border rounded p-1 text-sm"
-                                                    value={editForm.freeSlotsLimit}
-                                                    onChange={(e) => setEditForm({ ...editForm, freeSlotsLimit: parseInt(e.target.value) })}
-                                                />
-                                            </div>
-                                        ) : (
-                                            <span className="text-sm font-medium text-crown-dark">
-                                                {usedSlots} / {plan.freeSlotsLimit} Used
-                                            </span>
-                                        )}
+                                {/* Free Slot Usage Visualization - Hidden for Unlimited/Zero Limits */}
+                                {plan.freeSlotsLimit > 0 && plan.freeSlotsLimit < 1000 && (
+                                    <div>
+                                        <div className="flex justify-between items-end mb-2">
+                                            <label className="block text-xs font-semibold text-gray-400 uppercase">Free Slot Utilization</label>
+                                            {isEditing ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-gray-500">Limit:</span>
+                                                    <input
+                                                        type="number"
+                                                        className="w-20 border rounded p-1 text-sm"
+                                                        value={editForm.freeSlotsLimit}
+                                                        onChange={(e) => setEditForm({ ...editForm, freeSlotsLimit: parseInt(e.target.value) })}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm font-medium text-crown-dark">
+                                                    {usedSlots} / {plan.freeSlotsLimit} Used
+                                                </span>
+                                            )}
 
+                                        </div>
+                                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all duration-1000 ${percentUsed > 90 ? 'bg-red-400' : 'bg-crown-gold'}`}
+                                                style={{ width: `${Math.min(percentUsed, 100)}%` }}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            {plan.remainingFreeSlots} spots remaining for new {plan.name} users.
+                                        </p>
                                     </div>
-                                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full transition-all duration-1000 ${percentUsed > 90 ? 'bg-red-400' : 'bg-crown-gold'}`}
-                                            style={{ width: `${Math.min(percentUsed, 100)}%` }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        {plan.remainingFreeSlots} spots remaining for new {plan.name} users.
-                                    </p>
-                                </div>
+                                )}
 
                                 {/* Actions */}
                                 <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">

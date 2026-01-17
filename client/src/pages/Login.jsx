@@ -29,27 +29,27 @@ export default function Login() {
 
     return (
         <div className="container mx-auto px-4 py-16 flex justify-center">
-            <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-crown-soft animate-enter">
-                <h2 className="text-3xl font-serif text-center mb-8">Welcome Back</h2>
+            <div className="w-full max-w-md bg-[var(--card-bg)] p-8 rounded-2xl shadow-lg border border-[var(--card-border)] animate-enter transition-colors duration-300">
+                <h2 className="text-3xl font-serif text-center mb-8 text-[var(--text-primary)]">Welcome Back</h2>
                 {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-crown-gray mb-1">Email</label>
+                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Email</label>
                         <input
                             type="email"
                             required
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none"
+                            className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none transition-colors duration-300 placeholder-[var(--text-secondary)]"
                             placeholder="you@example.com"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-crown-gray mb-1">Password</label>
+                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Password</label>
                         <input
                             type="password"
                             required
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none"
+                            className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none transition-colors duration-300 placeholder-[var(--text-secondary)]"
                             placeholder="••••••••"
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}

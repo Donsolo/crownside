@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { Search, MapPin } from 'lucide-react';
 import { SERVICE_CATEGORIES, getCategoryLabel } from '../../config/categories';
+import { SUBSCRIPTION_TIERS } from '../../config/constants';
 
 export default function AdminPros() {
     const [stylists, setStylists] = useState([]);
@@ -31,10 +32,11 @@ export default function AdminPros() {
             s.user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
         let matchesTier = true;
-        const specialtyCount = (s.specialties || []).length;
-        if (filterTier === 'PRO') matchesTier = specialtyCount === 1;
-        if (filterTier === 'ELITE') matchesTier = specialtyCount === 2;
-        if (filterTier === 'PREMIER') matchesTier = specialtyCount >= 3;
+        // Use direct planKey check instead of legacy specialty count
+        if (filterTier !== 'ALL') {
+            const currentPlan = s.subscription?.planKey?.toLowerCase() || 'pro';
+            matchesTier = currentPlan === filterTier.toLowerCase();
+        }
 
         let matchesService = true;
         if (filterService !== 'ALL') {
@@ -116,19 +118,22 @@ export default function AdminPros() {
                                 <td className="p-4">
                                     <div className="text-sm font-bold text-gray-800 flex items-center gap-2">
                                         {(() => {
-                                            const planKey = (stylist.subscription?.planKey || 'PRO').toUpperCase();
-                                            // Fallback for safe display
-                                            if (planKey === 'PREMIER') return <span className="text-emerald-600">Beauty Pro Premier</span>;
-                                            if (planKey === 'ELITE') return <span className="text-purple-600">Beauty Pro Elite</span>;
-                                            return <span className="text-crown-gold">Beauty Pro</span>;
+                                            const planKey = (stylist.subscription?.planKey || 'pro').toUpperCase();
+                                            const plan = SUBSCRIPTION_TIERS[planKey] || SUBSCRIPTION_TIERS.PRO;
+
+                                            // Dynamic Color based on Key
+                                            let colorClass = 'text-crown-gold';
+                                            if (planKey === 'ELITE') colorClass = 'text-purple-600';
+                                            if (planKey === 'PREMIER') colorClass = 'text-emerald-600';
+
+                                            return <span className={colorClass}>{plan.label}</span>;
                                         })()}
                                     </div>
                                     <div className="text-xs text-gray-400 mt-1">
                                         {(() => {
-                                            const planKey = (stylist.subscription?.planKey || 'PRO').toUpperCase();
-                                            if (planKey === 'PREMIER') return '$49.99/mo';
-                                            if (planKey === 'ELITE') return '$34.99/mo';
-                                            return '$24.99/mo';
+                                            const planKey = (stylist.subscription?.planKey || 'pro').toUpperCase();
+                                            const plan = SUBSCRIPTION_TIERS[planKey] || SUBSCRIPTION_TIERS.PRO;
+                                            return `$${plan.price.toFixed(2)}/mo`;
                                         })()}
                                     </div>
                                 </td>

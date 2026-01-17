@@ -1,16 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false }
-});
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
     console.log('Start seeding ...');
@@ -114,28 +106,42 @@ async function main() {
     console.log('Seeding Subscription Plans...');
     await prisma.subscriptionPlan.upsert({
         where: { key: 'pro' },
-        update: {},
+        update: { price: 15.00, name: 'Beauty Pro', freeTrialDays: 30 },
         create: {
             key: 'pro',
             name: 'Beauty Pro',
-            price: 24.99,
-            description: 'Hair OR Nails specialty. Free for first 30 days/pros.',
-            freeTrialDays: 30,
-            freeSlotsLimit: 30,
+            price: 15.00,
+            description: 'Perfect for getting started. 8 Portfolio Photos.',
+            freeTrialDays: 30, // ONLY Pro gets trial
+            freeSlotsLimit: 999999, // Unlimited availability
             active: true
         }
     });
 
     await prisma.subscriptionPlan.upsert({
         where: { key: 'elite' },
-        update: {},
+        update: { price: 25.00, name: 'Beauty Pro Elite', freeTrialDays: 0 },
         create: {
             key: 'elite',
             name: 'Beauty Pro Elite',
-            price: 34.99,
-            description: 'Hair AND Nails specialties. Free for first 30 days/pros.',
-            freeTrialDays: 30,
-            freeSlotsLimit: 30,
+            price: 25.00,
+            description: 'Enhanced visibility. 20 Portfolio Assets + Video.',
+            freeTrialDays: 0, // NO Trial
+            freeSlotsLimit: 0,
+            active: true
+        }
+    });
+
+    await prisma.subscriptionPlan.upsert({
+        where: { key: 'premier' },
+        update: { price: 35.00, name: 'Beauty Pro Premier', freeTrialDays: 0 },
+        create: {
+            key: 'premier',
+            name: 'Beauty Pro Premier',
+            price: 35.00,
+            description: 'Maximum exposure & priority support. 20+ Assets.',
+            freeTrialDays: 0, // NO Trial
+            freeSlotsLimit: 0,
             active: true
         }
     });
@@ -150,5 +156,4 @@ main()
     })
     .finally(async () => {
         await prisma.$disconnect();
-        await pool.end();
     });

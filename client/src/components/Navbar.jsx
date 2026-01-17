@@ -22,66 +22,75 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <nav className="bg-[var(--nav-background)] shadow-sm sticky top-0 z-50 border-b border-[var(--border-subtle)] transition-colors duration-300">
             <div className="container mx-auto px-4">
-                <div className="flex justify-between items-center h-[64px] md:h-[76px] transition-all duration-300">
-                    {/* Logo - Click area constrained, Visual area overflows */}
-                    <Link to="/" className="brand-logo relative flex items-center shrink-0 h-full w-[100px] md:w-[130px] ml-2 group">
-                        <img
-                            src={logo}
-                            alt="CrownSide"
-                            className="absolute left-0 top-1/2 -translate-y-1/2 h-[100px] md:h-[150px] w-auto max-w-none object-contain pointer-events-none"
-                        />
-                    </Link>
+                <div className="flex justify-between items-center h-[70px] md:h-[80px] transition-all duration-300">
+                    {/* Brand Block */}
+                    <div className="flex items-center gap-2 md:gap-4">
+                        <Link to="/" className="brand-logo relative flex items-center shrink-0 h-full w-[100px] md:w-[130px] group">
+                            <img
+                                src={logo}
+                                alt="CrownSide"
+                                className="absolute left-0 top-1/2 -translate-y-1/2 h-[90px] md:h-[140px] w-auto max-w-none object-contain pointer-events-none"
+                            />
+                        </Link>
+
+                        {/* Location Context - Desktop & Tablet */}
+                        <div className="hidden md:flex flex-col justify-center border-l border-crown-gold/30 pl-4 h-full py-1">
+                            <span className="text-2xl text-crown-gold/90 font-medium" style={{ fontFamily: '"Pinyon Script", cursive' }}>
+                                Serving Metro Detroit
+                            </span>
+                        </div>
+
+                        {/* Location Context - Mobile */}
+                        <div className="md:hidden flex flex-col justify-center pl-3 border-l border-crown-gold/30 h-6 ml-2">
+                            <span className="text-xl text-crown-gold/90 whitespace-nowrap" style={{ fontFamily: '"Pinyon Script", cursive' }}>
+                                Serving Metro Detroit
+                            </span>
+                        </div>
+                    </div>
 
                     {/* Desktop Navigation Actions */}
                     <div className="hidden md:flex items-center space-x-6">
-                        <Link to="/explore" className="text-crown-gray hover:text-crown-gold font-medium transition">Explore</Link>
+                        <Link to="/explore" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Explore</Link>
 
                         {user ? (
                             <>
                                 {user.role === 'CLIENT' && (
                                     <>
-                                        <Link to="/my-bookings" className="text-crown-gray hover:text-crown-gold font-medium transition">My Bookings</Link>
-                                        <Link to="/profile" className="text-crown-gray hover:text-crown-gold font-medium transition">Profile</Link>
+                                        <Link to="/my-bookings" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">My Bookings</Link>
+                                        <Link to="/profile" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Profile</Link>
                                     </>
                                 )}
                                 {user.role === 'STYLIST' && (
-                                    <Link to="/dashboard" className="text-crown-gray hover:text-crown-gold font-medium transition">Dashboard</Link>
+                                    <Link to="/dashboard" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Dashboard</Link>
                                 )}
                                 <button
                                     onClick={handleLogout}
-                                    className="text-crown-gray hover:text-crown-gold font-medium transition"
+                                    className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition"
                                 >
                                     Log Out
                                 </button>
                             </>
                         ) : (
                             <>
-                                <Link to="/login" className="text-crown-gray hover:text-crown-gold font-medium transition">Log In</Link>
+                                <Link to="/login" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Log In</Link>
                                 <Link to="/register" className="btn-primary text-white bg-crown-dark hover:bg-black px-5 py-2 rounded-full text-sm">
                                     Join CrownSide
                                 </Link>
                             </>
                         )}
 
-                        {/* Main Hamburger Menu (Desktop & Mobile) */}
-                        <button
-                            onClick={() => setAdminMenuOpen(true)} // Reusing existing state or creating new one? Let's use a new one or rename.
-                            className="p-2 text-crown-dark hover:bg-gray-100 rounded-lg transition ml-2"
-                            aria-label="Open Menu"
-                        >
-                            <Menu size={28} />
-                        </button>
                     </div>
 
-                    {/* Mobile Admin Link (No Hamburger) */}
-                    <div className="md:hidden flex items-center">
+                    {/* Mobile Actions (Admin + Menu) */}
+                    <div className="md:hidden flex items-center gap-2">
                         {user?.role === 'ADMIN' && (
                             <Link to="/admin" className="text-crown-gold font-bold text-sm bg-crown-cream px-3 py-1 rounded-full">
                                 Admin
                             </Link>
                         )}
+
                     </div>
                 </div>
             </div>

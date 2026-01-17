@@ -42,6 +42,7 @@ model User {
   password  String
   role      Role     @default(CLIENT)
   displayName String?
+  themePreference String @default("light")
   createdAt DateTime @default(now())
   
   // Relations

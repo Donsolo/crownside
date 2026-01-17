@@ -5,7 +5,7 @@ import api from '../lib/api';
 import { FaUser, FaLock, FaBell, FaShieldAlt, FaSignOutAlt, FaChevronLeft, FaSave, FaCheckCircle } from 'react-icons/fa';
 
 export default function AccountSettings() {
-    const { user, login, logout } = useAuth(); // login needed to update local user state on change
+    const { user, login, logout } = useAuth();
     const navigate = useNavigate();
 
     const [displayName, setDisplayName] = useState(user?.displayName || '');

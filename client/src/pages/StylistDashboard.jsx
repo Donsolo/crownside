@@ -10,7 +10,7 @@ import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, 
 export default function StylistDashboard() {
     const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user: authUser, loading: authLoading } = useAuth();
 
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
@@ -18,11 +18,36 @@ export default function StylistDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Wait for global auth to finish (restore from localStorage)
+        if (authLoading) return;
+
+        // If not logged in after auth finishes, redirect
+        if (!authUser) {
+            navigate('/login');
+            return;
+        }
+
         const fetchDashboardData = async () => {
+            const fetchWithRetry = async (fn, retries = 3, delay = 500) => {
+                try {
+                    return await fn();
+                } catch (err) {
+                    if (retries === 0) throw err;
+                    // Don't retry if it's a client error (except maybe timeouts, but let's stick to status checks)
+                    if (err.response && err.response.status >= 400 && err.response.status < 500) throw err;
+
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(fn, retries - 1, delay * 2);
+                }
+            };
+
             try {
+                // If we already have the user in context, we might not need to fetch /auth/me again if context is fresh,
+                // but fetching ensures we have the latest profile relation.
+                // Using fetchWithRetry for robust loading
                 const [meRes, subRes] = await Promise.all([
-                    api.get('/auth/me'),
-                    api.get('/subscriptions/status').catch(() => ({ data: null }))
+                    fetchWithRetry(() => api.get('/auth/me')),
+                    fetchWithRetry(() => api.get('/subscriptions/status').catch(() => ({ data: null })))
                 ]);
 
                 if (meRes.data.role !== 'STYLIST') {
@@ -35,13 +60,21 @@ export default function StylistDashboard() {
                 setSubscription(subRes.data);
             } catch (err) {
                 console.error("Dashboard Load Error", err);
-                navigate('/login');
+                // Auth Guard Logic: Only redirects if strictly unauthorized
+                if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                    logout(); // Clear potentially stale state
+                    navigate('/login');
+                } else {
+                    // Stay on page but show error state (don't kick user out for 500s)
+                    console.error("Dashboard Sync Failed:", err);
+                    alert("We couldn't sync your dashboard. Please check your connection and refresh.");
+                }
             } finally {
                 setLoading(false);
             }
         };
         fetchDashboardData();
-    }, [navigate]);
+    }, [navigate, authUser, authLoading]);
 
     const handleLogout = () => {
         logout();
@@ -62,7 +95,7 @@ export default function StylistDashboard() {
     const avatarUrl = profile?.profileImage;
 
     return (
-        <div className="min-h-screen bg-neutral-50">
+        <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
 
             {/* 1. HERO SECTION */}
             <Hero
@@ -80,7 +113,7 @@ export default function StylistDashboard() {
             <div className="container mx-auto px-4 max-w-5xl relative z-20 -mt-24 mb-20">
 
                 {/* 3. PRO PROFILE CARD */}
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col md:flex-row items-center md:items-start gap-8 mb-10 animate-fade-in-up">
+                <div className="bg-[var(--card-bg)] rounded-2xl shadow-xl border border-[var(--card-border)] p-8 flex flex-col md:flex-row items-center md:items-start gap-8 mb-10 animate-fade-in-up transition-colors duration-300">
 
                     {/* Avatar */}
                     <div className="relative group cursor-pointer" onClick={() => setActiveView('profile')}>
@@ -184,9 +217,9 @@ export default function StylistDashboard() {
 
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in">
+                    <div className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden animate-fade-in transition-colors duration-300">
                         {/* Editor Header */}
-                        <div className="bg-gray-50 border-b px-6 py-4 flex items-center justify-between">
+                        <div className="bg-[var(--bg-tertiary)] border-b border-[var(--card-border)] px-6 py-4 flex items-center justify-between transition-colors duration-300">
                             <button
                                 onClick={() => setActiveView('home')}
                                 className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-crown-dark transition"
@@ -216,7 +249,7 @@ function DashboardCard({ title, desc, icon, color, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="group bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-crown-gold/30 transition text-left flex items-start gap-4"
+            className="group bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)] shadow-sm hover:shadow-md hover:border-crown-gold/30 transition-all text-left flex items-start gap-4"
         >
             <div className={`${color} w-12 h-12 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
                 {icon}
@@ -709,7 +742,9 @@ function ServiceEditor() {
                                     value={newService.deposit}
                                     onChange={e => setNewService({ ...newService, deposit: e.target.value })}
                                 />
-                                <p className="text-xs text-gray-500 mt-2">Amount clients must pay upfront to secure the booking.</p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Enter the deposit amount you require. You are responsible for collecting this directly from clients (e.g., via Zelle, CashApp). CrownSide does not process deposits.
+                                </p>
                             </div>
 
                         </div>
@@ -832,6 +867,14 @@ function BillingManager() {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-2xl font-serif mb-6">Billing & Subscription</h2>
+            
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600 flex gap-3">
+                 <span className="text-xl">🤝</span>
+                 <div>
+                    <p className="font-bold text-gray-800">Your Earnings are Yours.</p>
+                    <p>We do not take commissions on your appointments or services. This subscription covers your platform hosting and features.</p>
+                 </div>
+            </div>
 
             <div className="bg-gray-50 border border-crown-soft rounded-xl p-6 mb-8">
                 <div className="flex justify-between items-start">

@@ -1,19 +1,99 @@
 @import "tailwindcss";
 
 @theme {
-  --color-crown-gold: #C5A059;
-  --color-crown-dark: #2C2420;
-  --color-crown-cream: #F9F7F2;
-  --color-crown-gray: #4A4A4A;
-  --color-crown-soft: #E8E4D9;
+  --color-crown-gold: var(--crown-gold);
+  --color-crown-dark: var(--crown-dark);
+  --color-crown-cream: var(--crown-cream);
+  --color-crown-gray: var(--crown-gray);
+  --color-crown-soft: var(--crown-soft);
 
   --font-sans: Inter, sans-serif;
   --font-serif: "Playfair Display", serif;
 }
 
 @layer base {
+  :root {
+    /* Color Primitives - Light Theme Default */
+    --crown-gold: #C5A059;
+    --crown-dark: #2C2420;
+    --crown-cream: #F9F7F2;
+    --crown-gray: #4A4A4A;
+    --crown-soft: #E8E4D9;
+
+    /* Semantic Variables (Light) */
+    --bg-primary: var(--crown-cream);
+    --bg-secondary: #ffffff;
+    --bg-tertiary: var(--crown-soft);
+
+    --nav-background: #ffffff;
+    --nav-text: var(--crown-dark);
+
+    --footer-bg: var(--crown-dark);
+    --footer-text: #ffffff;
+
+    --text-primary: var(--crown-dark);
+    --text-secondary: var(--crown-gray);
+    --text-accent: var(--crown-gold);
+
+    --card-bg: #ffffff;
+    --card-border: var(--crown-soft);
+    --border-subtle: rgba(197, 160, 89, 0.2);
+
+    --input-background: #ffffff;
+    --input-text: var(--crown-dark);
+    --border-input: #d1d5db;
+    /* gray-300 */
+
+    --overlay-dark: rgba(0, 0, 0, 0.5);
+    --overlay-light: rgba(255, 255, 255, 0.5);
+  }
+
+  [data-theme='dark'] {
+    /* Color Primitives - Dark Theme Overrides */
+    /* remap 'cream' to be the dark background so standard classes adapt */
+    --crown-cream: #1a1614;
+    /* Deep Warm Charcoal */
+    --crown-dark: #F9F7F2;
+    /* Invert Dark to Light Cream for text */
+    --crown-gold: #D4B675;
+    /* Lighter Gold for contrast */
+    --crown-gray: #BEB6B0;
+    /* Muted warm gray */
+    --crown-soft: #2C2420;
+    /* Darker accent for borders/soft backgrounds */
+
+    /* Semantic Variables (Dark) */
+    --bg-primary: #1a1614;
+    --bg-secondary: #2C2420;
+    /* Card backgrounds */
+    --bg-tertiary: #3E3430;
+
+    --nav-background: #1a1614;
+    /* Deep Charcoal */
+    --nav-text: #F9F7F2;
+
+    --footer-bg: #0f0c0b;
+    /* Almost black for footer */
+    --footer-text: #F9F7F2;
+
+    --text-primary: #F9F7F2;
+    --text-secondary: #BEB6B0;
+    --text-accent: #D4B675;
+
+    --card-bg: #2C2420;
+    --card-border: #3E3430;
+    --border-subtle: rgba(197, 160, 89, 0.15);
+
+    --input-background: #2C2420;
+    --input-text: #F9F7F2;
+    --border-input: #4A4A4A;
+
+    --overlay-dark: rgba(0, 0, 0, 0.7);
+    --overlay-light: rgba(255, 255, 255, 0.1);
+  }
+
   body {
-    @apply bg-crown-cream text-crown-dark font-sans;
+    @apply bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans transition-colors duration-300;
   }
 
   h1,
@@ -22,7 +102,7 @@
   h4,
   h5,
   h6 {
-    @apply font-serif font-bold text-crown-dark;
+    @apply font-serif font-bold text-[var(--text-primary)];
   }
 }
 
@@ -36,7 +116,7 @@
   }
 
   .card-premium {
-    @apply bg-white rounded-2xl shadow-lg border border-crown-soft p-6;
+    @apply bg-[var(--card-bg)] rounded-2xl shadow-lg border border-[var(--card-border)] p-6 transition-colors duration-300;
   }
 
   @keyframes fadeSlideUp {

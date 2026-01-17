@@ -43,7 +43,7 @@ export default function Explore() {
     }, [activeCategory, stylists]);
 
     return (
-        <div className="min-h-screen bg-crown-cream">
+        <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
             <Hero
                 pageKey="explore"
                 className="h-[50vh] md:h-[60vh] flex items-center justify-center text-center"
@@ -55,17 +55,17 @@ export default function Explore() {
             </Hero>
 
             <div className="container mx-auto px-4 relative z-20 -mt-20">
-                <div className="bg-white rounded-3xl shadow-xl p-6 md:p-8 border border-crown-soft" >
+                <div className="bg-[var(--card-bg)] rounded-3xl shadow-xl p-6 md:p-8 border border-[var(--border-subtle)] transition-colors duration-300" >
 
                     {/* Filter Toggles */}
                     {/* Filter Bar */}
                     <div className="flex justify-center mb-10 animate-enter animate-delay-1">
-                        <div className="inline-flex bg-gray-100 p-1 rounded-xl shadow-inner overflow-x-auto max-w-full">
+                        <div className="inline-flex bg-[var(--bg-tertiary)] p-1 rounded-xl shadow-inner overflow-x-auto max-w-full border border-[var(--border-subtle)]">
                             <button
                                 onClick={() => setActiveCategory('all')}
                                 className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${activeCategory === 'all'
-                                    ? 'bg-white text-crown-dark shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                                    ? 'bg-crown-gold text-white shadow-sm'
+                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
                                     }`}
                             >
                                 All Services
@@ -75,8 +75,8 @@ export default function Explore() {
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
                                     className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap flex items-center gap-2 ${activeCategory === cat.id
-                                        ? 'bg-white text-crown-dark shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                                        ? 'bg-crown-gold text-white shadow-sm'
+                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
                                         }`}
                                 >
                                     {cat.shortLabel}
@@ -86,13 +86,13 @@ export default function Explore() {
                     </div>
 
                     {isLoading ? (
-                        <div className="text-center py-12">Loading...</div>
+                        <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
                     ) : (
                         <div className="grid md:grid-cols-3 gap-6 animate-enter animate-delay-2">
                             {filteredStylists.length === 0 && <p className="col-span-3 text-center text-gray-500 py-12">No professionals found for this category.</p>}
                             {filteredStylists.map(stylist => (
                                 <Link key={stylist.id} to={`/stylist/${stylist.id}`} className="block group">
-                                    <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-gray-100 group-hover:border-crown-gold/30">
+                                    <div className="bg-[var(--card-bg)] rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-[var(--card-border)] group-hover:border-crown-gold/30">
                                         <div className="h-48 bg-gray-200 relative">
                                             {/* Image Wrapper for Zoom Effect */}
                                             <div className="absolute inset-0 overflow-hidden">
@@ -104,7 +104,7 @@ export default function Explore() {
                                             </div>
 
                                             {/* Avatar - Now outside the overflow-hidden image wrapper */}
-                                            <div className="absolute -bottom-6 left-6 border-4 border-white rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10">
+                                            <div className="absolute -bottom-6 left-6 border-4 border-[var(--card-bg)] rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10 transition-colors duration-300">
                                                 {stylist.profileImage ? (
                                                     <img src={stylist.profileImage} className="w-full h-full object-cover" alt="Profile" />
                                                 ) : (
@@ -116,12 +116,12 @@ export default function Explore() {
                                         </div>
                                         <div className="p-6 pt-10">
                                             <div className="mb-1">
-                                                <h3 className="text-xl font-bold font-serif group-hover:text-crown-gold transition truncate">{stylist.businessName}</h3>
+                                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)] group-hover:text-crown-gold transition truncate">{stylist.businessName}</h3>
                                             </div>
 
-                                            <p className="text-sm text-gray-500 mb-3 line-clamp-2 min-h-[40px]">{stylist.bio || 'Beauty Professional ready to serve you.'}</p>
+                                            <p className="text-sm text-[var(--text-secondary)] mb-3 line-clamp-2 min-h-[40px]">{stylist.bio || 'Beauty Professional ready to serve you.'}</p>
 
-                                            <div className="flex items-center gap-2 text-xs font-medium text-crown-gold border-t pt-3 mt-3">
+                                            <div className="flex items-center gap-2 text-xs font-medium text-crown-gold border-t border-[var(--border-subtle)] pt-3 mt-3">
                                                 <FaStar /> <span>5.0 (New)</span>
                                                 <span className="text-gray-300">|</span>
                                                 <span className="text-gray-400">Detroit, MI</span>

@@ -45,7 +45,7 @@ function AuthenticatedHome({ user }) {
     const displayName = user.displayName || user.email?.split('@')[0] || 'Beautiful';
 
     return (
-        <div className="min-h-screen bg-neutral-50 pb-20">
+        <div className="min-h-screen bg-[var(--bg-primary)] pb-20 transition-colors duration-300">
             {/* 1. SOFT HERO */}
             <Hero
                 pageKey="home"
@@ -69,31 +69,31 @@ function AuthenticatedHome({ user }) {
                 <div className="flex flex-col gap-4 mb-10 max-w-xl mx-auto">
                     <div className="grid grid-cols-2 gap-4 animate-enter animate-delay-1">
                         {/* Find a Pro */}
-                        <Link to="/explore" className="group relative bg-gradient-to-br from-white to-[#FDFBF7] p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-white/50 hover:scale-[1.02] transition-all duration-200 ease-out flex flex-col items-center text-center">
-                            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-crown-gold mb-3 text-lg group-hover:text-crown-gold/80 transition-colors">
+                        <Link to="/explore" className="group relative bg-gradient-to-br from-[var(--card-bg)] to-[var(--bg-tertiary)] p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-[var(--border-subtle)] hover:scale-[1.02] transition-all duration-200 ease-out flex flex-col items-center text-center">
+                            <div className="w-12 h-12 rounded-full bg-[var(--bg-primary)] shadow-sm flex items-center justify-center text-crown-gold mb-3 text-lg group-hover:text-crown-gold/80 transition-colors">
                                 <FaSearch />
                             </div>
-                            <h3 className="font-medium text-gray-900 leading-tight mb-0.5">Find a Pro</h3>
-                            <p className="text-xs text-crown-gray/80 font-medium">Book top talent</p>
+                            <h3 className="font-medium text-[var(--text-primary)] leading-tight mb-0.5">Find a Pro</h3>
+                            <p className="text-xs text-[var(--text-secondary)] font-medium">Book top talent</p>
                         </Link>
 
                         {/* My Bookings */}
-                        <Link to={user.role === 'STYLIST' ? '/dashboard' : '/my-bookings'} className="group relative bg-gradient-to-br from-white to-[#FDFBF7] p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-white/50 hover:scale-[1.02] transition-all duration-200 ease-out flex flex-col items-center text-center">
-                            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-crown-gold mb-3 text-lg group-hover:text-crown-gold/80 transition-colors">
+                        <Link to={user.role === 'STYLIST' ? '/dashboard' : '/my-bookings'} className="group relative bg-gradient-to-br from-[var(--card-bg)] to-[var(--bg-tertiary)] p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-[var(--border-subtle)] hover:scale-[1.02] transition-all duration-200 ease-out flex flex-col items-center text-center">
+                            <div className="w-12 h-12 rounded-full bg-[var(--bg-primary)] shadow-sm flex items-center justify-center text-crown-gold mb-3 text-lg group-hover:text-crown-gold/80 transition-colors">
                                 <FaCalendarAlt />
                             </div>
-                            <h3 className="font-medium text-gray-900 leading-tight mb-0.5">{user.role === 'STYLIST' ? 'Pro Studio' : 'My Bookings'}</h3>
-                            <p className="text-xs text-crown-gray/80 font-medium">{user.role === 'STYLIST' ? 'Manage business' : 'Upcoming visits'}</p>
+                            <h3 className="font-medium text-[var(--text-primary)] leading-tight mb-0.5">{user.role === 'STYLIST' ? 'Pro Studio' : 'My Bookings'}</h3>
+                            <p className="text-xs text-[var(--text-secondary)] font-medium">{user.role === 'STYLIST' ? 'Manage business' : 'Upcoming visits'}</p>
                         </Link>
                     </div>
 
                     {/* New Services (Full Width) */}
                     <div className="animate-enter animate-delay-2">
-                        <Link to="/explore" className="group flex items-center justify-center gap-3 w-full bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100/60 hover:border-crown-gold/20 hover:scale-[1.01] transition-all duration-200 ease-out p-5">
+                        <Link to="/explore" className="group flex items-center justify-center gap-3 w-full bg-[var(--card-bg)] rounded-2xl shadow-sm hover:shadow-md border border-[var(--border-subtle)] hover:border-crown-gold/20 hover:scale-[1.01] transition-all duration-200 ease-out p-5">
                             <div className="w-8 h-8 rounded-full bg-crown-gold/10 flex items-center justify-center text-crown-gold text-sm group-hover:scale-110 transition-transform duration-200">
                                 <FaCut />
                             </div>
-                            <span className="font-medium text-gray-800 group-hover:text-crown-gold transition-colors">Discover New Services</span>
+                            <span className="font-medium text-[var(--text-primary)] group-hover:text-crown-gold transition-colors">Discover New Services</span>
                         </Link>
                     </div>
                 </div>
@@ -101,7 +101,7 @@ function AuthenticatedHome({ user }) {
                 {/* 3. BROWSE BY SERVICE */}
                 <div className="mb-12">
                     <div className="flex justify-between items-end mb-4 px-1">
-                        <h3 className="text-xl font-serif font-bold text-gray-900">Browse by Service</h3>
+                        <h3 className="text-xl font-serif font-bold text-[var(--text-primary)]">Browse by Service</h3>
                         <Link to="/explore" className="text-crown-gold text-sm font-bold hover:underline">See All</Link>
                     </div>
 
@@ -129,7 +129,7 @@ function AuthenticatedHome({ user }) {
                 {/* 4. FEATURED PROS */}
                 <div className="mb-12">
                     <div className="flex justify-between items-end mb-4 px-1">
-                        <h3 className="text-xl font-serif font-bold text-gray-900">Featured in Detroit</h3>
+                        <h3 className="text-xl font-serif font-bold text-[var(--text-primary)]">Featured in Detroit</h3>
                     </div>
 
                     {loading ? (
@@ -142,7 +142,7 @@ function AuthenticatedHome({ user }) {
                                 <Link
                                     key={pro.id}
                                     to={`/stylist/${pro.id}`}
-                                    className="min-w-[260px] md:min-w-[280px] bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition snap-start flex-shrink-0"
+                                    className="min-w-[260px] md:min-w-[280px] bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden hover:shadow-md transition snap-start flex-shrink-0"
                                 >
                                     <div className="h-32 bg-gray-200 relative">
                                         {pro.bannerImage ? (
@@ -150,7 +150,7 @@ function AuthenticatedHome({ user }) {
                                         ) : (
                                             <div className="w-full h-full bg-cover bg-center opacity-50" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=500&q=60)` }} />
                                         )}
-                                        <div className="absolute -bottom-6 left-4 border-4 border-white rounded-full w-14 h-14 bg-gray-100 overflow-hidden shadow-sm">
+                                        <div className="absolute -bottom-6 left-4 border-4 border-[var(--card-bg)] rounded-full w-14 h-14 bg-gray-100 overflow-hidden shadow-sm">
                                             {pro.profileImage ? (
                                                 <img src={pro.profileImage} alt="" className="w-full h-full object-cover" />
                                             ) : (
@@ -161,7 +161,7 @@ function AuthenticatedHome({ user }) {
                                         </div>
                                     </div>
                                     <div className="pt-8 pb-4 px-4">
-                                        <h4 className="font-bold text-gray-900 truncate">{pro.businessName}</h4>
+                                        <h4 className="font-bold text-[var(--text-primary)] truncate">{pro.businessName}</h4>
                                         <p className="text-xs text-gray-500 mb-2 truncate">{pro.bio || 'Beauty Professional'}</p>
                                         <div className="flex items-center gap-2 text-xs font-medium text-crown-gold">
                                             <FaStar /> <span>5.0 (New)</span>
@@ -182,8 +182,8 @@ function AuthenticatedHome({ user }) {
                 {/* 5. LOCAL VIBE / TRENDING */}
                 <div className="bg-crown-gold/10 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
                     <div>
-                        <h3 className="text-2xl font-serif font-bold text-crown-dark mb-2">New to CrownSide?</h3>
-                        <p className="text-crown-dark/70">Join the community of Detroit's best beauty professionals and clients.</p>
+                        <h3 className="text-2xl font-serif font-bold text-[var(--text-primary)] mb-2">New to CrownSide?</h3>
+                        <p className="text-[var(--text-primary)] opacity-70">Join the community of Detroit's best beauty professionals and clients.</p>
                     </div>
                     {/* Only show if NOT a pro? Or just generic vibe button */}
                     <button onClick={() => navigate('/explore')} className="btn-primary whitespace-nowrap">
@@ -197,7 +197,7 @@ function AuthenticatedHome({ user }) {
 
 function LandingPage() {
     return (
-        <div className="bg-crown-cream min-h-[80vh]">
+        <div className="bg-[var(--bg-primary)] min-h-[80vh] transition-colors duration-300">
             {/* Hero Section */}
             {/* Hero Section */}
             <Hero
@@ -230,7 +230,7 @@ function LandingPage() {
             </Hero>
 
             {/* Value Props */}
-            <section className="bg-white py-16">
+            <section className="bg-[var(--bg-secondary)] py-16 transition-colors duration-300">
                 <div className="container mx-auto px-4 grid md:grid-cols-3 gap-8">
                     <div className="text-center p-6 bg-crown-cream rounded-2xl">
                         <h3 className="text-xl font-bold mb-3">Hair, Nail & Lash Pros</h3>

@@ -8,8 +8,7 @@ const pricingTiers = require('../config/pricingTiers');
 
 const createCustomer = async (email, paymentMethodId) => {
     if (!stripe) {
-        console.log('[MOCK] Stripe createCustomer:', email);
-        return { id: 'cus_mock_' + Date.now().toString(36) };
+        throw new Error('Stripe is not configured (Missing STRIPE_SECRET_KEY)');
     }
 
     try {
@@ -22,9 +21,7 @@ const createCustomer = async (email, paymentMethodId) => {
         });
         return customer;
     } catch (error) {
-        console.error('Stripe Error:', error);
-        // Don't crash for now, just return mock if configured to allow soft failures? 
-        // No, if keys are present but fails, we should throw.
+        console.error('Stripe createCustomer Error:', error);
         throw new Error('Payment processing failed: ' + error.message);
     }
 };
@@ -34,23 +31,25 @@ const createSubscription = async (customerId, planKey) => {
     if (!tier) throw new Error('Invalid plan key');
 
     if (!stripe) {
-        console.log(`[MOCK] Stripe createSubscription for ${customerId} on ${planKey}`);
-        return {
-            id: 'sub_mock_' + Date.now().toString(36),
-            status: 'active',
-            current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
-        };
+        throw new Error('Stripe is not configured (Missing STRIPE_SECRET_KEY)');
     }
 
     try {
-        const subscription = await stripe.subscriptions.create({
+        const subscriptionParams = {
             customer: customerId,
             items: [{ price: tier.stripePriceId }],
             expand: ['latest_invoice.payment_intent'],
-        });
+        };
+
+        // Business Rule: Only 'pro' gets 30-day trial automatically
+        if (planKey === 'pro') {
+            subscriptionParams.trial_period_days = 30;
+        }
+
+        const subscription = await stripe.subscriptions.create(subscriptionParams);
         return subscription;
     } catch (error) {
-        console.error('Stripe Sub Error:', error);
+        console.error('Stripe createSubscription Error:', error);
         throw error;
     }
 };
@@ -60,8 +59,7 @@ const updateSubscriptionTier = async (subscriptionId, newPlanKey) => {
     if (!tier) throw new Error('Invalid plan key');
 
     if (!stripe) {
-        console.log(`[MOCK] Stripe updateSubscription ${subscriptionId} to ${newPlanKey}`);
-        return { id: subscriptionId, plan: tier };
+        throw new Error('Stripe is not configured (Missing STRIPE_SECRET_KEY)');
     }
 
     try {
@@ -81,8 +79,7 @@ const updateSubscriptionTier = async (subscriptionId, newPlanKey) => {
 
 const cancelSubscription = async (subscriptionId) => {
     if (!stripe) {
-        console.log(`[MOCK] Stripe cancelSubscription ${subscriptionId}`);
-        return { status: 'canceled' };
+        throw new Error('Stripe is not configured (Missing STRIPE_SECRET_KEY)');
     }
 
     try {

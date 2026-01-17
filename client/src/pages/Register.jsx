@@ -3,12 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { SUBSCRIPTION_TIERS } from '../config/constants';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { stripePromise } from '../lib/stripe';
 
-export default function Register() {
+
+const CARD_ELEMENT_OPTIONS = {
+    style: {
+        base: {
+            color: '#32325d',
+            fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+            fontSmoothing: 'antialiased',
+            fontSize: '16px',
+            '::placeholder': {
+                color: '#aab7c4'
+            }
+        },
+        invalid: {
+            color: '#fa755a',
+            iconColor: '#fa755a'
+        }
+    }
+};
+
+function RegisterContent() {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const stripe = useStripe();
+    const elements = useElements();
+
     const [role, setRole] = useState('CLIENT');
-    const [step, setStep] = useState(1); // 1: Account, 2: Plan (Stylist only)
+    const [step, setStep] = useState(1); // 1: Account, 2: Services, 3: Plan, 4: Payment
 
     const [formData, setFormData] = useState({
         displayName: '',
@@ -17,7 +42,8 @@ export default function Register() {
         confirmPassword: '',
         businessName: '',
         specialties: [],
-        planKey: ''
+        planKey: '',
+        paymentMethodId: ''
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -35,8 +61,6 @@ export default function Register() {
         }
         return true;
     };
-
-    // Plan selection logic removed - auto-derived from specialties
 
     const toggleSpecialty = (spec) => {
         if (formData.specialties.includes(spec)) {
@@ -56,20 +80,64 @@ export default function Register() {
 
         // Validation before submit
         if (role === 'STYLIST') {
-            // planKey is now auto-derived on backend based on count
             if (formData.specialties.length === 0) {
                 setError('Please select your specialty.');
                 setIsSubmitting(false);
                 return;
             }
+
+            // Stripe Payment Method Creation
+            if (!stripe || !elements) {
+                setError('Stripe is not loaded yet. Please wait.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            const cardElement = elements.getElement(CardElement);
+            if (!cardElement) {
+                setError('Card details not found.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            try {
+                const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: cardElement,
+                    billing_details: {
+                        email: formData.email,
+                        name: formData.displayName || formData.businessName
+                    }
+                });
+
+                if (stripeError) {
+                    setError(stripeError.message);
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                // Inject Payment Method ID into payload
+                await performRegistration({
+                    ...formData,
+                    role,
+                    paymentMethodId: paymentMethod.id
+                });
+
+            } catch (err) {
+                setError('Payment setup failed: ' + err.message);
+                setIsSubmitting(false);
+            }
+
+        } else {
+            // Client Registration (No Payment)
+            await performRegistration({ ...formData, role });
         }
+    };
 
+    const performRegistration = async (payloadRaw) => {
         try {
-            // Exclude confirmPassword from payload
-            const { confirmPassword, ...payloadData } = formData;
-            const payload = { ...payloadData, role };
-
-            const res = await api.post('/auth/register', payload);
+            const { confirmPassword, ...payloadData } = payloadRaw;
+            const res = await api.post('/auth/register', payloadData);
 
             login(res.data.user, res.data.token);
 
@@ -102,6 +170,12 @@ export default function Register() {
                 return;
             }
         }
+        if (step === 3) {
+            if (role === 'STYLIST' && !formData.planKey) {
+                setError('Please select a plan.');
+                return;
+            }
+        }
         setStep(step + 1);
     };
 
@@ -112,7 +186,7 @@ export default function Register() {
 
     return (
         <div className="container mx-auto px-4 py-16 flex justify-center">
-            <div className={`w-full ${step === 2 ? 'max-w-4xl' : 'max-w-md'} bg-white p-8 rounded-2xl shadow-lg border border-crown-soft transition-all duration-500 animate-enter`}>
+            <div className={`w-full ${step === 2 ? 'max-w-4xl' : 'max-w-md'} bg-[var(--card-bg)] p-8 rounded-2xl shadow-lg border border-[var(--card-border)] transition-all duration-500 animate-enter`}>
                 <h2 className="text-3xl font-serif text-center mb-6">
                     {step === 1 ? 'Create Account' : 'Select Your Plan'}
                 </h2>
@@ -121,18 +195,18 @@ export default function Register() {
 
                 {/* Role Toggle - Only visible on Step 1 */}
                 {step === 1 && (
-                    <div className="flex bg-gray-100 p-1 rounded-full mb-8">
+                    <div className="flex bg-[var(--bg-tertiary)] p-1 rounded-full mb-8">
                         <button
                             type="button"
                             onClick={() => setRole('CLIENT')}
-                            className={`flex-1 py-2 rounded-full text-sm font-medium transition ${role === 'CLIENT' ? 'bg-white shadow text-crown-dark' : 'text-gray-500'}`}
+                            className={`flex-1 py-2 rounded-full text-sm font-medium transition ${role === 'CLIENT' ? 'bg-[var(--bg-secondary)] shadow text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
                         >
                             Client
                         </button>
                         <button
                             type="button"
                             onClick={() => setRole('STYLIST')}
-                            className={`flex-1 py-2 rounded-full text-sm font-medium transition ${role === 'STYLIST' ? 'bg-white shadow text-crown-dark' : 'text-gray-500'}`}
+                            className={`flex-1 py-2 rounded-full text-sm font-medium transition ${role === 'STYLIST' ? 'bg-[var(--bg-secondary)] shadow text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
                         >
                             Beauty Pro
                         </button>
@@ -144,11 +218,22 @@ export default function Register() {
                     {/* STEP 1: Account Info */}
                     {step === 1 && (
                         <div className="space-y-4 animate-fade-in">
+                            {role === 'STYLIST' && (
+                                <div className="bg-crown-gold/10 border border-crown-gold/30 p-4 rounded-xl flex gap-3 items-start mb-4">
+                                    <span className="text-xl">✨</span>
+                                    <div>
+                                        <h4 className="font-bold text-crown-dark text-sm">Full Earnings Guarantee</h4>
+                                        <p className="text-xs text-crown-dark/80 mt-1">
+                                            You keep 100% of your service earnings. CrownSide only charges a flat monthly subscription to host your business.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                             <div>
-                                <label className="block text-sm font-medium text-crown-gray mb-1">Display Name <span className="text-gray-400 text-xs">(Optional)</span></label>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Display Name <span className="text-gray-400 text-xs">(Optional)</span></label>
                                 <input
                                     type="text"
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none"
+                                    className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none transition-colors duration-300 placeholder-[var(--text-secondary)]"
                                     placeholder="e.g. Jane Doe"
                                     value={formData.displayName}
                                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
@@ -156,22 +241,22 @@ export default function Register() {
                                 <p className="text-xs text-gray-400 mt-1">This name will be visible to beauty professionals you book with.</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-crown-gray mb-1">Email</label>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Email</label>
                                 <input
                                     type="email"
                                     required
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none"
+                                    className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none transition-colors duration-300 placeholder-[var(--text-secondary)]"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-crown-gray mb-1">Password</label>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Password</label>
                                 <div className="relative">
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         required
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none pr-10"
+                                        className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none pr-10 transition-colors duration-300 placeholder-[var(--text-secondary)]"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     />
@@ -186,12 +271,12 @@ export default function Register() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-crown-gray mb-1">Confirm Password</label>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Confirm Password</label>
                                 <div className="relative">
                                     <input
                                         type={showConfirmPassword ? "text" : "password"}
                                         required
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none pr-10"
+                                        className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none pr-10 transition-colors duration-300 placeholder-[var(--text-secondary)]"
                                         value={formData.confirmPassword}
                                         onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                     />
@@ -207,11 +292,11 @@ export default function Register() {
 
                             {role === 'STYLIST' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-crown-gray mb-1">Business Name</label>
+                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Business Name</label>
                                     <input
                                         type="text"
                                         required={role === 'STYLIST'}
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-crown-gold focus:outline-none"
+                                        className="w-full px-4 py-3 rounded-lg border border-[var(--border-input)] bg-[var(--input-background)] text-[var(--input-text)] focus:ring-2 focus:ring-crown-gold focus:outline-none transition-colors duration-300 placeholder-[var(--text-secondary)]"
                                         placeholder="e.g. Silk Press Studio"
                                         value={formData.businessName}
                                         onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
@@ -234,7 +319,7 @@ export default function Register() {
                         <div className="animate-fade-in space-y-8">
 
                             <div className="text-center space-y-2">
-                                <h3 className="text-xl font-bold font-serif text-crown-dark">Select Your Services</h3>
+                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)]">Select Your Services</h3>
                                 <p className="text-gray-500 text-sm">Select the services you offer. Your plan is automatically calculated based on your selection.</p>
                             </div>
 
@@ -248,8 +333,8 @@ export default function Register() {
                                     <label
                                         key={service.id}
                                         className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.specialties.includes(service.id)
-                                            ? 'border-crown-gold bg-crown-soft/30 shadow-sm'
-                                            : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                                            ? 'border-crown-gold bg-[var(--bg-tertiary)] shadow-sm'
+                                            : 'border-[var(--card-border)] hover:border-[var(--border-subtle)] bg-[var(--bg-primary)]'
                                             }`}
                                     >
                                         <input
@@ -259,7 +344,7 @@ export default function Register() {
                                             className="rounded text-crown-gold focus:ring-crown-gold h-5 w-5 mr-4"
                                         />
                                         <div className="flex-1">
-                                            <div className="font-bold text-gray-900">{service.label}</div>
+                                            <div className="font-bold text-[var(--text-primary)]">{service.label}</div>
                                             <div className="text-xs text-gray-500">{service.desc}</div>
                                         </div>
                                     </label>
@@ -290,31 +375,29 @@ export default function Register() {
                     {step === 3 && role === 'STYLIST' && (
                         <div className="animate-fade-in space-y-6">
                             <div className="text-center space-y-2">
-                                <h3 className="text-xl font-bold font-serif text-crown-dark">Choose Your Plan</h3>
+                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)]">Choose Your Plan</h3>
                                 <p className="text-gray-500 text-sm">Select the plan that fits your business needs.</p>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="bg-gradient-to-r from-crown-gold/20 to-crown-gold/5 border border-crown-gold/30 rounded-xl p-4 mb-6">
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">🎁</span>
-                                        <div>
-                                            <h4 className="font-bold text-crown-dark">Early Access Offer</h4>
-                                            <p className="text-sm text-gray-700">The first 30 Beauty Pros get <span className="font-bold">30 Days Free</span>! No commitment, cancel anytime.</p>
+                                {formData.planKey === 'pro' && (
+                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-2xl">🎁</span>
+                                            <div>
+                                                <h4 className="font-bold text-emerald-800">30-Day Free Trial!</h4>
+                                                <p className="text-sm text-emerald-700">Select the <span className="font-bold">Beauty Pro</span> plan to get your first month free.</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
-                                {[
-                                    { key: 'pro', label: 'Beauty Pro', price: '$15.00', desc: 'Perfect for getting started. 8 Portfolio Photos.' },
-                                    { key: 'elite', label: 'Beauty Pro Elite', price: '$25.00', desc: 'Enhanced visibility. 20 Portfolio Assets + Video.' },
-                                    { key: 'premier', label: 'Beauty Pro Premier', price: '$35.00', desc: 'Maximum exposure & priority support. 20+ Assets.' }
-                                ].map((plan) => (
+                                {Object.values(SUBSCRIPTION_TIERS).map((plan) => (
                                     <label
                                         key={plan.key}
                                         className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.planKey === plan.key
-                                            ? 'border-crown-gold bg-crown-soft/30 shadow-sm'
-                                            : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                                            ? 'border-crown-gold bg-[var(--bg-tertiary)] shadow-sm'
+                                            : 'border-[var(--card-border)] hover:border-[var(--border-subtle)] bg-[var(--bg-primary)]'
                                             }`}
                                     >
                                         <input
@@ -327,10 +410,14 @@ export default function Register() {
                                         />
                                         <div className="flex-1">
                                             <div className="flex justify-between items-center">
-                                                <div className="font-bold text-gray-900">{plan.label}</div>
-                                                <div className="font-bold text-crown-gold">{plan.price}<span className="text-gray-400 text-xs font-normal">/mo</span></div>
+                                                <div className="font-bold text-[var(--text-primary)]">{plan.label}</div>
+                                                <div className="font-bold text-crown-gold">${plan.price.toFixed(2)}<span className="text-gray-400 text-xs font-normal">/mo</span></div>
                                             </div>
-                                            <div className="text-xs text-gray-500 mt-1">{plan.desc}</div>
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                {plan.key === 'pro' && 'Perfect for getting started. 8 Portfolio Photos.'}
+                                                {plan.key === 'elite' && 'Enhanced visibility. 20 Portfolio Assets + Video.'}
+                                                {plan.key === 'premier' && 'Maximum exposure & priority support. 20+ Assets.'}
+                                            </div>
                                         </div>
                                     </label>
                                 ))}
@@ -345,18 +432,108 @@ export default function Register() {
                                     <ChevronLeft size={18} /> Back
                                 </button>
                                 <button
-                                    type="submit"
-                                    disabled={!formData.planKey || isSubmitting}
-                                    className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    type="button"
+                                    onClick={nextStep}
+                                    disabled={!formData.planKey}
+                                    className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                                 >
-                                    {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
+                                    Next: Payment <ChevronRight size={18} />
                                 </button>
                             </div>
                         </div>
                     )}
 
-                </form>
-            </div>
-        </div>
+                    {/* STEP 4: Payment (Real Stripe Elements) */}
+                    {step === 4 && role === 'STYLIST' && (
+                        <div className="animate-fade-in space-y-6">
+                            <div className="text-center space-y-2">
+                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)]">Payment Method</h3>
+                                <p className="text-gray-500 text-sm">A valid card is required to activate your subscription.</p>
+
+                                {!stripePromise ? (
+                                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs font-bold flex items-center gap-2 justify-center">
+                                        <span>⚠️</span>
+                                        Payments Disabled (Dev Mode: No Stripe Key)
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-crown-gold font-bold bg-crown-gold/5 inline-block px-3 py-1 rounded-full border border-crown-gold/20">
+                                        Trusted: Your clients will pay YOU directly for services.
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Order Summary */}
+                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                                <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wide mb-4">Order Summary</h4>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-gray-600">{SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.label}</span>
+                                    <span className="font-medium">${SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.price.toFixed(2)}/mo</span>
+                                </div>
+                                {formData.planKey === 'pro' ? (
+                                    <>
+                                        <div className="flex justify-between items-center text-emerald-600 text-sm mb-4">
+                                            <span>30-Day Free Trial</span>
+                                            <span>-$15.00</span>
+                                        </div>
+                                        <div className="border-t border-gray-200 pt-3 flex justify-between items-center font-bold text-lg">
+                                            <span>Due Today</span>
+                                            <span>$0.00</span>
+                                        </div>
+                                        <p className="text-xs text-center text-gray-400 mt-2">Billing starts automatically after 30 days.</p>
+                                    </>
+                                ) : (
+                                    <div className="border-t border-gray-200 pt-3 flex justify-between items-center font-bold text-lg">
+                                        <span>Due Today</span>
+                                        <span>${SUBSCRIPTION_TIERS[formData.planKey?.toUpperCase()]?.price.toFixed(2)}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Real Card Element */}
+                            <div className="border border-gray-300 rounded-lg p-4 bg-white">
+                                <label className="block text-xs font-semibold text-gray-400 uppercase mb-2">Card Information</label>
+                                <div className="p-1">
+                                    {stripePromise ? (
+                                        <CardElement options={CARD_ELEMENT_OPTIONS} />
+                                    ) : (
+                                        <div className="bg-gray-100 p-4 rounded text-center text-gray-400 text-sm italic">
+                                            Card Element Unavailable
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 text-gray-600 text-xs rounded border border-gray-100">
+                                <div className="font-bold">SECURE</div>
+                                <p>This card is for your CrownSide monthly subscription ONLY.</p>
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={prevStep}
+                                    className="px-6 py-3 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={18} /> Back
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!stripe || isSubmitting || !stripePromise}
+                                    className="flex-1 btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? 'Processing Payment...' : (!stripePromise ? 'Payments Unavailable' : 'Confirm Subscription')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                </form >
+            </div >
+        </div >
     );
+}
+
+// Wrapper for Elements
+export default function Register() {
+    return <RegisterContent />;
 }
