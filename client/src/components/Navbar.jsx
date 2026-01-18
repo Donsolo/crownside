@@ -37,14 +37,14 @@ export default function Navbar() {
 
                         {/* Location Context - Desktop & Tablet */}
                         <div className="hidden md:flex flex-col justify-center border-l border-crown-gold/30 pl-4 h-full py-1">
-                            <span className="text-2xl text-[#8F6A2D] font-serif font-medium tracking-[0.04em] [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]">
+                            <span className="text-3xl text-[#8F6A2D] font-medium tracking-wider [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]" style={{ fontFamily: '"Great Vibes", cursive' }}>
                                 Serving Metro Detroit
                             </span>
                         </div>
 
                         {/* Location Context - Mobile */}
                         <div className="md:hidden flex flex-col justify-center pl-3 border-l border-crown-gold/30 h-6 ml-2">
-                            <span className="text-xl text-[#8F6A2D] font-serif font-medium tracking-[0.04em] whitespace-nowrap [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]">
+                            <span className="text-2xl text-[#8F6A2D] font-medium tracking-wide whitespace-nowrap [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]" style={{ fontFamily: '"Great Vibes", cursive' }}>
                                 Serving Metro Detroit
                             </span>
                         </div>
