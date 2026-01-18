@@ -95,8 +95,8 @@ export default function MyBookings() {
                 overlayOpacity={0.7}
             >
                 <div className="text-center text-white z-10 px-4">
-                    <h1 className="font-serif text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg">My Appointments</h1>
-                    <p className="text-white/80 text-lg font-medium">Your upcoming and past bookings</p>
+                    <h1 className="font-serif text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg text-white">My Appointments</h1>
+                    <p className="text-white/80 text-lg font-medium text-white">Your upcoming and past bookings</p>
                 </div>
             </Hero>
 

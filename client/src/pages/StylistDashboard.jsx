@@ -113,8 +113,8 @@ export default function StylistDashboard() {
                 overlayOpacity={0.7}
             >
                 <div className="text-center text-white z-10 px-4">
-                    <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg">Pro Studio</h1>
-                    <p className="text-white/80 text-lg font-medium">Manage your services, bookings, and brand</p>
+                    <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg text-white">Pro Studio</h1>
+                    <p className="text-white/80 text-lg font-medium text-white">Manage your services, bookings, and brand</p>
                 </div>
             </Hero>
 

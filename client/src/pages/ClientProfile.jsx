@@ -58,8 +58,8 @@ export default function ClientProfile() {
                 overlayOpacity={0.7}
             >
                 <div className="text-center text-white z-10 px-4">
-                    <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg">My Profile</h1>
-                    <p className="text-white/80 text-lg">Manage your account and preferences</p>
+                    <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg text-white">My Profile</h1>
+                    <p className="text-white/80 text-lg text-white">Manage your account and preferences</p>
                 </div>
             </Hero>
 
