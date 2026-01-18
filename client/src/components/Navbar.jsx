@@ -44,7 +44,7 @@ export default function Navbar() {
 
                         {/* Location Context - Mobile */}
                         <div className="md:hidden flex flex-col justify-center pl-3 border-l border-crown-gold/30 h-6 ml-2">
-                            <span className="text-2xl text-[#8F6A2D] font-medium tracking-wide whitespace-nowrap [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]" style={{ fontFamily: '"Great Vibes", cursive' }}>
+                            <span className="text-xl text-[#8F6A2D] font-medium tracking-wide whitespace-nowrap [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]" style={{ fontFamily: '"Great Vibes", cursive' }}>
                                 Serving Metro Detroit
                             </span>
                         </div>
@@ -83,14 +83,9 @@ export default function Navbar() {
 
                     </div>
 
-                    {/* Mobile Actions (Admin + Menu) */}
+                    {/* Mobile Actions (Menu Only) */}
                     <div className="md:hidden flex items-center gap-2">
-                        {user?.role === 'ADMIN' && (
-                            <Link to="/admin" className="text-crown-gold font-bold text-sm bg-crown-cream px-3 py-1 rounded-full">
-                                Admin
-                            </Link>
-                        )}
-
+                        {/* Admin Badge Removed */}
                     </div>
                 </div>
             </div>
