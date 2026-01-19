@@ -196,6 +196,13 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
                     </div>
                 )}
 
+                {/* Cancellation Banner - Read Only Mode */}
+                {participants?.status && (participants.status.includes('CANCEL') || participants.status === 'CANCELED') && (
+                    <div className="bg-gray-100 text-gray-600 px-4 py-2 text-xs text-center border-t border-gray-200 font-bold">
+                        This appointment has been cancelled. Messaging is disabled.
+                    </div>
+                )}
+
                 {/* Input Area */}
                 <form onSubmit={handleSend} className="p-4 bg-[var(--card-bg)] border-t border-[var(--border-subtle)]">
                     <div className="flex items-end gap-2">
@@ -212,15 +219,15 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
                                     handleSend(e);
                                 }
                             }}
-                            placeholder="Type a message..."
+                            placeholder={participants?.status && (participants.status.includes('CANCEL') || participants.status === 'CANCELED') ? "Messaging disabled" : "Type a message..."}
                             rows={1}
                             className="flex-1 bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-3xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-crown-gold/30 disabled:opacity-50 resize-none overflow-hidden"
-                            disabled={sending}
+                            disabled={sending || (participants?.status && (participants.status.includes('CANCEL') || participants.status === 'CANCELED'))}
                             style={{ minHeight: '44px', maxHeight: '120px' }}
                         />
                         <button
                             type="submit"
-                            disabled={!newMessage.trim() || sending}
+                            disabled={!newMessage.trim() || sending || (participants?.status && (participants.status.includes('CANCEL') || participants.status === 'CANCELED'))}
                             className="bg-crown-gold text-white p-3 rounded-full hover:bg-crown-gold/90 transition shadow-md disabled:opacity-50 disabled:shadow-none mb-[1px]"
                         >
                             {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}

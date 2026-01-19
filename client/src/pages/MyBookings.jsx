@@ -3,13 +3,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import Hero from '../components/Hero';
 import { useAuth } from '../context/AuthContext';
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaSearch, FaInfoCircle, FaTimes } from 'react-icons/fa';
 
 // ... imports
 import ChatInterface from '../components/ChatInterface';
 import { MessageSquare } from 'lucide-react';
 
 import { useNotifications } from '../context/NotificationContext';
+
+import CancellationModal from '../components/CancellationModal'; // Import Modal
 
 export default function MyBookings() {
     const { user } = useAuth();
@@ -18,6 +20,8 @@ export default function MyBookings() {
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeChat, setActiveChat] = useState(null);
+    const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null }); // Cancel State
+    const [reasonModal, setReasonModal] = useState({ open: false, text: '' });
     const location = useLocation();
 
     // Close chat if navigating (e.g. clicking Bookings in navbar)
@@ -25,36 +29,56 @@ export default function MyBookings() {
         setActiveChat(null);
     }, [location]);
 
+    const fetchBookings = async () => {
+        try {
+            const res = await api.get('/bookings?asClient=true');
+            setBookings(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
         markBookingsSeen();
-        const fetchBookings = async () => {
-            try {
-                const res = await api.get('/bookings?asClient=true');
-                setBookings(res.data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchBookings();
     }, []);
 
+    const handleCancelBooking = async (reason) => {
+        try {
+            await api.put(`/bookings/${cancelModal.bookingId}/cancel`, { reason });
+            setCancelModal({ open: false, bookingId: null });
+            fetchBookings(); // Refresh list to update status
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.error || 'Failed to cancel booking');
+        }
+    };
+
     // Derived State
     const upcomingBookings = bookings.filter(b => ['PENDING', 'APPROVED'].includes(b.status));
-    const pastBookings = bookings.filter(b => ['COMPLETED', 'CANCELED'].includes(b.status));
+    const pastBookings = bookings.filter(b => ['COMPLETED', 'CANCELED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_TECH'].includes(b.status));
 
     const StatusBadge = ({ status }) => {
         const styles = {
             APPROVED: 'bg-green-100 text-green-800 border-green-200',
             PENDING: 'bg-amber-100 text-amber-800 border-amber-200',
             COMPLETED: 'bg-slate-100 text-slate-600 border-slate-200',
-            CANCELED: 'bg-red-50 text-red-500 border-red-100'
+            CANCELED: 'bg-red-50 text-red-500 border-red-100',
+            CANCELLED_BY_CLIENT: 'bg-red-50 text-red-500 border-red-100',
+            CANCELLED_BY_TECH: 'bg-red-50 text-red-500 border-red-100'
         };
+        const labels = {
+            CANCELLED_BY_CLIENT: 'CANCELLED',
+            CANCELLED_BY_TECH: 'CANCELLED (PRO)',
+            CANCELED: 'CANCELLED'
+        };
+
         const s = status ? status.toUpperCase() : 'PENDING';
         return (
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold border ${styles[s] || styles.CANCELED}`}>
-                {s}
+                {labels[s] || s}
             </span>
         );
     };
@@ -97,26 +121,45 @@ export default function MyBookings() {
                         <span className="font-bold text-gray-700 text-sm">${booking.service.price}</span>
                     </div>
 
-                    {/* Chat Button (Only for unrelated cancelled/past bookings?) 
-                        Actually only allow chat if status is APPROVED or maybe COMPLETED for follow up.
-                        Let's allow for Approved/Pending/Completed.
-                    */}
-                    {!isPast && booking.status !== 'CANCELED' && (
-                        <button
-                            onClick={() => setActiveChat({
-                                bookingId: booking.id,
-                                otherName: booking.stylist.businessName,
-                                bookingDate: booking.appointmentDate
-                            })}
-                            className="bg-crown-gold text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-black transition flex items-center gap-1 shadow-sm relative"
-                        >
-                            <MessageSquare size={12} /> Message
-                            {/* Notification Dot */}
-                            {booking.conversation?._count?.messages > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-                            )}
-                        </button>
-                    )}
+                    <div className="flex gap-2">
+                        {/* Cancel Button (My Upcoming Only) */}
+                        {!isPast && (
+                            <button
+                                onClick={() => setCancelModal({ open: true, bookingId: booking.id })}
+                                className="text-red-500 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-red-50 transition border border-transparent hover:border-red-100"
+                            >
+                                Cancel
+                            </button>
+                        )}
+
+                        {/* View Reason Button for Cancelled */}
+                        {booking.status.includes('CANCEL') && (
+                            <button
+                                onClick={() => setReasonModal({ open: true, text: booking.cancellationReason })}
+                                className="text-gray-400 hover:text-crown-gold hover:bg-gray-50 px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1 border border-transparent hover:border-gray-100"
+                            >
+                                <FaInfoCircle /> Reason
+                            </button>
+                        )}
+
+                        {/* Chat Button - Allow for all unless generic CANCELED (which is old) */}
+                        {booking.status !== 'CANCELED' && (
+                            <button
+                                onClick={() => setActiveChat({
+                                    bookingId: booking.id,
+                                    otherName: booking.stylist.businessName,
+                                    bookingDate: booking.appointmentDate,
+                                    status: booking.status // Pass status
+                                })}
+                                className="bg-crown-gold text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-black transition flex items-center gap-1 shadow-sm relative"
+                            >
+                                <MessageSquare size={12} /> Message
+                                {booking.conversation?._count?.messages > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -126,6 +169,41 @@ export default function MyBookings() {
 
     return (
         <div className="min-h-screen bg-neutral-50 pb-20">
+            {/* Cancellation Modal */}
+            <CancellationModal
+                isOpen={cancelModal.open}
+                onClose={() => setCancelModal({ open: false, bookingId: null })}
+                onConfirm={handleCancelBooking}
+                title="Cancel Appointment"
+            />
+
+            {/* Reason View Modal */}
+            {reasonModal.open && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-enter">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReasonModal({ open: false, text: '' })} />
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+                        <button
+                            onClick={() => setReasonModal({ open: false, text: '' })}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <FaTimes />
+                        </button>
+                        <h3 className="font-serif font-bold text-xl mb-4 text-gray-900">Cancellation Reason</h3>
+                        <div className="bg-gray-50 p-4 rounded-xl text-gray-700 italic border border-gray-100 min-h-[80px]">
+                            "{reasonModal.text || 'No reason provided.'}"
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={() => setReasonModal({ open: false, text: '' })}
+                                className="btn-secondary py-2 px-6"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Chat Modal */}
             {activeChat && (
                 <ChatInterface
@@ -133,13 +211,6 @@ export default function MyBookings() {
                     participants={activeChat}
                     onClose={() => {
                         setActiveChat(null);
-                        // Refresh to update unread counts
-                        const fetchBookings = async () => {
-                            try {
-                                const res = await api.get('/bookings?asClient=true');
-                                setBookings(res.data);
-                            } catch (err) { console.error(err); }
-                        };
                         fetchBookings();
                     }}
                 />
@@ -147,7 +218,7 @@ export default function MyBookings() {
 
             {/* HER0 - Distinct from Profile */}
             <Hero
-                pageKey="bookings" // We might need to ensure pageKey 'bookings' exists in DB or fallback works, assuming fallback works if not dynamic
+                pageKey="bookings"
                 className="h-[30vh] min-h-[250px] flex items-center justify-center relative"
                 overlayOpacity={0.7}
             >
@@ -188,7 +259,7 @@ export default function MyBookings() {
                         )}
                     </div>
 
-                    {/* Past Section */}
+                    {/* Past Section (Includes Cancelled) */}
                     {pastBookings.length > 0 && (
                         <div className="animate-enter animate-delay-2">
                             <h2 className="text-xl font-serif font-bold text-gray-400 mb-6 uppercase tracking-wider text-sm">Past History</h2>
@@ -204,3 +275,5 @@ export default function MyBookings() {
         </div>
     );
 }
+
+

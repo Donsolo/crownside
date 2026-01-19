@@ -22,6 +22,8 @@ enum BookingStatus {
   APPROVED
   COMPLETED
   CANCELED
+  CANCELLED_BY_CLIENT
+  CANCELLED_BY_TECH
 }
 
 enum ContactPreference {
@@ -129,6 +131,10 @@ model Booking {
   appointmentDate DateTime
   status      BookingStatus @default(PENDING)
   notes       String?
+  
+  cancellationReason String?
+  cancelledAt        DateTime?
+  cancelledBy        String? // User ID of who cancelled
   
   reviews     Review[]
   conversation Conversation?

@@ -117,6 +117,86 @@ const updateBookingStatus = async (req, res) => {
     }
 };
 
+const cancelBooking = async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    try {
+        const booking = await prisma.booking.findUnique({
+            where: { id },
+            include: { stylist: true, client: true }
+        });
+
+        if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+        // Authorization: Only Client or Stylist can cancel
+        if (booking.clientId !== userId && booking.stylist.userId !== userId) {
+            return res.status(403).json({ error: 'Not authorized to cancel this booking' });
+        }
+
+        // Prevent cancelling completed bookings
+        if (booking.status === 'COMPLETED' || booking.status === 'CANCELED' || booking.status === 'CANCELLED_BY_CLIENT' || booking.status === 'CANCELLED_BY_TECH') {
+            return res.status(400).json({ error: 'Cannot cancel an already completed or cancelled booking' });
+        }
+
+        const newStatus = role === 'CLIENT' ? 'CANCELLED_BY_CLIENT' : 'CANCELLED_BY_TECH';
+
+        // 1. Update Booking
+        const updatedBooking = await prisma.booking.update({
+            where: { id },
+            data: {
+                status: newStatus,
+                cancellationReason: reason,
+                cancelledAt: new Date(),
+                cancelledBy: userId
+            }
+        });
+
+        // 2. Insert System Message into Conversation (if exists or create one)
+        // We need the conversation ID.
+        let conversation = await prisma.conversation.findUnique({
+            where: { bookingId: id }
+        });
+
+        if (!conversation) {
+            // Create conversation if it doesn't exist to log the cancellation
+            conversation = await prisma.conversation.create({
+                data: {
+                    bookingId: id,
+                    clientId: booking.clientId,
+                    stylistId: booking.stylistId,
+                    lastMessageAt: new Date()
+                }
+            });
+        }
+
+        const systemMessageText = `Appointment cancelled by ${role === 'CLIENT' ? 'Client' : 'Beauty Tech'}. Reason: ${reason || 'No reason provided.'}`;
+
+        await prisma.message.create({
+            data: {
+                conversationId: conversation.id,
+                senderId: userId, // Attributed to the canceler, or could be a system bot if we had one. Using canceler is fine.
+                content: `[SYSTEM]: ${systemMessageText}`,
+                readAt: null // Will trigger notification for the other party
+            }
+        });
+
+        // Update conversation timestamp
+        await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: { lastMessageAt: new Date() }
+        });
+
+        res.json(updatedBooking);
+
+    } catch (error) {
+        console.error("Cancellation Error:", error);
+        res.status(500).json({ error: 'Failed to cancel booking' });
+    }
+};
+
 const getAllBookings = async (req, res) => {
     try {
         const bookings = await prisma.booking.findMany({
@@ -134,4 +214,66 @@ const getAllBookings = async (req, res) => {
     }
 };
 
-module.exports = { createBooking, getMyBookings, updateBookingStatus, getAllBookings };
+const deleteBooking = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const booking = await prisma.booking.findUnique({
+            where: { id },
+            include: { stylist: true }
+        });
+
+        if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+        // Authorization: Only the stylist (owner of the profile) can delete
+        // Note: We might want to allow Admin too
+        if (booking.stylist.userId !== userId && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Not authorized to delete this booking' });
+        }
+
+        // Only allow deletion of finally cancelled/rejected/completed items?
+        // User asked for "requests that cancelled".
+        // Let's be safe: ALLOW deletion if status is CANCELLED*, COMPLETED, or REJECTED (if we had it).
+        // If it's PENDING/APPROVED, they should cancel it first.
+        const deletableStatuses = ['CANCELED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_TECH', 'COMPLETED', 'REJECTED'];
+        if (!deletableStatuses.includes(booking.status)) {
+            return res.status(400).json({ error: 'Active bookings cannot be deleted. Please cancel them first.' });
+        }
+
+        // Transaction to ensure atomicity
+        await prisma.$transaction(async (prisma) => {
+            // 1. Delete associated Reviews
+            await prisma.review.deleteMany({
+                where: { bookingId: id }
+            });
+
+            // 2. Find and Delete Conversation + Messages
+            const conversation = await prisma.conversation.findUnique({
+                where: { bookingId: id }
+            });
+
+            if (conversation) {
+                await prisma.message.deleteMany({
+                    where: { conversationId: conversation.id }
+                });
+                await prisma.conversation.delete({
+                    where: { id: conversation.id }
+                });
+            }
+
+            // 3. Delete Booking
+            await prisma.booking.delete({
+                where: { id }
+            });
+        });
+
+        res.json({ message: 'Booking deleted successfully' });
+
+    } catch (error) {
+        console.error("Delete Booking Error:", error);
+        res.status(500).json({ error: 'Failed to delete booking' });
+    }
+};
+
+module.exports = { createBooking, getMyBookings, updateBookingStatus, cancelBooking, getAllBookings, deleteBooking };

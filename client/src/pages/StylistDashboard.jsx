@@ -6,7 +6,7 @@ import { useNotifications } from '../context/NotificationContext';
 import PortfolioManager from '../components/PortfolioManager';
 import Hero from '../components/Hero';
 import { SERVICE_CATEGORIES } from '../config/categories';
-import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes } from 'react-icons/fa';
 
 export default function StylistDashboard() {
     const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
@@ -295,10 +295,14 @@ function DashboardCard({ title, desc, icon, color, onClick, badge }) {
 import ChatInterface from '../components/ChatInterface';
 import { MessageSquare } from 'lucide-react';
 
+import CancellationModal from '../components/CancellationModal'; // Import CancellationModal
+
 function BookingManager() {
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeChat, setActiveChat] = useState(null); // { bookingId, otherName, bookingDate }
+    const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null });
+    const [reasonModal, setReasonModal] = useState({ open: false, text: '' });
 
     const fetchBookings = async () => {
         try {
@@ -324,19 +328,50 @@ function BookingManager() {
         }
     };
 
+    const handleCancelBooking = async (reason) => {
+        try {
+            await api.put(`/bookings/${cancelModal.bookingId}/cancel`, { reason });
+            setCancelModal({ open: false, bookingId: null });
+            fetchBookings();
+        } catch (err) {
+            alert('Failed to cancel booking');
+        }
+    };
+
+    const handleDeleteBooking = async (id) => {
+        if (!confirm('Are you sure you want to delete this booking request? This cannot be undone.')) return;
+        try {
+            await api.delete(`/bookings/${id}`);
+            fetchBookings();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.error || 'Failed to delete booking');
+        }
+    };
+
     const openChat = (booking) => {
         setActiveChat({
             bookingId: booking.id,
             otherName: booking.client.displayName || 'Client',
-            bookingDate: booking.appointmentDate
+            bookingDate: booking.appointmentDate,
+            status: booking.status
         });
     };
 
     if (isLoading) return <div>Loading...</div>;
 
+    const CancelBadge = () => <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs ml-2">CANCELLED</span>;
+
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-2xl font-serif mb-6">Booking Requests</h2>
+
+            <CancellationModal
+                isOpen={cancelModal.open}
+                onClose={() => setCancelModal({ open: false, bookingId: null })}
+                onConfirm={handleCancelBooking}
+                title="Cancel Appointment"
+            />
 
             {activeChat && (
                 <ChatInterface
@@ -361,10 +396,12 @@ function BookingManager() {
                                 </p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${booking.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                                booking.status === 'CANCELED' ? 'bg-red-100 text-red-700' :
+                                booking.status.includes('CANCEL') ? 'bg-red-100 text-red-700' :
                                     'bg-yellow-100 text-yellow-700'
                                 }`}>
-                                {booking.status}
+                                {booking.status === 'CANCELLED_BY_CLIENT' ? 'CLIENT CANCELLED' :
+                                    booking.status === 'CANCELLED_BY_TECH' ? 'CANCELED' :
+                                        booking.status}
                             </span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
@@ -374,18 +411,55 @@ function BookingManager() {
 
                             <div className="flex gap-2">
                                 {/* Message Button */}
-                                {booking.status !== 'PENDING' && booking.status !== 'CANCELED' && (
-                                    <button
-                                        onClick={() => openChat(booking)}
-                                        className="text-crown-gold hover:bg-crown-gold/10 p-2 rounded-full transition flex items-center gap-1 relative"
-                                        title="Message Client"
-                                    >
-                                        <MessageSquare size={18} />
-                                        {/* Notification Dot */}
-                                        {booking.conversation?._count?.messages > 0 && (
-                                            <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-                                        )}
-                                    </button>
+                                {booking.status !== 'PENDING' && !booking.status.includes('CANCEL') && (
+                                    <>
+                                        <button
+                                            onClick={() => setCancelModal({ open: true, bookingId: booking.id })}
+                                            className="text-red-500 hover:bg-red-50 px-3 py-1 rounded transition text-xs font-bold"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={() => openChat(booking)}
+                                            className="text-crown-gold hover:bg-crown-gold/10 p-2 rounded-full transition flex items-center gap-1 relative"
+                                            title="Message Client"
+                                        >
+                                            <MessageSquare size={18} />
+                                            {/* Notification Dot */}
+                                            {booking.conversation?._count?.messages > 0 && (
+                                                <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                                            )}
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Buttons for Cancelled/Generic Status */}
+                                {booking.status.includes('CANCEL') && (
+                                    <>
+                                        <button
+                                            onClick={() => setReasonModal({ open: true, text: booking.cancellationReason })}
+                                            className="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition flex items-center gap-1 relative"
+                                            title="View Cancellation Reason"
+                                        >
+                                            <FaInfoCircle size={18} />
+                                        </button>
+
+                                        <button
+                                            onClick={() => openChat(booking)}
+                                            className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition flex items-center gap-1 relative"
+                                            title="View Messages"
+                                        >
+                                            <MessageSquare size={18} />
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleDeleteBooking(booking.id)}
+                                            className="text-red-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition flex items-center gap-1 relative"
+                                            title="Delete Request"
+                                        >
+                                            <FaTrash size={16} />
+                                        </button>
+                                    </>
                                 )}
 
                                 {booking.status === 'PENDING' && (
@@ -397,7 +471,7 @@ function BookingManager() {
                                             Approve
                                         </button>
                                         <button
-                                            onClick={() => handleStatusUpdate(booking.id, 'CANCELED')}
+                                            onClick={() => setCancelModal({ open: true, bookingId: booking.id })}
                                             className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                                         >
                                             Decline
@@ -409,6 +483,32 @@ function BookingManager() {
                     </div>
                 ))}
             </div>
+
+            {/* Reason View Modal */}
+            {reasonModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-enter">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+                        <button
+                            onClick={() => setReasonModal({ open: false, text: '' })}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <FaTimes />
+                        </button>
+                        <h3 className="font-serif font-bold text-xl mb-4 text-gray-900">Cancellation Reason</h3>
+                        <div className="bg-gray-50 p-4 rounded-xl text-gray-700 italic border border-gray-100 min-h-[80px]">
+                            "{reasonModal.text || 'No reason provided.'}"
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={() => setReasonModal({ open: false, text: '' })}
+                                className="btn-secondary py-2 px-6"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
