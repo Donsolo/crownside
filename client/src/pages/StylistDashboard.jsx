@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import PortfolioManager from '../components/PortfolioManager';
 import Hero from '../components/Hero';
 import { SERVICE_CATEGORIES } from '../config/categories';
@@ -11,6 +12,14 @@ export default function StylistDashboard() {
     const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
     const navigate = useNavigate();
     const { logout, user: authUser, loading: authLoading } = useAuth();
+    const { counts, markBookingsSeen } = useNotifications();
+    const location = useLocation();
+
+    // Reset chat/views when navigating to dashboard (even if from dashboard)
+    useEffect(() => {
+        // Resetting view to home naturally unmounts BookingManager/Chat
+        setActiveView('home');
+    }, [location]);
 
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
@@ -179,13 +188,19 @@ export default function StylistDashboard() {
                 {activeView === 'home' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
 
+
+
+
+
+
                         {/* Bookings Card (High Priority) */}
                         <DashboardCard
                             title="Bookings"
                             desc="Manage appointments & requests"
                             icon={<FaCalendarCheck className="w-6 h-6 text-white" />}
                             color="bg-crown-gold"
-                            onClick={() => setActiveView('bookings')}
+                            onClick={() => { setActiveView('bookings'); markBookingsSeen(); }}
+                            badge={counts.pendingRequests + counts.unreadMessages}
                         />
 
                         {/* Services Card */}
@@ -254,14 +269,19 @@ export default function StylistDashboard() {
 }
 
 // Helper Component for Dashboard Cards
-function DashboardCard({ title, desc, icon, color, onClick }) {
+function DashboardCard({ title, desc, icon, color, onClick, badge }) {
     return (
         <button
             onClick={onClick}
             className="group bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)] shadow-sm hover:shadow-md hover:border-crown-gold/30 transition-all text-left flex items-start gap-4"
         >
-            <div className={`${color} w-12 h-12 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+            <div className={`${color} w-12 h-12 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300 relative`}>
                 {icon}
+                {badge > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[var(--card-bg)] shadow-sm">
+                        {badge}
+                    </span>
+                )}
             </div>
             <div>
                 <h3 className="font-serif font-bold text-lg text-gray-900 group-hover:text-crown-gold transition-colors">{title}</h3>
@@ -271,9 +291,14 @@ function DashboardCard({ title, desc, icon, color, onClick }) {
     );
 }
 
+// ... imports
+import ChatInterface from '../components/ChatInterface';
+import { MessageSquare } from 'lucide-react';
+
 function BookingManager() {
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeChat, setActiveChat] = useState(null); // { bookingId, otherName, bookingDate }
 
     const fetchBookings = async () => {
         try {
@@ -299,11 +324,31 @@ function BookingManager() {
         }
     };
 
+    const openChat = (booking) => {
+        setActiveChat({
+            bookingId: booking.id,
+            otherName: booking.client.displayName || 'Client',
+            bookingDate: booking.appointmentDate
+        });
+    };
+
     if (isLoading) return <div>Loading...</div>;
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-2xl font-serif mb-6">Booking Requests</h2>
+
+            {activeChat && (
+                <ChatInterface
+                    bookingId={activeChat.bookingId}
+                    participants={activeChat}
+                    onClose={() => {
+                        setActiveChat(null);
+                        fetchBookings(); // Refresh list to clear dots
+                    }}
+                />
+            )}
+
             <div className="space-y-4">
                 {bookings.length === 0 && <p className="text-gray-500">No booking requests found.</p>}
                 {bookings.map(booking => (
@@ -312,7 +357,7 @@ function BookingManager() {
                             <div>
                                 <h4 className="font-bold text-lg">{booking.service.name}</h4>
                                 <p className="text-gray-600">
-                                    Client: {booking.client.email}
+                                    Client: {booking.client.displayName || booking.client.email}
                                 </p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${booking.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
@@ -327,22 +372,39 @@ function BookingManager() {
                                 {new Date(booking.appointmentDate).toLocaleString()} • ${booking.service.price}
                             </p>
 
-                            {booking.status === 'PENDING' && (
-                                <div className="flex gap-2">
+                            <div className="flex gap-2">
+                                {/* Message Button */}
+                                {booking.status !== 'PENDING' && booking.status !== 'CANCELED' && (
                                     <button
-                                        onClick={() => handleStatusUpdate(booking.id, 'APPROVED')}
-                                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                                        onClick={() => openChat(booking)}
+                                        className="text-crown-gold hover:bg-crown-gold/10 p-2 rounded-full transition flex items-center gap-1 relative"
+                                        title="Message Client"
                                     >
-                                        Approve
+                                        <MessageSquare size={18} />
+                                        {/* Notification Dot */}
+                                        {booking.conversation?._count?.messages > 0 && (
+                                            <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                                        )}
                                     </button>
-                                    <button
-                                        onClick={() => handleStatusUpdate(booking.id, 'CANCELED')}
-                                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                                    >
-                                        Decline
-                                    </button>
-                                </div>
-                            )}
+                                )}
+
+                                {booking.status === 'PENDING' && (
+                                    <>
+                                        <button
+                                            onClick={() => handleStatusUpdate(booking.id, 'APPROVED')}
+                                            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                                        >
+                                            Approve
+                                        </button>
+                                        <button
+                                            onClick={() => handleStatusUpdate(booking.id, 'CANCELED')}
+                                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                                        >
+                                            Decline
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}

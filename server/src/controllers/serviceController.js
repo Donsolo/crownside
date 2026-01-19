@@ -13,12 +13,7 @@ const addService = async (req, res) => {
 
         const serviceCategory = category || 'hair';
 
-        // Entitlement Check: Ensure stylist has this specialty
-        if (!stylist.specialties || !stylist.specialties.includes(serviceCategory)) {
-            return res.status(403).json({
-                error: `You are not subscribed to ${serviceCategory} services. Please upgrade your plan.`
-            });
-        }
+
 
         const service = await prisma.service.create({
             data: {

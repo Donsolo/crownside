@@ -73,6 +73,8 @@ const heroRoutes = require('./routes/heroRoutes');
 app.use('/api/heroes', heroRoutes);
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 app.use('/api/subscriptions', subscriptionRoutes);
+const messageRoutes = require('./routes/messageRoutes');
+app.use('/api/messages', messageRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'CrownSide API is running' });

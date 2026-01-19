@@ -15,7 +15,12 @@ const authenticateToken = (req, res, next) => {
 
 const authorizeRole = (roles) => {
     return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+        if (!req.user) {
+            console.log("AuthorizeRole: No User");
+            return res.sendStatus(403);
+        }
+        if (!roles.includes(req.user.role)) {
+            console.log(`AuthorizeRole: User Role ${req.user.role} NOT in required: ${roles}`);
             return res.sendStatus(403);
         }
         next();

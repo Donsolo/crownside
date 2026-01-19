@@ -1,20 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import Hero from '../components/Hero';
 import { useAuth } from '../context/AuthContext';
 import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
 
+// ... imports
+import ChatInterface from '../components/ChatInterface';
+import { MessageSquare } from 'lucide-react';
+
+import { useNotifications } from '../context/NotificationContext';
+
 export default function MyBookings() {
     const { user } = useAuth();
+    const { markBookingsSeen } = useNotifications();
     const navigate = useNavigate();
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeChat, setActiveChat] = useState(null);
+    const location = useLocation();
+
+    // Close chat if navigating (e.g. clicking Bookings in navbar)
+    useEffect(() => {
+        setActiveChat(null);
+    }, [location]);
 
     useEffect(() => {
+        markBookingsSeen();
         const fetchBookings = async () => {
             try {
-                const res = await api.get('/bookings');
+                const res = await api.get('/bookings?asClient=true');
                 setBookings(res.data);
             } catch (err) {
                 console.error(err);
@@ -77,8 +92,31 @@ export default function MyBookings() {
                 </div>
 
                 <div className="flex justify-between items-center text-xs text-gray-400 border-t pt-3">
-                    <span className="flex items-center gap-1"><FaMapMarkerAlt /> Detroit, MI</span>
-                    <span className="font-bold text-gray-700 text-sm">${booking.service.price}</span>
+                    <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1"><FaMapMarkerAlt /> Detroit, MI</span>
+                        <span className="font-bold text-gray-700 text-sm">${booking.service.price}</span>
+                    </div>
+
+                    {/* Chat Button (Only for unrelated cancelled/past bookings?) 
+                        Actually only allow chat if status is APPROVED or maybe COMPLETED for follow up.
+                        Let's allow for Approved/Pending/Completed.
+                    */}
+                    {!isPast && booking.status !== 'CANCELED' && (
+                        <button
+                            onClick={() => setActiveChat({
+                                bookingId: booking.id,
+                                otherName: booking.stylist.businessName,
+                                bookingDate: booking.appointmentDate
+                            })}
+                            className="bg-crown-gold text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-black transition flex items-center gap-1 shadow-sm relative"
+                        >
+                            <MessageSquare size={12} /> Message
+                            {/* Notification Dot */}
+                            {booking.conversation?._count?.messages > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
         );
@@ -88,6 +126,25 @@ export default function MyBookings() {
 
     return (
         <div className="min-h-screen bg-neutral-50 pb-20">
+            {/* Chat Modal */}
+            {activeChat && (
+                <ChatInterface
+                    bookingId={activeChat.bookingId}
+                    participants={activeChat}
+                    onClose={() => {
+                        setActiveChat(null);
+                        // Refresh to update unread counts
+                        const fetchBookings = async () => {
+                            try {
+                                const res = await api.get('/bookings?asClient=true');
+                                setBookings(res.data);
+                            } catch (err) { console.error(err); }
+                        };
+                        fetchBookings();
+                    }}
+                />
+            )}
+
             {/* HER0 - Distinct from Profile */}
             <Hero
                 pageKey="bookings" // We might need to ensure pageKey 'bookings' exists in DB or fallback works, assuming fallback works if not dynamic

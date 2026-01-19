@@ -48,6 +48,7 @@ model User {
   // Relations
   stylistProfile StylistProfile?
   clientBookings Booking[] @relation("ClientBookings")
+  conversations  Conversation[]
 }
 
 model StylistProfile {
@@ -74,6 +75,7 @@ model StylistProfile {
   
   services         Service[]
   stylistBookings  Booking[] @relation("StylistBookings")
+  conversations    Conversation[]
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -129,8 +131,10 @@ model Booking {
   notes       String?
   
   reviews     Review[]
+  conversation Conversation?
   
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt @default(now())
 }
 
 
@@ -197,4 +201,39 @@ model ProfessionalSubscription {
   
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+}
+
+model Conversation {
+  id           String    @id @default(uuid())
+  bookingId    String    @unique
+  booking      Booking   @relation(fields: [bookingId], references: [id])
+  
+  clientId     String
+  client       User      @relation(fields: [clientId], references: [id])
+  
+  stylistId    String
+  stylist      StylistProfile @relation(fields: [stylistId], references: [id])
+  
+  messages     Message[]
+  
+  lastMessageAt DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([stylistId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  
+  senderId       String       // User ID of sender
+  content        String
+  
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
 }

@@ -3,11 +3,15 @@ const prisma = require('../prisma');
 const createBooking = async (req, res) => {
     const clientId = req.user.id;
     const { stylistId, serviceId, appointmentDate, notes } = req.body;
+    console.log(`Creating booking: User ${req.user.id} Role: ${req.user.role}`);
 
     try {
         // Validate Stylist and Service
         const service = await prisma.service.findUnique({ where: { id: serviceId } });
         if (!service) return res.status(404).json({ error: 'Service not found' });
+
+        // Prevent self-booking if needed, or allow it for testing
+        // if (req.user.role === 'STYLIST') { ... check if stylistId matches profile ... }
 
         // Create Booking
         const booking = await prisma.booking.create({
@@ -31,23 +35,46 @@ const createBooking = async (req, res) => {
 const getMyBookings = async (req, res) => {
     const userId = req.user.id;
     const role = req.user.role;
+    const asClient = req.query.asClient === 'true';
 
     try {
         let whereClause = {};
-        if (role === 'CLIENT') {
+
+        // If explicitly asking as client, OR if user is only a CLIENT
+        if (asClient || role === 'CLIENT') {
             whereClause = { clientId: userId };
         } else if (role === 'STYLIST') {
+            // Default behavior for Stylist: Show bookings they need to fulfill
             const profile = await prisma.stylistProfile.findUnique({ where: { userId } });
             if (!profile) return res.json([]); // No profile yet
             whereClause = { stylistId: profile.id };
+        } else if (role === 'ADMIN') {
+            // Admin shouldn't really use this endpoint for all bookings, but fallback
+            whereClause = {};
         }
 
         const bookings = await prisma.booking.findMany({
             where: whereClause,
             include: {
                 service: true,
-                stylist: { select: { businessName: true } },
-                client: { select: { email: true } } // For stylists to see who booked
+                stylist: { select: { businessName: true, userId: true } },
+                client: { select: { email: true, displayName: true } },
+                conversation: {
+                    select: {
+                        id: true,
+                        // Count unread messages for the current user (where receiver is me => sender is NOT me)
+                        _count: {
+                            select: {
+                                messages: {
+                                    where: {
+                                        readAt: null,
+                                        senderId: { not: userId }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             },
             orderBy: { appointmentDate: 'asc' }
         });

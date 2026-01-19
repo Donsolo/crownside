@@ -4,8 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { Menu, X, LayoutDashboard, Image, Users, Scissors, Calendar, Star, Settings, Activity } from 'lucide-react';
 import logo from '../assets/logo.png';
 
+import { useNotifications } from '../context/NotificationContext';
+
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const { counts } = useNotifications(); // Access counts
 
     const navigate = useNavigate();
     const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
@@ -58,12 +61,18 @@ export default function Navbar() {
                             <>
                                 {user.role === 'CLIENT' && (
                                     <>
-                                        <Link to="/my-bookings" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">My Bookings</Link>
+                                        <Link to="/my-bookings" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
+                                            My Bookings
+                                            {(counts.bookingUpdates > 0 || counts.unreadMessages > 0) && <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+                                        </Link>
                                         <Link to="/profile" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Profile</Link>
                                     </>
                                 )}
                                 {user.role === 'STYLIST' && (
-                                    <Link to="/dashboard" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Dashboard</Link>
+                                    <Link to="/dashboard" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
+                                        Dashboard
+                                        {(counts.unreadMessages > 0 || counts.pendingRequests > 0) && <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+                                    </Link>
                                 )}
                                 <button
                                     onClick={handleLogout}

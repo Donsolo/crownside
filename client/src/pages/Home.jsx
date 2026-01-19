@@ -7,6 +7,8 @@ import { SERVICE_CATEGORIES } from '../config/categories';
 import api from '../lib/api';
 import { FaUserCircle, FaStar, FaMapMarkerAlt, FaSearch, FaCalendarAlt, FaCut } from 'react-icons/fa';
 
+import { useNotifications } from '../context/NotificationContext';
+
 export default function Home() {
     const { user } = useAuth();
 
@@ -19,6 +21,7 @@ export default function Home() {
 
 function AuthenticatedHome({ user }) {
     const navigate = useNavigate();
+    const { counts } = useNotifications();
     const [featuredPros, setFeaturedPros] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -79,6 +82,9 @@ function AuthenticatedHome({ user }) {
 
                         {/* My Bookings */}
                         <Link to={user.role === 'STYLIST' ? '/dashboard' : '/my-bookings'} className="group relative bg-gradient-to-br from-[var(--card-bg)] to-[var(--bg-tertiary)] p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-[var(--border-subtle)] hover:scale-[1.02] transition-all duration-200 ease-out flex flex-col items-center text-center">
+                            {(user.role === 'STYLIST' ? (counts.pendingRequests > 0 || counts.unreadMessages > 0) : counts.bookingUpdates > 0) && (
+                                <span className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm z-10"></span>
+                            )}
                             <div className="w-12 h-12 rounded-full bg-[var(--bg-primary)] shadow-sm flex items-center justify-center text-crown-gold mb-3 text-lg group-hover:text-crown-gold/80 transition-colors">
                                 <FaCalendarAlt />
                             </div>

@@ -3,7 +3,7 @@ const router = express.Router();
 const { createBooking, getMyBookings, updateBookingStatus, getAllBookings } = require('../controllers/bookingController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
-router.post('/', authenticateToken, authorizeRole(['CLIENT']), createBooking);
+router.post('/', authenticateToken, authorizeRole(['CLIENT', 'STYLIST', 'ADMIN']), createBooking);
 router.get('/', authenticateToken, getMyBookings); // Both can view
 router.put('/:id/status', authenticateToken, authorizeRole(['STYLIST']), updateBookingStatus);
 
