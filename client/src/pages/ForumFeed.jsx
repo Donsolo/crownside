@@ -46,7 +46,7 @@ export default function ForumFeed() {
 
     // Permission Checks for UI
     const canPost = () => {
-        if (!user) return true; // Show button (will prompt login)
+        if (!user) return false; // Hide button entirely for guests
         if (board === 'FIND_CLIENT' && user.role === 'CLIENT') return false;
         if (board === 'ANNOUNCEMENTS' && user.role === 'CLIENT') return false;
         return true;
@@ -108,12 +108,16 @@ export default function ForumFeed() {
                     </div>
 
                     {!canPost() ? (
-                        <div className="text-gray-500 text-sm font-medium italic py-2 px-4 bg-white/50 rounded-lg border border-gray-100 self-stretch md:self-auto">
-                            {board === 'FIND_CLIENT'
-                                ? 'Availability posts are shared by verified beauty professionals'
-                                : 'Official announcements are posted by admins and pros'
-                            }
-                        </div>
+                        /* Only show explanatory text if user is logged in but restricted (e.g. Client on Availability Board) */
+                        /* Guests see nothing here */
+                        user && (
+                            <div className="text-gray-500 text-sm font-medium italic py-2 px-4 bg-white/50 rounded-lg border border-gray-100 self-stretch md:self-auto">
+                                {board === 'FIND_CLIENT'
+                                    ? 'Availability posts are shared by verified beauty professionals'
+                                    : 'Official announcements are posted by admins and pros'
+                                }
+                            </div>
+                        )
                     ) : (
                         <>
                             {/* Desktop Button */}
@@ -141,7 +145,9 @@ export default function ForumFeed() {
                     <div className="text-center py-20 text-gray-400">Loading posts...</div>
                 ) : posts.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <p className="text-gray-500 text-lg">No posts yet. Be the first to connect.</p>
+                        <p className="text-gray-500 text-lg">
+                            {!user ? "No Post Yet" : "No posts yet. Be the first to connect."}
+                        </p>
                     </div>
                 ) : (
                     <div className="grid gap-4 max-w-3xl mx-auto">
