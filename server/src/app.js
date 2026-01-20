@@ -21,18 +21,19 @@ app.use(cors({
 
         // Exact match
         if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
+            return callback(null, origin);
         }
 
         // Subdomain regex match for .thecrownside.com
         // Matches https://*.thecrownside.com
-        if (/^https:\/\/.*\.thecrownside\.com$/.test(origin)) {
-            return callback(null, true);
+        // Capture group not strictly needed but explicit structure is good
+        if (/^https:\/\/([a-z0-9-]+)\.thecrownside\.com$/.test(origin)) {
+            return callback(null, origin);
         }
 
-        // Localhost Allow (Dynamic ports if needed, but strict list is safer)
+        // Localhost Allow (Dynamic ports if needed)
         if (process.env.NODE_ENV === 'development') {
-            return callback(null, true);
+            return callback(null, origin);
         }
 
         console.error(`CORS Blocked: Origin ${origin} not allowed.`);
