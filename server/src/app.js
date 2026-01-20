@@ -1,18 +1,23 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const cors = require('cors'); // Explicitly needed if previously removed
+const morgan = require('morgan');
+const helmet = require('helmet');
+require('dotenv').config();
+const path = require('path');
 
-// ... (existing imports)
+const app = express();
+
+// Middleware
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok" });
+});
+app.use(helmet({
+    crossOriginResourcePolicy: false,
+}));
 
 // CORS Configuration
-const allowedOrigins = [
-    process.env.APP_URL,
-    process.env.CLIENT_URL,
-    'https://crownside-lovat.vercel.app',
-    'https://thecrownside.com',
-    'https://www.thecrownside.com',
-    'http://localhost:5173',
-    'http://localhost:3000'
-].filter(Boolean);
+const subdomainRegex = /^https:\/\/([a-z0-9-]+)\.thecrownside\.com$/;
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -22,24 +27,29 @@ app.use(cors({
         // Debug Logging
         console.log(`CORS Check: ${origin}`);
 
-        // Exact match
-        if (allowedOrigins.includes(origin)) {
+        // Allow primary domains
+        if (
+            origin === "https://thecrownside.com" ||
+            origin === "https://www.thecrownside.com" ||
+            origin === "https://crownside-lovat.vercel.app" ||
+            origin === "http://localhost:5173" ||
+            origin === "http://localhost:3000"
+        ) {
             return callback(null, origin);
         }
 
-        // Subdomain check (Relaxed)
-        // Matches https://*.thecrownside.com
-        if (origin.endsWith('.thecrownside.com') && origin.startsWith('https://')) {
+        // Allow ALL subdomains of thecrownside.com
+        if (subdomainRegex.test(origin)) {
             return callback(null, origin);
         }
 
-        // Localhost Allow
+        // Localhost Allow (Dynamic ports if needed)
         if (process.env.NODE_ENV === 'development') {
             return callback(null, origin);
         }
 
         console.error(`CORS Blocked: Origin ${origin} not allowed.`);
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
