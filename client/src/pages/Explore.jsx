@@ -91,44 +91,102 @@ export default function Explore() {
                         <div className="grid md:grid-cols-3 gap-6 animate-enter animate-delay-2">
                             {filteredStylists.length === 0 && <p className="col-span-3 text-center text-gray-500 py-12">No professionals found for this category.</p>}
                             {filteredStylists.map(stylist => (
-                                <Link key={stylist.id} to={`/stylist/${stylist.id}`} className="block group">
-                                    <div className="bg-[var(--card-bg)] rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-[var(--card-border)] group-hover:border-crown-gold/30">
-                                        <div className="h-48 bg-gray-200 relative">
-                                            {/* Image Wrapper for Zoom Effect */}
-                                            <div className="absolute inset-0 overflow-hidden">
-                                                {stylist.bannerImage ? (
-                                                    <img src={stylist.bannerImage} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Banner" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-cover bg-center opacity-50" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=500&q=60)` }} />
-                                                )}
-                                            </div>
+                                {
+                                    filteredStylists.map(stylist => {
+                                        // Canonical Subdomain Logic
+                                        const hasHandle = !!stylist.storefrontHandle;
+                                        const isProd = process.env.NODE_ENV === 'production';
+                                        const subdomainUrl = isProd
+                                            ? `https://${stylist.storefrontHandle}.thecrownside.com`
+                                            : `/stylist/${stylist.storefrontHandle || stylist.id}`; // Fallback for dev
 
-                                            {/* Avatar - Now outside the overflow-hidden image wrapper */}
-                                            <div className="absolute -bottom-6 left-6 border-4 border-[var(--card-bg)] rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10 transition-colors duration-300">
-                                                {stylist.profileImage ? (
-                                                    <img src={stylist.profileImage} className="w-full h-full object-cover" alt="Profile" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-crown-dark text-white font-serif font-bold text-xl">
-                                                        {stylist.businessName ? stylist.businessName[0] : 'S'}
+                                        // If production and handle exists, force external link to subdomain
+                                        if (hasHandle && isProd) {
+                                            return (
+                                                <a key={stylist.id} href={subdomainUrl} className="block group">
+                                                    <div className="bg-[var(--card-bg)] rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-[var(--card-border)] group-hover:border-crown-gold/30">
+                                                        <div className="h-48 bg-gray-200 relative">
+                                                            {/* Image Wrapper for Zoom Effect */}
+                                                            <div className="absolute inset-0 overflow-hidden">
+                                                                {stylist.bannerImage ? (
+                                                                    <img src={stylist.bannerImage} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Banner" />
+                                                                ) : (
+                                                                    <div className="w-full h-full bg-cover bg-center opacity-50" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=500&q=60)` }} />
+                                                                )}
+                                                            </div>
+
+                                                            {/* Avatar - Now outside the overflow-hidden image wrapper */}
+                                                            <div className="absolute -bottom-6 left-6 border-4 border-[var(--card-bg)] rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10 transition-colors duration-300">
+                                                                {stylist.profileImage ? (
+                                                                    <img src={stylist.profileImage} className="w-full h-full object-cover" alt="Profile" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center bg-crown-dark text-white font-serif font-bold text-xl">
+                                                                        {stylist.businessName ? stylist.businessName[0] : 'S'}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-6 pt-10">
+                                                            <div className="mb-1">
+                                                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)] group-hover:text-crown-gold transition truncate">{stylist.businessName}</h3>
+                                                            </div>
+
+                                                            <p className="text-sm text-[var(--text-secondary)] mb-3 line-clamp-2 min-h-[40px]">{stylist.bio || 'Beauty Professional ready to serve you.'}</p>
+
+                                                            <div className="flex items-center gap-2 text-xs font-medium text-crown-gold border-t border-[var(--border-subtle)] pt-3 mt-3">
+                                                                <FaStar /> <span>5.0 (New)</span>
+                                                                <span className="text-gray-300">|</span>
+                                                                <span className="text-gray-400">Detroit, MI</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="p-6 pt-10">
-                                            <div className="mb-1">
-                                                <h3 className="text-xl font-bold font-serif text-[var(--text-primary)] group-hover:text-crown-gold transition truncate">{stylist.businessName}</h3>
-                                            </div>
+                                                </a>
+                                            );
+                                        }
 
-                                            <p className="text-sm text-[var(--text-secondary)] mb-3 line-clamp-2 min-h-[40px]">{stylist.bio || 'Beauty Professional ready to serve you.'}</p>
+                                        // Fallback internal link
+                                        return (
+                                            <Link key={stylist.id} to={`/stylist/${stylist.id}`} className="block group">
+                                                <div className="bg-[var(--card-bg)] rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-[var(--card-border)] group-hover:border-crown-gold/30">
+                                                    <div className="h-48 bg-gray-200 relative">
+                                                        {/* Image Wrapper for Zoom Effect */}
+                                                        <div className="absolute inset-0 overflow-hidden">
+                                                            {stylist.bannerImage ? (
+                                                                <img src={stylist.bannerImage} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Banner" />
+                                                            ) : (
+                                                                <div className="w-full h-full bg-cover bg-center opacity-50" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=500&q=60)` }} />
+                                                            )}
+                                                        </div>
 
-                                            <div className="flex items-center gap-2 text-xs font-medium text-crown-gold border-t border-[var(--border-subtle)] pt-3 mt-3">
-                                                <FaStar /> <span>5.0 (New)</span>
-                                                <span className="text-gray-300">|</span>
-                                                <span className="text-gray-400">Detroit, MI</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
+                                                        {/* Avatar - Now outside the overflow-hidden image wrapper */}
+                                                        <div className="absolute -bottom-6 left-6 border-4 border-[var(--card-bg)] rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10 transition-colors duration-300">
+                                                            {stylist.profileImage ? (
+                                                                <img src={stylist.profileImage} className="w-full h-full object-cover" alt="Profile" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-crown-dark text-white font-serif font-bold text-xl">
+                                                                    {stylist.businessName ? stylist.businessName[0] : 'S'}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-6 pt-10">
+                                                        <div className="mb-1">
+                                                            <h3 className="text-xl font-bold font-serif text-[var(--text-primary)] group-hover:text-crown-gold transition truncate">{stylist.businessName}</h3>
+                                                        </div>
+
+                                                        <p className="text-sm text-[var(--text-secondary)] mb-3 line-clamp-2 min-h-[40px]">{stylist.bio || 'Beauty Professional ready to serve you.'}</p>
+
+                                                        <div className="flex items-center gap-2 text-xs font-medium text-crown-gold border-t border-[var(--border-subtle)] pt-3 mt-3">
+                                                            <FaStar /> <span>5.0 (New)</span>
+                                                            <span className="text-gray-300">|</span>
+                                                            <span className="text-gray-400">Detroit, MI</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })
+                                }
                             ))}
                         </div>
                     )}
