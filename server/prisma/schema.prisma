@@ -15,7 +15,27 @@ enum Role {
   CLIENT
   STYLIST
   ADMIN
+  MODERATOR
 }
+
+// ... (Existing Enums)
+
+// (Removed partial User definition)
+
+// ... 
+
+enum PostStatus {
+  OPEN
+  CLOSED
+  REMOVED
+  RESOLVED
+}
+
+// (Removed duplicate ForumPost)
+
+// ...
+
+// (Removed duplicate Comment)
 
 enum BookingStatus {
   PENDING
@@ -45,12 +65,62 @@ model User {
   role      Role     @default(CLIENT)
   displayName String?
   themePreference String @default("light")
+  mutedUntil DateTime?
   createdAt DateTime @default(now())
   
   // Relations
+  mentionsReceived Comment[] @relation("UserMentions")
   stylistProfile StylistProfile?
   clientBookings Booking[] @relation("ClientBookings")
   conversations  Conversation[]
+  
+  // Forum & Safety
+  forumPosts      ForumPost[]
+  comments        Comment[]
+  likes           Like[]
+  postViews       PostView[]
+  reportsFiled    Report[]      @relation("Reporter")
+  reportsReceived Report[]      @relation("UserReports")
+
+  notificationsReceived Notification[] @relation("NotificationsReceived")
+  notificationsSent     Notification[] @relation("NotificationsSent")
+
+  // Social
+  bio           String?
+  location      String?
+  
+  sentConnections     Connection[] @relation("ConnectionSender")
+  receivedConnections Connection[] @relation("ConnectionReceiver")
+  
+  blocksBlocked       Block[]      @relation("Blocker")
+  blocksReceived      Block[]      @relation("Blocked")
+  
+  conversationsAsP1   Conversation[] @relation("ConsParticipant1")
+  conversationsAsP2   Conversation[] @relation("ConsParticipant2")
+}
+
+model Connection {
+  id          String   @id @default(uuid())
+  requesterId String
+  requester   User     @relation("ConnectionSender", fields: [requesterId], references: [id])
+  addresseeId String
+  addressee   User     @relation("ConnectionReceiver", fields: [addresseeId], references: [id])
+  status      String   @default("PENDING") // PENDING, ACCEPTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, addresseeId])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
 }
 
 model StylistProfile {
@@ -138,6 +208,7 @@ model Booking {
   
   reviews     Review[]
   conversation Conversation?
+  notifications Notification[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt @default(now())
@@ -211,16 +282,25 @@ model ProfessionalSubscription {
 
 model Conversation {
   id           String    @id @default(uuid())
-  bookingId    String    @unique
-  booking      Booking   @relation(fields: [bookingId], references: [id])
   
-  clientId     String
-  client       User      @relation(fields: [clientId], references: [id])
+  // Booking Context (Optional)
+  bookingId    String?    @unique
+  booking      Booking?   @relation(fields: [bookingId], references: [id])
   
-  stylistId    String
-  stylist      StylistProfile @relation(fields: [stylistId], references: [id])
+  // Legacy/Booking Specific Fields (Optional)
+  clientId     String?
+  client       User?      @relation(fields: [clientId], references: [id]) 
+  stylistId    String?
+  stylist      StylistProfile? @relation(fields: [stylistId], references: [id])
+  
+  // Generic Participants (User IDs)
+  participant1Id String?
+  participant1   User?   @relation("ConsParticipant1", fields: [participant1Id], references: [id])
+  participant2Id String?
+  participant2   User?   @relation("ConsParticipant2", fields: [participant2Id], references: [id])
   
   messages     Message[]
+  notifications Notification[]
   
   lastMessageAt DateTime @default(now())
   createdAt    DateTime  @default(now())
@@ -228,6 +308,8 @@ model Conversation {
 
   @@index([clientId])
   @@index([stylistId])
+  @@index([participant1Id])
+  @@index([participant2Id])
 }
 
 model Message {
@@ -242,4 +324,199 @@ model Message {
   createdAt      DateTime     @default(now())
 
   @@index([conversationId])
+}
+
+// --- FORUM SYSTEM ---
+
+enum ForumBoardType {
+  FIND_PRO
+  FIND_CLIENT
+  SALON_TALK
+  HELP_FEEDBACK
+  ANNOUNCEMENTS
+}
+
+// (Removed duplicate PostStatus)
+
+model ForumPost {
+  id          String         @id @default(uuid())
+  authorId    String
+  author      User           @relation(fields: [authorId], references: [id])
+  
+  board       ForumBoardType
+  type        String         // "HAIR", "NAILS", "BRAIDS", etc.
+  title       String
+  content     Json           // Structured data: budget, location, availability, etc.
+  
+  status      PostStatus     @default(OPEN)
+  isLocked    Boolean        @default(false)
+  
+  moderatedBy      String?
+  moderationReason String?
+  moderatedAt      DateTime?
+
+  viewCount   Int            @default(0)
+  
+  images      ForumImage[]
+  comments    Comment[]
+  likes       Like[]
+  reports     Report[]       @relation("PostReports")
+  postViews   PostView[]
+  
+  notifications Notification[]
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([board])
+  @@index([type])
+  @@index([authorId])
+}
+
+model ForumImage {
+  id        String    @id @default(uuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url       String
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  
+  depth          Int       @default(0)
+  
+  mentionedUserId String?
+  mentionedUser   User?    @relation("UserMentions", fields: [mentionedUserId], references: [id])
+  
+  isRemoved      Boolean   @default(false)
+  removedBy      String?
+  removedReason  String?
+  removedAt      DateTime?
+
+  likes     Like[]
+  reports   Report[]  @relation("CommentReports")
+  
+  notifications Notification[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  postId    String?
+  post      ForumPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  commentId String?
+  comment   Comment?   @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+}
+
+
+model PostView {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime  @default(now())
+
+  @@unique([userId, postId])
+}
+
+enum ReportTargetType {
+  POST
+  USER
+  COMMENT
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id          String           @id @default(uuid())
+  reporterId  String
+  reporter    User             @relation("Reporter", fields: [reporterId], references: [id])
+  
+  targetType  ReportTargetType
+  
+  forumPostId String?
+  forumPost   ForumPost?       @relation("PostReports", fields: [forumPostId], references: [id])
+  
+  commentId   String?
+  comment     Comment?         @relation("CommentReports", fields: [commentId], references: [id])
+  
+  targetUserId String?
+  targetUser   User?           @relation("UserReports", fields: [targetUserId], references: [id])
+  
+  reason      String
+  status      ReportStatus     @default(PENDING)
+  notes       String?          // Admin notes
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+enum NotificationType {
+  REPLY
+  MENTION
+  NEW_COMMENT
+  LIKE_POST
+  LIKE_COMMENT
+  NEW_BOOKING
+  BOOKING_UPDATE
+  NEW_MESSAGE
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           // Recipient
+  user      User             @relation("NotificationsReceived", fields: [userId], references: [id])
+  
+  senderId  String           // Actor who triggered it
+  sender    User             @relation("NotificationsSent", fields: [senderId], references: [id])
+  
+  type      NotificationType
+  
+  postId    String?
+  post      ForumPost?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  commentId String?
+  comment   Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  bookingId String?
+  booking   Booking?         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
 }

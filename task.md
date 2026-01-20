@@ -1,0 +1,304 @@
+# Resuming Crownside Development
+
+- [x] Install dependencies for Client <!-- id: 0 -->
+- [x] Install dependencies for Server <!-- id: 1 -->
+- [/] Verify functionality (start servers) <!-- id: 2 -->
+    - [/] Debug 500 error on /api/heroes <!-- id: 2.1 -->
+      - [x] Confirmed DB connection refused (Postgres not running?)
+    - [x] Debug 500 error on /api/notifications <!-- id: 2.2 -->
+      - [x] Identify Prisma Client Mismatch <!-- id: 2.2.1 -->
+      - [x] Regenerate Prisma Client <!-- id: 2.2.2 -->
+- [x] Restore Home Page Buttons and Styling <!-- id: 3 -->
+    - [x] Analyze Home.jsx and Hero component <!-- id: 3.1 -->
+    - [x] Re-implement buttons match screenshots <!-- id: 3.2 -->
+    - [x] Verify design matches <!-- id: 3.3 -->
+- [x] Implement Beauty Pro Premier Tier <!-- id: 4 -->
+    - [x] Create seed_premier.js script <!-- id: 4.1 -->
+    - [x] Update authController.js for tier logic <!-- id: 4.2 -->
+    - [x] Update Register.jsx for multi-select and auto-tier <!-- id: 4.3 -->
+    - [x] Update AdminPros.jsx <!-- id: 4.4 -->
+- [ ] Standardize Lash/Brow Tech Terminology <!-- id: 5 -->
+    - [ ] Update README.md <!-- id: 5.1 -->
+    - [ ] Update Register.jsx labels <!-- id: 5.2 -->
+    - [ ] Update Home.jsx and landing content <!-- id: 5.3 -->
+    - [ ] Update Admin and Service displays <!-- id: 5.4 -->
+- [x] Implement Admin Bootstrap Rule <!-- id: 6 -->
+- [x] Complete Admin Panel Integration <!-- id: 7 -->
+- [x] Fix Mobile Login Failure <!-- id: 8 -->
+    - [x] Analyze CORS/Cookie Config <!-- id: 8.1 -->
+    - [x] Update Backend CORS/Cookie Settings <!-- id: 8.2 -->
+    - [x] Verify Frontend Credentials Setting <!-- id: 8.3 -->
+- [x] Fix Production API URL & CORS <!-- id: 9 -->
+    - [x] Remove hardcoded localhost references <!-- id: 9.1 -->
+    - [x] Update Backend CORS for Vercel <!-- id: 9.2 -->
+    - [x] Verify Env Vars logic <!-- id: 9.3 -->
+- [x] Fix Global CORS and Hero Endpoint <!-- id: 10 -->
+    - [x] Configure Global CORS for Vercel <!-- id: 10.1 -->
+    - [x] Make /heroes endpoint robust (no 500s) <!-- id: 10.2 -->
+- [x] Fix Frontend/Backend Route Mismatch <!-- id: 11 -->
+    - [x] Verify Backend Route Mounting <!-- id: 11.1 -->
+    - [x] Clean up Frontend API Calls (remove /api prefix if needed) <!-- id: 11.2 -->
+    - [x] Provide Env Var Guidance <!-- id: 11.3 -->
+- [x] Scaffold Stripe Billing Foundation <!-- id: 12 -->
+    - [x] Create Centralized Stripe Service (Safe Ops) <!-- id: 12.1 -->
+    - [x] Define Pricing Tier Mappings <!-- id: 12.2 -->
+    - [x] Update Subscription Logic (Backend) <!-- id: 12.3 -->
+    - [x] Prepare Webhook Endpoint <!-- id: 12.4 -->
+    - [x] Admin Panel Visibility <!-- id: 12.5 -->
+- [x] Prevent Hero Flash on Load <!-- id: 13 -->
+    - [x] Implement Hero Loading State <!-- id: 13.1 -->
+    - [x] Remove Hardcoded Placeholders <!-- id: 13.2 -->
+    - [x] Ensure Neutral Fallback <!-- id: 13.3 -->
+- [x] Fix Scroll Position (Reset to Top) <!-- id: 14 -->
+    - [x] Create ScrollToTop Component <!-- id: 14.1 -->
+    - [x] Integrate into App Router <!-- id: 14.2 -->
+    - [x] Verify Mobile/Refresh Behavior <!-- id: 14.3 -->
+- [x] Migrate to Persistent Cloud Storage (AWS S3) <!-- id: 15 -->
+    - [x] Install AWS SDK & multer-s3 <!-- id: 15.1 -->
+    - [x] Update Upload Middleware for S3 <!-- id: 15.2 -->
+    - [x] Update Controllers/Helper for S3 URLs <!-- id: 15.3 -->
+    - [x] Verify Frontend Compatibility <!-- id: 15.4 -->
+- [x] Fix Hero Image S3 Uploads <!-- id: 16 -->
+    - [x] Debug Mixed Content/Localhost URLs <!-- id: 16.1 -->
+    - [x] Force S3 in Production / Fix Fallback Protocol <!-- id: 16.2 -->
+    - [x] Update Hero Controller for Robustness <!-- id: 16.3 -->
+- [x] Fix S3 ACL Compatibility <!-- id: 18 -->
+    - [x] Remove ACL: public-read from Middleware <!-- id: 18.1 -->
+    - [x] Update Prefix to 'public/' <!-- id: 18.2 -->
+    - [x] Provide Bucket Policy <!-- id: 18.3 -->
+- [x] Create Deploy Workflow <!-- id: 17 -->
+    - [x] Audit .gitignore <!-- id: 17.1 -->
+    - [x] Create .agent/workflows/deploy.md <!-- id: 17.2 -->
+- [x] UI/UX Polish: Explore & Profile <!-- id: 19 -->
+    - [x] Explore: Add Eyelash/Eyebrow Categories <!-- id: 19.1 -->
+    - [x] Admin: Update Service Categories <!-- id: 19.2 -->
+    - [x] Profile: Revamp to Dashboard UI <!-- id: 19.3 -->
+- [x] UI/UX Correction: Profile & Explore <!-- id: 20 -->
+    - [x] Profile: Fix Hero Layout & Logo <!-- id: 20.1 -->
+    - [x] Profile: Implement Centered Card Design <!-- id: 20.2 -->
+    - [x] Explore: Redesign Filter Bar <!-- id: 20.3 -->
+    - [ ] Audit Admin Routes and Pages <!-- id: 7.1 -->
+    - [x] Update AdminPros.jsx for Service/Tier Filters <!-- id: 7.2 -->
+    - [x] Check/Implement Admin Override Logic (N/A: No edit UI) <!-- id: 7.3 -->
+    - [x] Finalize UI Consistency for Lash/Brow Tech <!-- id: 7.4 -->
+- [x] Implement Account Settings Page
+    - [x] Create `client/src/pages/AccountSettings.jsx`
+    - [x] Add route `/account-settings` to `App.jsx`
+    - [x] Update `ClientProfile.jsx` to link to settings
+    - [x] Verify functionality (Update Name, Notifications UI, Logout)
+- [x] Fix Double Header on Pro Storefront
+    - [x] Remove redundant Navbar from StylistProfile.jsx
+- [x] Fix Subscription 500 Error
+    - [x] Fix Schema: Add missing `plan` relation to `ProfessionalSubscription`
+    - [x] Patch Logic: Manual plan fetch in `subscriptionController.js` to prevent schema crashes
+- [x] Fix Portfolio Upload Error (500)
+    - [x] Fix Env Vars: Swapped AWS Keys & Typo
+    - [x] Improve Error Logging
+- [x] Implement Portfolio Photo Cap (Max 8)
+    - [x] Create `MAX_PORTFOLIO_PHOTOS` constant
+    - [x] Backend: Update `portfolioController.js` to enforce limit
+    - [x] Frontend: Update `PortfolioManager.jsx` to disable upload/show warning
+    - [x] Admin: Update `AdminPros.jsx` to show usage count
+- [x] Refactor Pricing to Feature-Based Model
+    - [x] Configuration: Define `SUBSCRIPTION_TIERS` in constants
+    - [x] Backend: Update `authController.js` (remove auto-derive logic)
+    - [x] Frontend: Update `Register.jsx` (add Plan Selection step)
+    - [x] Backend: Update `portfolioController.js` (enforce tier limits)
+    - [x] Frontend: Update `PortfolioManager.jsx` (enforce tier limits & video UI)
+    - [x] Admin: Update `AdminPros.jsx` (show actual tier & limits)
+- [x] Verify Video Upload Support
+    - [x] Update `upload.js` middleware (add video extensions, increase size limit)
+    - [x] Update `portfolioController.js` (reject videos for Pro tier)
+- [x] Revamp Services Editor (Dashboard)
+    - [x] UI: Modernize `ServiceEditor` component in `StylistDashboard.jsx`
+    - [x] Data: Allow ALL `SERVICE_CATEGORIES` regardless of tier
+    - [x] Logic: Decouple service selection from pricing/subscription
+    - [x] UX: Add help text about storefront visibility
+- [x] Implement New Monthly Pricing ($15/$25/$35) & Early Access
+    - [x] Configuration: Update `SUBSCRIPTION_TIERS` in `constants.js` (Client & Server)
+    - [x] Backend: Update `authController.js` to implement "First 30 Free" logic (assign TRIAL status)
+    - [x] Frontend: Update `Register.jsx` to show new prices and "Early Access" messaging
+    - [x] Frontend: Update `StylistDashboard.jsx` Billing to show correct monthly price and Trial status
+    - [x] Admin: Ensure `AdminPros.jsx` reflects new pricing logic (via shared constants)
+- [x] Implement Global Dark Mode <!-- id: 21 -->
+    - [x] Schema: Add themePreference to User <!-- id: 21.1 -->
+    - [x] Backend: Update authController for theme support <!-- id: 21.2 -->
+    - [x] CSS: Define semantic variables in index.css <!-- id: 21.3 -->
+    - [x] Context: Create ThemeContext.jsx <!-- id: 21.4 -->
+    - [x] Main: Wrap App in ThemeProvider <!-- id: 21.5 -->
+    - [x] UI: Add Settings Toggle in AccountSettings <!-- id: 21.6 -->
+    - [x] UI: Add Header Toggle in Navbar <!-- id: 21.7 -->
+    - [x] UI: Update Footer with semantic tokens <!-- id: 21.8 -->
+    - [x] UI: Update Auth Pages (Login/Register) with semantic tokens <!-- id: 21.9 -->
+    - [x] UI: Update Navbar with dedicated nav tokens <!-- id: 21.10 -->
+    - [x] Logic: Fix StylistDashboard Auth Redirect <!-- id: 21.11 -->
+    - [x] UI: Fix Explore Filter Bar Dark Mode <!-- id: 21.12 -->
+    - [x] Logic: Implement Dashboard Retry Mechanism <!-- id: 21.13 -->
+- [x] Fix Hero Text Visibility (StylistDashboard, MyBookings, ClientProfile) <!-- id: 37 -->
+- [x] Update Header Subtitle Styling <!-- id: 38 -->
+    - [x] Font: Playfair Display Medium, Color: #8F6A2D, Spacing: 0.04em, Shadow applied <!-- id: 38.1 -->
+- [x] Update Header Font to "Great Vibes" <!-- id: 39 -->
+    - [x] Add Great Vibes import to index.html <!-- id: 39.1 -->
+    - [x] Add Great Vibes import to index.html <!-- id: 39.1 -->
+    - [x] Apply font-family: "Great Vibes" to Navbar subtitle <!-- id: 39.2 -->
+- [x] Fix Header Horizontal Scroll & Badge <!-- id: 40 -->
+    - [x] Reduce mobile font size (text-2xl -> text-xl) <!-- id: 40.1 -->
+    - [x] Remove Admin badge from mobile header <!-- id: 40.2 -->
+- [x] Implement Direct Messaging System <!-- id: 41 -->
+    - [x] Schema: Add Conversation & Message models <!-- id: 41.1 -->
+    - [x] Backend: Create message routes & controller <!-- id: 41.2 -->
+    - [x] Frontend: Create ChatInterface & MessageBubble components <!-- id: 41.3 -->
+    - [x] Integration: Connect UI to Booking cards <!-- id: 41.4 -->
+    - [ ] Integration: Connect UI to Booking cards <!-- id: 41.4 -->
+- [x] Global Verbiage & UX Copy Audit <!-- id: 22 -->
+    - [x] Audit Key Files (Register.jsx, StylistDashboard.jsx, AdminPros.jsx) <!-- id: 22.1 -->
+    - [x] Implementation Plan Created <!-- id: 22.2 -->
+    - [x] Apply Copy Updates <!-- id: 22.3 -->
+    - [x] Verify Consistency <!-- id: 22.4 -->
+- [x] Harden Stripe Frontend Initialization <!-- id: 23 -->
+    - [x] Analyze & Plan <!-- id: 23.1 -->
+    - [x] Update Register.jsx Initialization <!-- id: 23.2 -->
+    - [x] Add Fallback UI for Missing Keys <!-- id: 23.3 -->
+    - [x] Verify Local Dev Safety <!-- id: 23.4 -->
+- [x] Final Stripe Cleanup & Hardening <!-- id: 24 -->
+    - [x] Audit Duplicates <!-- id: 24.1 -->
+    - [x] Create Centralized lib/stripe.js <!-- id: 24.2 -->
+    - [x] Refactor App.jsx & Register.jsx <!-- id: 24.3 -->
+    - [x] Verify Single Initialization <!-- id: 24.4 -->
+- [x] Enhance Plan Tiers Visually <!-- id: 25 -->
+    - [x] Implement Royal Visual Hierarchy (Pro/Elite/Premier) <!-- id: 25.1 -->
+    - [x] Restore Pro 30-Day Trial Messaging <!-- id: 25.2 -->
+    - [x] Refine Badges & Copy <!-- id: 25.3 -->
+    - [x] Fix Register.jsx Syntax & Map Logic <!-- id: 25.4 -->
+- [x] Enable Dashboard Hero Control <!-- id: 26 -->
+    - [x] Update Hero.jsx to accept custom image props <!-- id: 26.1 -->
+    - [x] Integrate Banner Image into StylistDashboard Hero <!-- id: 26.2 -->
+- [x] Implement Metro Detroit PWA Install Prompt <!-- id: 27 -->
+    - [x] Create manifest.json and sw.js <!-- id: 27.1 -->
+    - [x] Create useInstallPrompt Hook <!-- id: 27.2 -->
+    - [x] Build InstallPrompt Component (Android/iOS) <!-- id: 27.3 -->
+    - [x] Integrate into App & Auth Flow <!-- id: 27.4 -->
+- [x] Fix Squished App Icons <!-- id: 28 -->
+    - [x] Create generate-icons.js script using Jimp <!-- id: 28.1 -->
+    - [x] Generate optimized icons (512, 192, 180, etc.) <!-- id: 28.2 -->
+    - [x] Update manifest.json with new icons <!-- id: 28.3 -->
+    - [x] Update index.html favicons <!-- id: 28.4 -->
+- [x] Replace Home Page Badge <!-- id: 29 -->
+    - [x] Upload new badge image <!-- id: 29.1 -->
+    - [x] Optimize transparency (remove checkerboard) <!-- id: 29.2 -->
+    - [x] Crop excess padding <!-- id: 29.3 -->
+- [x] Replace All App Icons (Final) <!-- id: 30 -->
+    - [x] Setup master-icon.png <!-- id: 30.1 -->
+    - [x] Create/Run replace-icons.js script <!-- id: 30.2 -->
+    - [x] Update manifest.json and meta tags <!-- id: 30.3 -->
+    - [x] Verify build and cache busting <!-- id: 30.4 -->
+- [x] Final Edge-to-Edge Icon Fix <!-- id: 31 -->
+    - [x] Setup master-icon-v3.png <!-- id: 31.1 -->
+    - [x] Create replace-icons-full.js (No padding, max fill) <!-- id: 31.2 -->
+    - [x] Generate Android Mipmap resources (Configured via manifest purpose: any) <!-- id: 31.3 -->
+    - [x] Verify manifest and iOS compliance <!-- id: 31.4 -->
+- [ ] Extreme Edge-to-Edge Icon Fix (No Padding) <!-- id: 32 -->
+    - [ ] Create icon-master-1024.png (98% fill, clean crop) <!-- id: 32.1 -->
+    - [ ] Generate all sizes from new master <!-- id: 32.2 -->
+    - [ ] Verify PWA Manifest vs Native Resources <!-- id: 32.3 -->
+    - [ ] Cache Busting & Validation <!-- id: 32.4 -->
+- [x] Remove Baked-in Background & Raw Fill Verification <!-- id: 33 -->
+    - [x] Create script to Flood-Fill remove background container <!-- id: 33.1 -->
+    - [x] Generate icon-master-raw-fill-1024.png (Gold Only, 96% Fill) <!-- id: 33.2 -->
+    - [x] Regenerate all pipelines (Web, PWA, iOS) <!-- id: 33.3 -->
+    - [x] Verify Visual Size vs Tektriq/LineSide <!-- id: 33.4 -->
+- [x] Extract Gold Artwork Only (Refinement) <!-- id: 34 -->
+    - [x] Setup master-icon-v5.png <!-- id: 34.1 -->
+    - [x] Create extract-artwork-only.js (Threshold + Border Erase + Manul Crop) <!-- id: 34.2 -->
+    - [x] Generate crownside-icon-artwork-only.png <!-- id: 34.3 -->
+- [x] Promote Showcase User (dariusreeder@gmail.com) <!-- id: 35 -->
+    - [x] Create promote_showcase_user.js <!-- id: 35.1 -->
+    - [x] Run promotion script <!-- id: 35.2 -->
+- [x] Wire Message Notifications <!-- id: 36 -->
+    - [x] Backend: Shared Unread Message Logic <!-- id: 36.1 -->
+    - [x] Client: Bookings Page Message Icon Dot <!-- id: 36.2 -->
+    - [x] Client: My Bookings Nav Dot <!-- id: 36.3 -->
+    - [x] Stylist: Dashboard Icon Dot <!-- id: 36.4 -->
+    - [x] Stylist: Bookings Card Dot <!-- id: 36.5 -->
+    - [x] Logic: Clear Dots on View <!-- id: 36.6 -->
+- [x] Implement Appointment Cancellation <!-- id: 37 -->
+    - [x] Schema: Update Booking Statuses & Fields <!-- id: 37.1 -->
+    - [x] Backend: Add `cancelBooking` to `BookingController`
+        - [x] Integrate `updateBookingStatus` with new cancellation fields
+        - [x] Add system message injection for `CANCELLED` status
+    - [x] Frontend: Client Cancellation
+        - [x] Create `CancellationModal`
+        - [x] Add "Cancel" button to `MyBookings`
+    - [x] Frontend: Stylist Cancellation
+        - [x] Add "Cancel" option to `StylistDashboard`
+        - [x] Integrate `CancellationModal`
+    - [x] Frontend: Post-Cancellation UI
+        - [x] Update `ChatInterface` to be read-only for cancelled bookings
+        - [x] Ensure cancelled bookings appear in "Past" lists correctly <!-- id: 37.6 -->
+- [x] Stylist Cancellation Enhancements <!-- id: 38 -->
+    - [x] Backend: Add `deleteBooking` endpoint (soft or hard delete?) <!-- id: 38.1 -->
+    - [x] Frontend: Add "Delete" button for cancelled bookings in Dashboard <!-- id: 38.2 -->
+    - [x] Frontend: Add "View Reason" CTA for cancelled bookings <!-- id: 38.3 -->
+    - [x] Frontend: Implement Reason Display Modal <!-- id: 38.4 -->
+    - [x] Frontend: Add "View Reason" CTA for cancelled bookings in MyBookings <!-- id: 39.1 -->
+    - [x] Frontend: Implement Reason Display Modal for Client <!-- id: 39.2 -->
+- [ ] Implement Forum System (Phase 1) <!-- id: 40 -->
+    - [x] Schema: Create ForumPost, ForumImage, Report models <!-- id: 40.1 -->
+    - [x] Backend: Create forumController & Routes <!-- id: 40.2 -->
+    - [x] Backend: Implement Report & Rate Limit Logic <!-- id: 40.3 -->
+    - [x] Frontend: Navbar Update (Add Forum Tab) <!-- id: 40.4 -->
+    - [x] Frontend: Forum Landing Page (Board Selection) <!-- id: 40.5 -->
+    - [x] Frontend: Forum Feed (Filtering & Logic) <!-- id: 40.6 -->
+    - [x] Frontend: Create Post Flow (Find Pro / Find Client) <!-- id: 40.7 -->
+    - [x] Create Post Flow (Frontend)
+    - [x] Post Detail Page & Reporting
+    - [x] Expose Forum Access (Nav/Mobile) <!-- id: 40.8 -->
+    - [x] Integrate Forum Hero with Admin Panel <!-- id: 40.9 -->
+    - [x] Moderation: Report UI & Admin View <!-- id: 40.10 -->
+    - [x] Rebrand: Forum -> Crown Connect
+- [x] Restrict Client Posting in Availability Board
+
+## Phase 2: Crown Connect Community
+- [x] Database Schema Updates (Boards, Comments, Likes) <!-- id: 50.1 -->
+- [x] Backend: Comment System & Likes API <!-- id: 50.2 -->
+- [x] Backend: Community Post Logic & Permissions <!-- id: 50.3 -->
+- [x] Frontend: Community Board Config & Landing Update <!-- id: 50.4 -->
+- [x] Frontend: "Start Conversation" Flow (Community Posting) <!-- id: 50.5 -->
+- [x] Frontend: Comment Thread UI & Interaction <!-- id: 50.6 -->
+- [x] Backend: Misuse Detection Logic <!-- id: 50.7 -->
+
+## Phase 3: Moderation System
+- [x] Database Schema: Moderator Role & Content States <!-- id: 60.1 -->
+- [x] Backend: Moderation Middleware & Controller <!-- id: 60.2 -->
+- [x] Frontend: Moderator Dashboard (Reports Queue) <!-- id: 60.3 -->
+- [x] Frontend: In-Context Mod Actions (Lock, Remove) <!-- id: 60.4 -->
+- [x] Backend/Frontend: User Muting Logic <!-- id: 60.5 -->
+- [/] Verification: Test Modulation Flow <!-- id: 60.6 -->
+- [ ] Global Notification System <!-- id: 50 -->
+    - [x] Schema: Update Notification Model (Types & Relations) <!-- id: 50.1 -->
+    - [x] Backend: Update Booking Controller (Triggers) <!-- id: 50.2 -->
+    - [x] Backend: Update Message Controller (Triggers) <!-- id: 50.3 -->
+    - [x] Frontend: Unified NotificationContext <!-- id: 50.4 -->
+    - [x] Frontend: Notification Panel UI <!-- id: 50.5 -->
+    - [x] Frontend: Header Bell & Badge Logic <!-- id: 50.6 -->
+    - [x] Frontend: Update BottomNav Badges <!-- id: 50.7 -->
+
+- [x] QA & Stability Review <!-- id: 70 -->
+    - [x] Verify Crown Connect Permissions <!-- id: 70.1 -->
+    - [x] Verify Comments & Threading <!-- id: 70.2 -->
+    - [x] Verify Notifications & Badges <!-- id: 70.3 -->
+    - [x] Verify Navigation <!-- id: 70.4 -->
+- [x] Social Integration <!-- id: 80 -->
+    - [x] Schema: Connections, Blocks, Generic Conversations <!-- id: 80.1 -->
+    - [x] Backend: Connection & Block Controllers <!-- id: 80.2 -->
+    - [x] Backend: Update User & Message Controllers <!-- id: 80.3 -->
+    - [x] Frontend: UserProfile.jsx (Public Client View) <!-- id: 80.4 -->
+    - [x] Frontend: Update StylistProfile (Actions) <!-- id: 80.5 -->
+    - [x] Frontend: Messaging UI Updates <!-- id: 80.6 -->
+    - [x] Verification: Connect, Message, Block flows <!-- id: 80.7 -->
+- [x] Implement My Connections Feature <!-- id: 90 -->
+    - [x] Update Home Screen (Button Replacement) <!-- id: 90.1 -->
+    - [x] Create MyConnections Overlay Component <!-- id: 90.2 -->
+- [x] Integrate Connection List API (Added Pending Requests) <!-- id: 90.3 -->
+    - [x] Implement Connection Actions (Accept, Message, Profile, Remove, Block) <!-- id: 90.4 -->
+    - [x] Verify Empty & Blocked States <!-- id: 90.5 -->

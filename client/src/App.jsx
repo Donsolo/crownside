@@ -1,4 +1,5 @@
 import React from 'react';
+import ConnectionsPage from './pages/ConnectionsPage';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -33,9 +34,13 @@ import AdminReviews from './pages/admin/AdminReviews';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminSubscriptions from './pages/admin/AdminSubscriptions';
 import AccountSettings from './pages/AccountSettings';
-
-
-
+import ForumLanding from './pages/ForumLanding';
+import ForumFeed from './pages/ForumFeed';
+import CreatePost from './pages/CreatePost';
+import PostDetail from './pages/PostDetail';
+import ModeratorDashboard from './pages/ModeratorDashboard';
+import UserProfile from './pages/UserProfile';
+import MessageThread from './pages/MessageThread';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
@@ -43,7 +48,6 @@ function App() {
     <Router>
       <ScrollToTop />
       <AuthProvider>
-
         <ThemeProvider>
           <NotificationProvider>
             <Elements stripe={stripePromise}>
@@ -57,6 +61,20 @@ function App() {
                     <Route path="/my-bookings" element={<MyBookings />} />
                     <Route path="/profile" element={<ClientProfile />} />
                     <Route path="/account-settings" element={<AccountSettings />} />
+                    <Route path="/connections" element={<ConnectionsPage />} />
+
+                    {/* Forum Routes */}
+                    <Route path="/forum" element={<ForumLanding />} />
+                    <Route path="/forum/feed" element={<ForumFeed />} />
+                    <Route path="/forum/create" element={<CreatePost />} />
+                    <Route path="/forum/:id" element={<PostDetail />} />
+                    <Route path="/forum/:id" element={<PostDetail />} />
+                    <Route path="/moderator" element={<ModeratorDashboard />} />
+
+                    {/* Social Routes */}
+                    <Route path="/user/:userId" element={<UserProfile />} />
+                    <Route path="/messages/:conversationId" element={<MessageThread />} />
+
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/dashboard" element={<StylistDashboard />} />
@@ -65,6 +83,7 @@ function App() {
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/faq" element={<FAQ />} />
+
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<AdminDashboard />} />
                       <Route path="heroes" element={<AdminHeroManager />} />

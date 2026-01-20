@@ -25,6 +25,24 @@ const createBooking = async (req, res) => {
             }
         });
 
+        // NOTIFICATION: Trigger NEW_BOOKING for Stylist
+        // Need Stylist's User ID (booking.stylistId is Profile ID)
+        const stylistProfile = await prisma.stylistProfile.findUnique({
+            where: { id: stylistId },
+            select: { userId: true }
+        });
+
+        if (stylistProfile) {
+            await prisma.notification.create({
+                data: {
+                    userId: stylistProfile.userId, // Recipient (Stylist)
+                    senderId: clientId,           // Triggered by Client
+                    type: 'NEW_BOOKING',
+                    bookingId: booking.id
+                }
+            });
+        }
+
         res.status(201).json(booking);
     } catch (error) {
         console.error(error);
@@ -111,6 +129,18 @@ const updateBookingStatus = async (req, res) => {
             where: { id },
             data: { status }
         });
+
+        // NOTIFICATION: Trigger BOOKING_UPDATE for Client
+        // Only if status actually changed (assumed yes by flow)
+        await prisma.notification.create({
+            data: {
+                userId: booking.clientId, // Recipient (Client)
+                senderId: userId,         // Triggered by Stylist
+                type: 'BOOKING_UPDATE',
+                bookingId: booking.id
+            }
+        });
+
         res.json(updated);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update booking' });

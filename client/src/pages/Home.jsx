@@ -8,6 +8,7 @@ import api from '../lib/api';
 import { FaUserCircle, FaStar, FaMapMarkerAlt, FaSearch, FaCalendarAlt, FaCut } from 'react-icons/fa';
 
 import { useNotifications } from '../context/NotificationContext';
+import MyConnections from '../components/MyConnections';
 
 export default function Home() {
     const { user } = useAuth();
@@ -24,6 +25,7 @@ function AuthenticatedHome({ user }) {
     const { counts } = useNotifications();
     const [featuredPros, setFeaturedPros] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showConnections, setShowConnections] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -94,15 +96,24 @@ function AuthenticatedHome({ user }) {
                     </div>
 
                     {/* New Services (Full Width) */}
+                    {/* New Services Replacement: My Connections */}
                     <div className="animate-enter animate-delay-2">
-                        <Link to="/explore" className="group flex items-center justify-center gap-3 w-full bg-[var(--card-bg)] rounded-2xl shadow-sm hover:shadow-md border border-[var(--border-subtle)] hover:border-crown-gold/20 hover:scale-[1.01] transition-all duration-200 ease-out p-5">
+                        <button
+                            onClick={() => setShowConnections(true)}
+                            className="group flex items-center justify-center gap-3 w-full bg-[var(--card-bg)] rounded-2xl shadow-sm hover:shadow-md border border-[var(--border-subtle)] hover:border-crown-gold/20 hover:scale-[1.01] transition-all duration-200 ease-out p-5"
+                        >
                             <div className="w-8 h-8 rounded-full bg-crown-gold/10 flex items-center justify-center text-crown-gold text-sm group-hover:scale-110 transition-transform duration-200">
-                                <FaCut />
+                                <FaUserCircle />
                             </div>
-                            <span className="font-medium text-[var(--text-primary)] group-hover:text-crown-gold transition-colors">Discover New Services</span>
-                        </Link>
+                            <span className="font-medium text-[var(--text-primary)] group-hover:text-crown-gold transition-colors">My Connections</span>
+                        </button>
                     </div>
                 </div>
+
+                {/* My Connections Overlay */}
+                {showConnections && (
+                    <MyConnections onClose={() => setShowConnections(false)} />
+                )}
 
                 {/* 3. BROWSE BY SERVICE */}
                 <div className="mb-12">

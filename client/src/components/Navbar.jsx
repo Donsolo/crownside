@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, LayoutDashboard, Image, Users, Scissors, Calendar, Star, Settings, Activity } from 'lucide-react';
+import { X, LayoutDashboard, Image, Users, Scissors, Calendar, Star, Settings, Activity, Bell } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 import { useNotifications } from '../context/NotificationContext';
+import NotificationPanel from './NotificationPanel';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -12,6 +13,7 @@ export default function Navbar() {
 
     const navigate = useNavigate();
     const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
+    const [panelOpen, setPanelOpen] = React.useState(false);
     const location = useLocation();
 
     // Close menu when route changes
@@ -56,14 +58,27 @@ export default function Navbar() {
                     {/* Desktop Navigation Actions */}
                     <div className="hidden md:flex items-center space-x-6">
                         <Link to="/explore" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Explore</Link>
+                        <Link to="/forum" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Connect</Link>
 
                         {user ? (
                             <>
+                                {/* Notification Bell */}
+                                <button
+                                    onClick={() => setPanelOpen(true)}
+                                    className="relative p-2 text-[var(--nav-text)] hover:text-crown-gold transition group"
+                                >
+                                    <Bell size={24} className="group-hover:rotate-12 transition-transform" />
+                                    {counts.total > 0 && (
+                                        <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center border border-[var(--nav-background)]">
+                                            {counts.total > 9 ? '9+' : counts.total}
+                                        </span>
+                                    )}
+                                </button>
+
                                 {user.role === 'CLIENT' && (
                                     <>
                                         <Link to="/my-bookings" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
                                             My Bookings
-                                            {(counts.bookingUpdates > 0 || counts.unreadMessages > 0) && <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
                                         </Link>
                                         <Link to="/profile" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Profile</Link>
                                     </>
@@ -71,7 +86,6 @@ export default function Navbar() {
                                 {user.role === 'STYLIST' && (
                                     <Link to="/dashboard" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
                                         Dashboard
-                                        {(counts.unreadMessages > 0 || counts.pendingRequests > 0) && <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
                                     </Link>
                                 )}
                                 <button
@@ -94,10 +108,23 @@ export default function Navbar() {
 
                     {/* Mobile Actions (Menu Only) */}
                     <div className="md:hidden flex items-center gap-2">
-                        {/* Admin Badge Removed */}
+                        {user && (
+                            <button
+                                onClick={() => setPanelOpen(true)}
+                                className="relative p-2 text-[var(--nav-text)] hover:text-crown-gold transition"
+                            >
+                                <Bell size={24} />
+                                {counts.total > 0 && (
+                                    <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border border-[var(--nav-background)]" />
+                                )}
+                            </button>
+                        )}
+
                     </div>
                 </div>
             </div>
+
+            <NotificationPanel open={panelOpen} setOpen={setPanelOpen} />
 
             {/* Navigation Drawer / Side Menu */}
             {adminMenuOpen && ( // Assuming we rename this or use it for the main menu now
@@ -126,9 +153,13 @@ export default function Navbar() {
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Navigation</p>
                                 <Link to="/" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Home</Link>
                                 <Link to="/explore" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Explore</Link>
+                                <Link to="/forum" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Crown Connect</Link>
                                 {user?.role === 'CLIENT' && (
                                     <>
-                                        <Link to="/my-bookings" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Bookings</Link>
+                                        <Link to="/my-bookings" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">
+                                            Bookings
+                                            {counts.bookings > 0 && <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{counts.bookings}</span>}
+                                        </Link>
                                         <Link to="/profile" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Profile</Link>
                                     </>
                                 )}
@@ -155,7 +186,10 @@ export default function Navbar() {
                                 {user ? (
                                     <>
                                         {user.role === 'STYLIST' && (
-                                            <Link to="/dashboard" onClick={() => setAdminMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">My Dashboard</Link>
+                                            <Link to="/dashboard" onClick={() => setAdminMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">
+                                                My Dashboard
+                                                {counts.total - counts.forum > 0 && <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{counts.total - counts.forum}</span>}
+                                            </Link>
                                         )}
                                         <button
                                             onClick={() => { handleLogout(); setAdminMenuOpen(false); }}

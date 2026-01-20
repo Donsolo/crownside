@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Send, X, Loader2, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
 import api from '../lib/api';
 import MessageBubble from './MessageBubble';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 
-export default function ChatInterface({ bookingId, onClose, participants }) {
+export default function ChatInterface({ bookingId, conversationId, onClose, participants }) {
     const { user, loading: authLoading } = useAuth(); // Get auth loading state
     const { markMessagesSeen } = useNotifications();
     const [conversation, setConversation] = useState(null);
@@ -24,26 +26,31 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
 
         const initChat = async () => {
             // Prevent premature or duplicate calls
-            if (!bookingId || !user || authLoading) return;
-            // Prevent double-init in Strict Mode if already successful/loading? 
-            // Actually, we just want to ensure we don't spam.
+            if ((!bookingId && !conversationId) || !user || authLoading) return;
+            // Prevent double-init 
             if (initRef.current) return;
             initRef.current = true;
 
             try {
                 if (isMounted) setLoading(true);
 
-                // Get or Create Conversation
-                const res = await api.post('/messages', { bookingId });
+                let targetId = conversationId;
+
+                // If only bookingId provided, fetch/create convo first
+                if (bookingId && !conversationId) {
+                    const res = await api.post('/messages', { bookingId });
+                    targetId = res.data.id;
+                    if (isMounted) setConversation(res.data);
+                }
 
                 if (isMounted) {
-                    setConversation(res.data);
-                    // Fetch Messages
-                    await fetchMessages(res.data.id);
+                    // Fetch Messages (and conversation details if endpoint supports it)
+                    // My updated backend `getConversation` returns { conversation, messages }
+                    await fetchMessages(targetId);
 
                     // Start Polling (every 5s)
                     pollingRef.current = setInterval(() => {
-                        fetchMessages(res.data.id, true);
+                        fetchMessages(targetId, true);
                     }, 5000);
                 }
 
@@ -68,7 +75,7 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
             if (pollingRef.current) clearInterval(pollingRef.current);
             initRef.current = false; // Reset on unmount
         };
-    }, [bookingId, user, authLoading]); // Re-run when auth is ready
+    }, [bookingId, conversationId, user, authLoading]); // Re-run when auth is ready
 
     // Cleanup polling on unmount
     useEffect(() => {
@@ -93,6 +100,11 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
                 if (isPolling && res.data.messages.length === prev.length) return prev;
                 return res.data.messages;
             });
+
+            // Validate conversation state if missing (e.g. direct load)
+            if (!conversation && res.data.conversation) {
+                setConversation(res.data.conversation);
+            }
 
             // Mark as read if I am viewing
             // Only mark if unread messages exist to save API calls
@@ -131,19 +143,26 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
     };
 
     if (loading) {
-        return (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        return ReactDOM.createPortal(
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                 <div className="bg-[var(--card-bg)] p-8 rounded-2xl shadow-xl flex flex-col items-center">
                     <Loader2 className="animate-spin text-crown-gold mb-3" size={32} />
                     <p className="text-[var(--text-secondary)] font-medium">Loading Chat...</p>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 
-    return (
-        <div className="fixed inset-0 z-[40] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 md:p-4">
-            <div className="bg-[var(--bg-primary)] w-full max-w-lg h-[90vh] md:h-[80vh] rounded-2xl shadow-2xl flex flex-col relative overflow-hidden animate-enter">
+    return ReactDOM.createPortal(
+        <div
+            onClick={onClose}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 md:p-4"
+        >
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-[var(--bg-primary)] w-full max-w-lg h-[90vh] md:h-[80vh] rounded-2xl shadow-2xl flex flex-col relative overflow-hidden animate-enter"
+            >
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-[var(--card-bg)] z-10">
@@ -172,9 +191,11 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
                             <div className="w-16 h-16 bg-crown-gold/10 rounded-full flex items-center justify-center mb-4 text-crown-gold">
                                 <Send size={24} />
                             </div>
-                            <h4 className="font-bold text-[var(--text-primary)] mb-1">Start the conversation</h4>
+                            <h4 className="font-bold text-[var(--text-primary)] mb-1">
+                                Say hello to {participants?.otherName || 'them'}
+                            </h4>
                             <p className="text-sm text-[var(--text-secondary)]">
-                                Ask questions or coordinate details about your appointment.
+                                Ask questions, confirm details, or share inspiration.
                             </p>
                         </div>
                     ) : (
@@ -204,7 +225,7 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
                 )}
 
                 {/* Input Area */}
-                <form onSubmit={handleSend} className="p-4 bg-[var(--card-bg)] border-t border-[var(--border-subtle)]">
+                <form onSubmit={handleSend} className="p-4 pb-8 bg-[var(--card-bg)] border-t border-[var(--border-subtle)]">
                     <div className="flex items-end gap-2">
                         <textarea
                             value={newMessage}
@@ -236,9 +257,7 @@ export default function ChatInterface({ bookingId, onClose, participants }) {
                 </form>
 
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
-
-// Helper for formatting if date-fns isn't globally available here (it should be though)
-import { format } from 'date-fns';

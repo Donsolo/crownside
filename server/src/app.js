@@ -75,6 +75,14 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 app.use('/api/subscriptions', subscriptionRoutes);
 const messageRoutes = require('./routes/messageRoutes');
 app.use('/api/messages', messageRoutes);
+const forumRoutes = require('./routes/forumRoutes');
+app.use('/api/forum', forumRoutes);
+const commentRoutes = require('./routes/commentRoutes');
+app.use('/api/comments', commentRoutes);
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/moderation', require('./routes/moderationRoutes'));
+app.use('/api/connections', require('./routes/connectionRoutes'));
+app.use('/api/blocks', require('./routes/blockRoutes'));
 
 app.get('/', (req, res) => {
     res.json({ message: 'CrownSide API is running' });

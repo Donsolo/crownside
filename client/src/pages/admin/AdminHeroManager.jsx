@@ -11,7 +11,8 @@ const PAGES = [
     { key: 'faq', label: 'FAQ' },
     { key: 'bookings', label: 'My Bookings Page' },
     { key: 'profile', label: 'Client Profile Dashboard' },
-    { key: 'dashboard', label: 'Pro Studio Dashboard' }
+    { key: 'dashboard', label: 'Pro Studio Dashboard' },
+    { key: 'forum', label: 'Crown Connect (Global)' }
 ];
 
 export default function AdminHeroManager() {

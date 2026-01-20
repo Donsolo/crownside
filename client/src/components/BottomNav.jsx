@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Home, Search, Calendar, User, LogIn, LayoutDashboard, Image, Users, Scissors, Star, Settings, Activity } from 'lucide-react';
+import { Home, Search, Calendar, User, LogIn, LayoutDashboard, Image, Users, Scissors, Star, Settings, Activity, MessageSquare } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 
 export default function BottomNav() {
@@ -8,7 +8,7 @@ export default function BottomNav() {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     const isLoggedIn = !!user;
     const isStylist = user?.role === 'STYLIST';
-    const { counts } = useNotifications() || { counts: { bookingUpdates: 0, unreadMessages: 0, pendingRequests: 0 } };
+    const { counts } = useNotifications() || { counts: { total: 0, bookings: 0, messages: 0, forum: 0 } };
 
     const navItems = [
         {
@@ -21,17 +21,23 @@ export default function BottomNav() {
             path: '/explore',
             icon: Search
         },
+        {
+            label: 'Connect',
+            path: '/forum',
+            icon: MessageSquare,
+            hasNotification: counts.forum > 0
+        },
         ...(isLoggedIn ? [{
             label: 'Bookings',
             path: '/my-bookings',
             icon: Calendar,
-            hasNotification: !isStylist && (counts.bookingUpdates > 0 || counts.unreadMessages > 0)
+            hasNotification: !isStylist && (counts.bookings > 0 || counts.messages > 0)
         }] : []),
         {
             label: isLoggedIn ? (isStylist ? 'Dashboard' : 'Profile') : 'Log In',
             path: isLoggedIn ? (isStylist ? '/dashboard' : '/profile') : '/login',
             icon: isLoggedIn ? User : LogIn,
-            hasNotification: isStylist && (counts.unreadMessages > 0 || counts.pendingRequests > 0)
+            hasNotification: isStylist && (counts.bookings > 0 || counts.messages > 0)
         }
     ];
 
