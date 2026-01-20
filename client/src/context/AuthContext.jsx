@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
                 }
             } catch (err) {
                 // Not logged in or session expired
-                // console.debug('No active session found');
+                console.warn('Session hydration failed:', err.message);
+                if (err.message && err.message.includes('Network Error')) {
+                    console.error('Possible CORS or Cookie Domain Issue', err);
+                }
             } finally {
                 setLoading(false);
             }
