@@ -155,7 +155,7 @@ export default function StylistProfile({ handle }) {
                 <button
                     onClick={() => {
                         const url = stylist.storefrontHandle
-                            ? `https://${stylist.storefrontHandle}.crownside.com`
+                            ? `https://${stylist.storefrontHandle}.thecrownside.com`
                             : window.location.href;
                         navigator.clipboard.writeText(url);
                         alert('Storefront link copied!');

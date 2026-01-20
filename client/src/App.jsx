@@ -45,15 +45,15 @@ import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   // Subdomain Logic
-  const hostname = window.location.hostname; // e.g., "crownside.com" or "queenlashes.crownside.com"
+  const hostname = window.location.hostname; // e.g., "thecrownside.com" or "queenlashes.thecrownside.com"
   const parts = hostname.split('.');
 
   // Logic: 
   // localhost: parts = ['localhost'] (len 1) -> No subdomain
   // queenlashes.localhost: parts = ['queenlashes', 'localhost'] (len 2) -> Subdomain 'queenlashes'
-  // crownside.com: parts = ['crownside', 'com'] (len 2) -> No subdomain (standard prod)
-  // www.crownside.com: parts = ['www', 'crownside', 'com'] (len 3) -> Ignore 'www'
-  // queenlashes.crownside.com: parts = ['queenlashes', 'crownside', 'com'] (len 3) -> Subdomain 'queenlashes'
+  // thecrownside.com: parts = ['thecrownside', 'com'] (len 2) -> No subdomain (standard prod)
+  // www.thecrownside.com: parts = ['www', 'thecrownside', 'com'] (len 3) -> Ignore 'www'
+  // queenlashes.thecrownside.com: parts = ['queenlashes', 'thecrownside', 'com'] (len 3) -> Subdomain 'queenlashes'
 
   let subdomain = null;
 
