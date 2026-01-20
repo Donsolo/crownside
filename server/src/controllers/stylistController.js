@@ -43,8 +43,21 @@ const adminListStylists = async (req, res) => {
 const getStylistById = async (req, res) => {
     const { id } = req.params;
     try {
-        const stylist = await prisma.stylistProfile.findUnique({
-            where: { id },
+        let whereClause = {};
+
+        // basic UUID check regex
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        if (isUuid) {
+            whereClause = { id };
+        } else {
+            // Treat as handle (support handle@thecrownside.com input too)
+            const cleanHandle = id.split('@')[0].toLowerCase();
+            whereClause = { storefrontHandle: cleanHandle };
+        }
+
+        const stylist = await prisma.stylistProfile.findFirst({
+            where: whereClause,
             include: {
                 services: true,
                 portfolioImages: true,
@@ -58,26 +71,72 @@ const getStylistById = async (req, res) => {
 
         res.json(stylist);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch stylist' });
+    }
+};
+
+const generateHandle = async (name, currentUserId) => {
+    if (!name) return null;
+
+    // 1. Sanitize: lowercase, alphanumeric only
+    let baseHandle = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!baseHandle) baseHandle = "stylist"; // fallback
+
+    let handle = baseHandle;
+    let counter = 1;
+
+    // 2. Loop until unique
+    while (true) {
+        const existing = await prisma.stylistProfile.findUnique({
+            where: { storefrontHandle: handle }
+        });
+
+        // If it's unique OR it belongs to self, we're good
+        if (!existing || (currentUserId && existing.userId === currentUserId)) {
+            return handle;
+        }
+
+        // Collision -> append number
+        counter++;
+        handle = `${baseHandle}${counter}`;
     }
 };
 
 const updateProfile = async (req, res) => {
     const userId = req.user.id; // From token
     try {
-        const { phoneNumber, instagramHandle, tiktokHandle, websiteUrl, contactPreference, ...otherData } = req.body;
+        const {
+            businessName, bio, locationType,
+            phoneNumber, instagramHandle, tiktokHandle, websiteUrl, contactPreference,
+            specialties, profileImage, bannerImage
+        } = req.body;
 
-        // Data Validation / Sanitization
-        let cleanData = { ...otherData };
+        // Whitelist approach to avoid passing relations (services, user, etc.) to Prisma
+        let cleanData = {};
 
+        if (bio !== undefined) cleanData.bio = bio;
+        if (locationType !== undefined) cleanData.locationType = locationType;
+        if (specialties !== undefined) cleanData.specialties = specialties;
+        if (profileImage !== undefined) cleanData.profileImage = profileImage;
+        if (bannerImage !== undefined) cleanData.bannerImage = bannerImage;
+
+        // Handle Business Name & Storefront Handle
+        if (businessName) {
+            cleanData.businessName = businessName;
+            // Generate/Update handle if name changed
+            // Ideally we check if it changed (optimization), but generator handles ownership check efficiently.
+            cleanData.storefrontHandle = await generateHandle(businessName, userId);
+        }
+
+        // Contact Info Logic
         if (contactPreference) {
             const validPrefs = ['BOOKINGS_ONLY', 'CALL_OR_TEXT', 'SOCIAL_DM'];
             if (validPrefs.includes(contactPreference)) {
                 cleanData.contactPreference = contactPreference;
             }
         }
-
-        if (phoneNumber !== undefined) cleanData.phoneNumber = phoneNumber; // Allow clearing string
+        if (phoneNumber !== undefined) cleanData.phoneNumber = phoneNumber;
         if (websiteUrl !== undefined) cleanData.websiteUrl = websiteUrl;
 
         // Strip @ from handles if present
@@ -94,7 +153,7 @@ const updateProfile = async (req, res) => {
         });
         res.json(updatedProfile);
     } catch (error) {
-        console.error(error);
+        console.error("Update Profile Error:", error);
         res.status(500).json({ error: 'Failed to update profile' });
     }
 };

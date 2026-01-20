@@ -129,6 +129,7 @@ model StylistProfile {
   user             User     @relation(fields: [userId], references: [id])
   
   businessName     String
+  storefrontHandle String?  @unique // Simplified URL handle
   bio              String?
   locationType     String   // 'HOME', 'SALON', 'MOBILE'
   profileImage     String?
