@@ -34,7 +34,7 @@ export default function BottomNav() {
             hasNotification: !isStylist && (counts.bookings > 0 || counts.messages > 0)
         }] : []),
         {
-            label: isLoggedIn ? (isStylist ? 'Dashboard' : 'Profile') : 'Log In',
+            label: isLoggedIn ? (isStylist ? 'Dashboard' : 'Profile') : 'Log in / Register',
             path: isLoggedIn ? (isStylist ? '/dashboard' : '/profile') : '/login',
             icon: isLoggedIn ? User : LogIn,
             hasNotification: isStylist && (counts.bookings > 0 || counts.messages > 0)

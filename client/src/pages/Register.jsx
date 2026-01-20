@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
@@ -311,6 +311,13 @@ function RegisterContent() {
                             >
                                 {role === 'STYLIST' ? <>Next Step <ChevronRight size={18} /></> : 'Sign Up as Client'}
                             </button>
+
+                            <div className="mt-6 text-center text-sm">
+                                <span className="text-[var(--text-secondary)]">Already have an account? </span>
+                                <Link to="/login" className="text-crown-gold font-medium hover:underline">
+                                    Log in
+                                </Link>
+                            </div>
                         </div>
                     )}
 

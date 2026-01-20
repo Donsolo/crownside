@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 
@@ -58,6 +58,13 @@ export default function Login() {
                     <button type="submit" className="w-full btn-primary bg-crown-dark text-white py-3 rounded-full hover:bg-black transition">
                         Log In
                     </button>
+
+                    <div className="mt-6 text-center text-sm">
+                        <span className="text-[var(--text-secondary)]">Need an account? </span>
+                        <Link to="/register" className="text-crown-gold font-medium hover:underline">
+                            Register here
+                        </Link>
+                    </div>
                 </form>
             </div>
         </div>
