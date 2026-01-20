@@ -7,12 +7,15 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaInstagram, FaTiktok, FaPhoneAlt, FaGlobe, FaMapMarkerAlt, FaStar, FaShareAlt, FaUserPlus, FaUserCheck, FaUserTimes, FaComment, FaEllipsisH, FaBan, FaFlag } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
-export default function StylistProfile() {
+export default function StylistProfile({ handle }) {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user: currentUser } = useAuth();
     const [stylist, setStylist] = useState(null);
     const [services, setServices] = useState([]);
+
+    // Determine the identifier to use (prop handle takes precedence for subdomains)
+    const activeId = handle || id;
     const [portfolio, setPortfolio] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -27,9 +30,9 @@ export default function StylistProfile() {
 
     useEffect(() => {
         const fetchStylist = async () => {
-            // ... existing fetch ...
+            if (!activeId) return;
             try {
-                const res = await api.get(`/stylists/${id}`);
+                const res = await api.get(`/stylists/${activeId}`);
                 setStylist(res.data);
                 setServices(res.data.services || []);
                 setPortfolio(res.data.portfolioImages || []);
@@ -46,7 +49,7 @@ export default function StylistProfile() {
             }
         };
         fetchStylist();
-    }, [id, currentUser]); // Added currentUser dep
+    }, [activeId, currentUser]);
 
     const checkConnectionStatus = async (targetId) => {
         try {
@@ -148,6 +151,20 @@ export default function StylistProfile() {
 
         return (
             <div className="flex gap-3 mt-4 flex-wrap justify-center">
+                {/* Storefront Share Button */}
+                <button
+                    onClick={() => {
+                        const url = stylist.storefrontHandle
+                            ? `https://${stylist.storefrontHandle}.crownside.com`
+                            : window.location.href;
+                        navigator.clipboard.writeText(url);
+                        alert('Storefront link copied!');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-crown-gold/10 text-crown-dark border border-crown-gold/30 rounded-full text-sm font-bold hover:bg-crown-gold/20 transition shadow-sm"
+                >
+                    <FaShareAlt size={14} /> Share
+                </button>
+
                 {/* Existing Socials */}
                 {stylist.contactPreference !== 'BOOKINGS_ONLY' && (
                     <>

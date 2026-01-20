@@ -44,6 +44,53 @@ import MessageThread from './pages/MessageThread';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
+  // Subdomain Logic
+  const hostname = window.location.hostname; // e.g., "crownside.com" or "queenlashes.crownside.com"
+  const parts = hostname.split('.');
+
+  // Logic: 
+  // localhost: parts = ['localhost'] (len 1) -> No subdomain
+  // queenlashes.localhost: parts = ['queenlashes', 'localhost'] (len 2) -> Subdomain 'queenlashes'
+  // crownside.com: parts = ['crownside', 'com'] (len 2) -> No subdomain (standard prod)
+  // www.crownside.com: parts = ['www', 'crownside', 'com'] (len 3) -> Ignore 'www'
+  // queenlashes.crownside.com: parts = ['queenlashes', 'crownside', 'com'] (len 3) -> Subdomain 'queenlashes'
+
+  let subdomain = null;
+
+  // Simple heuristic for now: 
+  if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'api') {
+    subdomain = parts[0];
+  } else if (parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'www') {
+    // Localhost testing support
+    subdomain = parts[0];
+  }
+
+  // If a specific storefront subdomain is detected, we render ONLY the simplified storefront flow.
+  if (subdomain) {
+    return (
+      <Router>
+        <ScrollToTop />
+        <AuthProvider>
+          <ThemeProvider>
+            <NotificationProvider>
+              <Elements stripe={stripePromise}>
+                <div className="min-h-screen flex flex-col">
+                  <Navbar />
+                  <main className="flex-grow pb-[68px] md:pb-0">
+                    <StylistProfile handle={subdomain} />
+                  </main>
+                  <Footer />
+                  <CookieConsent />
+                </div>
+              </Elements>
+            </NotificationProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </Router>
+    );
+  }
+
+  // Standard App Routing
   return (
     <Router>
       <ScrollToTop />

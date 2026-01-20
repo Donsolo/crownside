@@ -644,14 +644,14 @@ function ProfileEditor({ onUpdate }) {
                         <div className="flex items-center justify-between gap-2">
                             <code className="text-sm text-crown-dark font-mono truncate">
                                 {profile.businessName
-                                    ? `${profile.businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}@thecrownside.com`
-                                    : (profile.storefrontHandle ? `${profile.storefrontHandle}@thecrownside.com` : 'Start typing name...')}
+                                    ? `https://${profile.businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}.crownside.com`
+                                    : (profile.storefrontHandle ? `https://${profile.storefrontHandle}.crownside.com` : 'Start typing name...')}
                             </code>
                             {profile.storefrontHandle && (
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        navigator.clipboard.writeText(`${profile.storefrontHandle}@thecrownside.com`);
+                                        navigator.clipboard.writeText(`https://${profile.storefrontHandle}.crownside.com`);
                                         alert('Storefront link copied!');
                                     }}
                                     className="text-xs bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-2 py-1 rounded shadow-sm font-bold flex-shrink-0"
