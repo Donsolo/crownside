@@ -156,5 +156,127 @@ const updateUserRole = async (req, res) => {
     }
 };
 
-module.exports = { getAllUsers, getDashboardStats, getPublicProfile, updateUserRole };
+const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
 
+        // Prevent deleting self
+        if (req.user.id === userId) {
+            return res.status(400).json({ error: 'Cannot delete yourself' });
+        }
+
+        // Find user first to confirm existence and role
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { stylistProfile: true }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Execute huge transaction to clean up all relations
+        await prisma.$transaction(async (tx) => {
+            // 1. Social & Notifications
+            // Delete notifications involved with this user (either sent or received)
+            await tx.notification.deleteMany({
+                where: { OR: [{ userId }, { senderId: userId }] }
+            });
+
+            await tx.connection.deleteMany({
+                where: { OR: [{ requesterId: userId }, { addresseeId: userId }] }
+            });
+
+            await tx.block.deleteMany({
+                where: { OR: [{ blockerId: userId }, { blockedId: userId }] }
+            });
+
+            // 2. Engagement (Likes, Views, Reports)
+            await tx.like.deleteMany({ where: { userId } });
+            await tx.postView.deleteMany({ where: { userId } });
+            await tx.report.deleteMany({
+                where: { OR: [{ reporterId: userId }, { targetUserId: userId }] }
+            });
+
+            // 3. Comments
+            // Note: If user has replied to threads, this deletes their contributions.
+            // If deleting a parent comment causes constraint violation on children, this might fail 
+            // without recursive logic, but standard Prisma deleteMany usually handles simple FKs unless Restrict is set.
+            await tx.comment.deleteMany({ where: { authorId: userId } });
+
+            // 4. Forum Posts
+            // Comments and Images usually cascade from Post if schema defines it.
+            // Our schema: Comment->Post (Cascade), Image->Post (Cascade). Safe.
+            await tx.forumPost.deleteMany({ where: { authorId: userId } });
+
+            // 5. Messaging / Conversations
+            // Find conversations where user is ANY participant
+            // Note: StylistProfile participation needs checking stylistId
+            const orConditions = [
+                { clientId: userId },
+                { participant1Id: userId },
+                { participant2Id: userId }
+            ];
+            if (user.stylistProfile) {
+                orConditions.push({ stylistId: user.stylistProfile.id });
+            }
+
+            const conversations = await tx.conversation.findMany({
+                where: { OR: orConditions }
+            });
+
+            const convIds = conversations.map(c => c.id);
+            if (convIds.length > 0) {
+                await tx.message.deleteMany({
+                    where: { conversationId: { in: convIds } }
+                });
+                await tx.conversation.deleteMany({
+                    where: { id: { in: convIds } }
+                });
+            }
+
+            // 6. Bookings (As Client)
+            const clientBookings = await tx.booking.findMany({ where: { clientId: userId } });
+            const clientBookingIds = clientBookings.map(b => b.id);
+            if (clientBookingIds.length > 0) {
+                await tx.review.deleteMany({ where: { bookingId: { in: clientBookingIds } } });
+                // Clean remaining notifications linked to these bookings just in case
+                await tx.notification.deleteMany({ where: { bookingId: { in: clientBookingIds } } });
+                await tx.booking.deleteMany({ where: { id: { in: clientBookingIds } } });
+            }
+
+            // 7. Stylist Specifics
+            if (user.stylistProfile) {
+                const sId = user.stylistProfile.id;
+
+                // Stylist Bookings
+                const stylistBookings = await tx.booking.findMany({ where: { stylistId: sId } });
+                const sBookingIds = stylistBookings.map(b => b.id);
+                if (sBookingIds.length > 0) {
+                    await tx.review.deleteMany({ where: { bookingId: { in: sBookingIds } } });
+                    await tx.notification.deleteMany({ where: { bookingId: { in: sBookingIds } } });
+                    await tx.booking.deleteMany({ where: { id: { in: sBookingIds } } });
+                }
+
+                // Services & Portfolio & Sub
+                await tx.service.deleteMany({ where: { stylistId: sId } });
+                await tx.portfolioImage.deleteMany({ where: { stylistId: sId } });
+                await tx.professionalSubscription.deleteMany({ where: { stylistId: sId } });
+
+                // Finally Delete Profile
+                await tx.stylistProfile.delete({ where: { id: sId } });
+            }
+
+            // 8. Finally Delete User
+            await tx.user.delete({ where: { id: userId } });
+        });
+
+        res.json({ message: 'User and all associated data deleted successfully' });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ error: 'Failed to delete user: ' + error.message });
+        // Optionally map P2003 again if we missed something
+    }
+};
+
+module.exports = { getAllUsers, getDashboardStats, getPublicProfile, updateUserRole, deleteUser };

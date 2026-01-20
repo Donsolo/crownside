@@ -30,8 +30,8 @@ const EditRoleModal = ({ user, onClose, onSave }) => {
                     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
                 </Transition.Child>
 
-                <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div className="fixed inset-0 z-10 w-full overflow-y-auto">
+                    <div className="flex min-h-screen items-center justify-center p-4 text-center">
                         <Transition.Child
                             as={Fragment}
                             enter="ease-out duration-300"
@@ -41,7 +41,7 @@ const EditRoleModal = ({ user, onClose, onSave }) => {
                             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
-                            <Dialog.Panel className={`relative transform overflow-hidden rounded-lg px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white'}`}>
+                            <Dialog.Panel className={`relative transform overflow-hidden rounded-lg px-4 pb-4 pt-5 text-left shadow-xl transition-all w-full max-w-lg p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white'}`}>
                                 <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
                                     <button
                                         type="button"
@@ -144,6 +144,17 @@ export default function AdminUsers() {
         }
     };
 
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+        try {
+            await api.delete(`/users/${userId}`);
+            setUsers(users.filter(u => u.id !== userId));
+        } catch (err) {
+            console.error("Delete failed", err);
+            alert(err.response?.data?.error || "Failed to delete user");
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -162,7 +173,7 @@ export default function AdminUsers() {
     if (loading) return <div>Loading users...</div>;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-full overflow-hidden">
             <div className={`sticky top-0 z-20 pt-4 pb-4 ${theme === 'dark' ? 'bg-gray-900/95' : 'bg-gray-50/95'} backdrop-blur-sm`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h1 className={`text-2xl sm:text-3xl font-serif font-bold ${theme === 'dark' ? 'text-white' : 'text-crown-dark'}`}>
@@ -224,7 +235,11 @@ export default function AdminUsers() {
                                     >
                                         <Edit size={18} />
                                     </button>
-                                    <button className="text-red-400 hover:text-red-600 p-1" title="Delete (Mock)">
+                                    <button
+                                        className="text-red-400 hover:text-red-600 p-1"
+                                        title="Delete User"
+                                        onClick={() => handleDeleteUser(user.id)}
+                                    >
                                         <Trash2 size={18} />
                                     </button>
                                 </td>
@@ -260,7 +275,10 @@ export default function AdminUsers() {
                                 >
                                     <Edit size={18} />
                                 </button>
-                                <button className="p-2 bg-red-50 text-red-600 rounded-lg dark:bg-red-900/30 dark:text-red-400">
+                                <button
+                                    className="p-2 bg-red-50 text-red-600 rounded-lg dark:bg-red-900/30 dark:text-red-400"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                >
                                     <Trash2 size={18} />
                                 </button>
                             </div>
