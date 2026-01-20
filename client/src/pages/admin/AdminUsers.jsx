@@ -69,8 +69,8 @@ const EditRoleModal = ({ user, onClose, onSave }) => {
                                                     value={role}
                                                     onChange={(e) => setRole(e.target.value)}
                                                     className={`mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 ring-1 ring-inset focus:ring-2 sm:text-sm sm:leading-6 ${theme === 'dark'
-                                                            ? 'bg-gray-700 text-white ring-gray-600 focus:ring-crown-gold'
-                                                            : 'text-gray-900 ring-gray-300 focus:ring-crown-gold'
+                                                        ? 'bg-gray-700 text-white ring-gray-600 focus:ring-crown-gold'
+                                                        : 'text-gray-900 ring-gray-300 focus:ring-crown-gold'
                                                         }`}
                                                 >
                                                     <option value="CLIENT">Client</option>
@@ -94,8 +94,8 @@ const EditRoleModal = ({ user, onClose, onSave }) => {
                                     <button
                                         type="button"
                                         className={`mt-3 inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset sm:mt-0 sm:w-auto ${theme === 'dark'
-                                                ? 'bg-gray-700 text-gray-300 ring-gray-600 hover:bg-gray-600'
-                                                : 'bg-white text-gray-900 ring-gray-300 hover:bg-gray-50'
+                                            ? 'bg-gray-700 text-gray-300 ring-gray-600 hover:bg-gray-600'
+                                            : 'bg-white text-gray-900 ring-gray-300 hover:bg-gray-50'
                                             }`}
                                         onClick={onClose}
                                     >
@@ -151,9 +151,9 @@ export default function AdminUsers() {
 
     const RoleBadge = ({ role }) => (
         <span className={`px-2 py-1 rounded-full text-xs font-bold ${role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
-                role === 'STYLIST' ? 'bg-crown-gold/10 text-crown-gold' :
-                    role === 'MODERATOR' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-600'
+            role === 'STYLIST' ? 'bg-crown-gold/10 text-crown-gold' :
+                role === 'MODERATOR' ? 'bg-blue-100 text-blue-700' :
+                    'bg-gray-100 text-gray-600'
             }`}>
             {role}
         </span>
@@ -174,8 +174,8 @@ export default function AdminUsers() {
                             type="text"
                             placeholder="Search users..."
                             className={`w-full sm:w-64 pl-10 pr-4 py-2 border rounded-lg ${theme === 'dark'
-                                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-crown-gold'
-                                    : 'bg-white border-gray-200 focus:border-crown-gold'
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-crown-gold'
+                                : 'bg-white border-gray-200 focus:border-crown-gold'
                                 }`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -240,12 +240,12 @@ export default function AdminUsers() {
                     <div key={user.id} className={`p-4 rounded-xl shadow-sm border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
                         }`}>
                         <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-crown-cream flex items-center justify-center text-crown-gold font-bold text-lg">
+                            <div className="flex items-center gap-3 w-full">
+                                <div className="w-10 h-10 rounded-full bg-crown-cream flex-shrink-0 flex items-center justify-center text-crown-gold font-bold text-lg">
                                     {user.email[0].toUpperCase()}
                                 </div>
-                                <div>
-                                    <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{user.email}</div>
+                                <div className="min-w-0 flex-1">
+                                    <div className={`font-medium truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{user.email}</div>
                                     <RoleBadge role={user.role} />
                                 </div>
                             </div>
