@@ -65,32 +65,7 @@ function App() {
     subdomain = parts[0];
   }
 
-  // If a specific storefront subdomain is detected, we render ONLY the simplified storefront flow.
-  if (subdomain) {
-    return (
-      <Router>
-        <ScrollToTop />
-        <AuthProvider>
-          <ThemeProvider>
-            <NotificationProvider>
-              <Elements stripe={stripePromise}>
-                <div className="min-h-screen flex flex-col">
-                  <Navbar />
-                  <main className="flex-grow pb-[68px] md:pb-0">
-                    <StylistProfile handle={subdomain} />
-                  </main>
-                  <Footer />
-                  <CookieConsent />
-                </div>
-              </Elements>
-            </NotificationProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </Router>
-    );
-  }
-
-  // Standard App Routing
+  // Unified App Structure
   return (
     <Router>
       <ScrollToTop />
@@ -101,49 +76,56 @@ function App() {
               <div className="min-h-screen flex flex-col">
                 <Navbar />
                 <main className="flex-grow pb-[68px] md:pb-0">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/explore" element={<Explore />} />
-                    <Route path="/stylist/:id" element={<StylistProfile />} />
-                    <Route path="/my-bookings" element={<MyBookings />} />
-                    <Route path="/profile" element={<ClientProfile />} />
-                    <Route path="/account-settings" element={<AccountSettings />} />
-                    <Route path="/connections" element={<ConnectionsPage />} />
+                  {subdomain ? (
+                    // Storefront Mode: Render StylistProfile directly
+                    // This preserves the App Shell (Auth, Navbar, etc.) but isolates the view
+                    <StylistProfile handle={subdomain} />
+                  ) : (
+                    // Standard App Routing
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/explore" element={<Explore />} />
+                      <Route path="/stylist/:id" element={<StylistProfile />} />
+                      <Route path="/my-bookings" element={<MyBookings />} />
+                      <Route path="/profile" element={<ClientProfile />} />
+                      <Route path="/account-settings" element={<AccountSettings />} />
+                      <Route path="/connections" element={<ConnectionsPage />} />
 
-                    {/* Forum Routes */}
-                    <Route path="/forum" element={<ForumLanding />} />
-                    <Route path="/forum/feed" element={<ForumFeed />} />
-                    <Route path="/forum/create" element={<CreatePost />} />
-                    <Route path="/forum/:id" element={<PostDetail />} />
-                    <Route path="/forum/:id" element={<PostDetail />} />
-                    <Route path="/moderator" element={<ModeratorDashboard />} />
+                      {/* Forum Routes */}
+                      <Route path="/forum" element={<ForumLanding />} />
+                      <Route path="/forum/feed" element={<ForumFeed />} />
+                      <Route path="/forum/create" element={<CreatePost />} />
+                      <Route path="/forum/:id" element={<PostDetail />} />
+                      <Route path="/moderator" element={<ModeratorDashboard />} />
 
-                    {/* Social Routes */}
-                    <Route path="/user/:userId" element={<UserProfile />} />
-                    <Route path="/messages/:conversationId" element={<MessageThread />} />
+                      {/* Social Routes */}
+                      <Route path="/user/:userId" element={<UserProfile />} />
+                      <Route path="/messages/:conversationId" element={<MessageThread />} />
 
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/dashboard" element={<StylistDashboard />} />
-                    <Route path="/privacy" element={<PrivacyPolicy />} />
-                    <Route path="/terms" element={<TermsOfService />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/faq" element={<FAQ />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/dashboard" element={<StylistDashboard />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/terms" element={<TermsOfService />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/faq" element={<FAQ />} />
 
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route index element={<AdminDashboard />} />
-                      <Route path="heroes" element={<AdminHeroManager />} />
-                      <Route path="users" element={<AdminUsers />} />
-                      <Route path="pros" element={<AdminPros />} />
-                      <Route path="bookings" element={<AdminBookings />} />
-                      <Route path="reviews" element={<AdminReviews />} />
-                      <Route path="pricing" element={<AdminSubscriptions />} />
-                      <Route path="settings" element={<AdminSettings />} />
-                    </Route>
-                  </Routes>
+                      <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<AdminDashboard />} />
+                        <Route path="heroes" element={<AdminHeroManager />} />
+                        <Route path="users" element={<AdminUsers />} />
+                        <Route path="pros" element={<AdminPros />} />
+                        <Route path="bookings" element={<AdminBookings />} />
+                        <Route path="reviews" element={<AdminReviews />} />
+                        <Route path="pricing" element={<AdminSubscriptions />} />
+                        <Route path="settings" element={<AdminSettings />} />
+                      </Route>
+                    </Routes>
+                  )}
                 </main>
-                <BottomNav />
+                {/* Hide BottomNav on Subdomain Storefronts for "App-like" feel, or keep it? User said "Bottom nav may be hidden" */}
+                {!subdomain && <BottomNav />}
                 <Footer />
                 <CookieConsent />
                 <InstallPrompt />
