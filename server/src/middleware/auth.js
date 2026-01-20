@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.token; // Bearer TOKEN or Cookie
 
     if (!token) return res.sendStatus(401);
 
@@ -29,7 +29,7 @@ const authorizeRole = (roles) => {
 
 const optionalAuth = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.token;
 
     if (!token) return next();
 

@@ -1,52 +1,48 @@
 const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const helmet = require('helmet');
-require('dotenv').config();
-const path = require('path');
+const cookieParser = require('cookie-parser');
 
-const app = express();
+// ... (existing imports)
 
-// Middleware
-app.get("/health", (req, res) => {
-    res.status(200).json({ status: "ok" });
-});
-app.use(helmet({
-    crossOriginResourcePolicy: false,
-}));
-
-// CORS Configuration
 // CORS Configuration
 const allowedOrigins = [
     process.env.APP_URL,
     process.env.CLIENT_URL,
-    'https://crownside-lovat.vercel.app', // Explicitly allow production frontend
-    'https://thecrownside.com', // Custom Domain
-    'https://www.thecrownside.com', // Custom Domain (www)
+    'https://crownside-lovat.vercel.app',
+    'https://thecrownside.com',
+    'https://www.thecrownside.com',
     'http://localhost:5173',
     'http://localhost:3000'
 ].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow requests with no origin
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) {
-            callback(null, true);
-        } else {
-            if (process.env.NODE_ENV === 'development') {
-                callback(null, true);
-            } else {
-                console.error(`CORS Blocked: Origin ${origin} not allowed. Allowed: ${allowedOrigins.join(', ')}`);
-                callback(new Error('Not allowed by CORS'));
-            }
+        // Exact match
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
         }
+
+        // Subdomain regex match for .thecrownside.com
+        // Matches https://*.thecrownside.com
+        if (/^https:\/\/.*\.thecrownside\.com$/.test(origin)) {
+            return callback(null, true);
+        }
+
+        // Localhost Allow (Dynamic ports if needed, but strict list is safer)
+        if (process.env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+
+        console.error(`CORS Blocked: Origin ${origin} not allowed.`);
+        callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
