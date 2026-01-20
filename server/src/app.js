@@ -19,19 +19,21 @@ app.use(cors({
         // Allow requests with no origin
         if (!origin) return callback(null, true);
 
+        // Debug Logging
+        console.log(`CORS Check: ${origin}`);
+
         // Exact match
         if (allowedOrigins.includes(origin)) {
             return callback(null, origin);
         }
 
-        // Subdomain regex match for .thecrownside.com
+        // Subdomain check (Relaxed)
         // Matches https://*.thecrownside.com
-        // Capture group not strictly needed but explicit structure is good
-        if (/^https:\/\/([a-z0-9-]+)\.thecrownside\.com$/.test(origin)) {
+        if (origin.endsWith('.thecrownside.com') && origin.startsWith('https://')) {
             return callback(null, origin);
         }
 
-        // Localhost Allow (Dynamic ports if needed)
+        // Localhost Allow
         if (process.env.NODE_ENV === 'development') {
             return callback(null, origin);
         }
