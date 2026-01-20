@@ -1,17 +1,19 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors'); // Explicitly needed if previously removed
+const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 require('dotenv').config();
 const path = require('path');
 
+// Initialize App FIRST
 const app = express();
 
 // Middleware
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "ok" });
 });
+
 app.use(helmet({
     crossOriginResourcePolicy: false,
 }));
@@ -21,13 +23,13 @@ const subdomainRegex = /^https:\/\/([a-z0-9-]+)\.thecrownside\.com$/;
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
         // Debug Logging
         console.log(`CORS Check: ${origin}`);
 
-        // Allow primary domains
+        // Allow primary domains explicitly
         if (
             origin === "https://thecrownside.com" ||
             origin === "https://www.thecrownside.com" ||
