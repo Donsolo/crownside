@@ -99,8 +99,8 @@ export default function ForumFeed() {
                     </button>
                 </div>
 
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex gap-2">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                    <div className="flex gap-2 self-start md:self-auto">
                         {/* Filter Placeholder - Hide for Announcements/Feedback? Keep for now */}
                         <button className="bg-white px-4 py-2 rounded-full shadow-sm text-sm font-bold text-gray-700 flex items-center gap-2 border border-gray-200">
                             <FaFilter /> All Types
@@ -108,20 +108,32 @@ export default function ForumFeed() {
                     </div>
 
                     {!canPost() ? (
-                        <div className="text-gray-500 text-sm font-medium italic py-2 px-4 bg-white/50 rounded-lg border border-gray-100">
+                        <div className="text-gray-500 text-sm font-medium italic py-2 px-4 bg-white/50 rounded-lg border border-gray-100 self-stretch md:self-auto">
                             {board === 'FIND_CLIENT'
                                 ? 'Availability posts are shared by verified beauty professionals'
                                 : 'Official announcements are posted by admins and pros'
                             }
                         </div>
                     ) : (
-                        <button
-                            onClick={() => navigate(`/forum/create?board=${board}`)}
-                            className="btn-primary flex items-center gap-2 shadow-lg"
-                        >
-                            <FaPen size={14} />
-                            {isCommunity ? 'Start a Conversation' : 'Post to Crown Connect'}
-                        </button>
+                        <>
+                            {/* Desktop Button */}
+                            <button
+                                onClick={() => navigate(`/forum/create?board=${board}`)}
+                                className="hidden md:flex btn-primary items-center gap-2 shadow-lg"
+                            >
+                                <FaPen size={14} />
+                                {isCommunity ? 'Start a Conversation' : 'Post to Crown Connect'}
+                            </button>
+
+                            {/* Mobile FAB */}
+                            <button
+                                onClick={() => navigate(`/forum/create?board=${board}`)}
+                                className="md:hidden fixed bottom-24 right-4 z-50 bg-crown-gold text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:bg-crown-gold-dark transition-transform active:scale-95"
+                                aria-label="Create Post"
+                            >
+                                <FaPen size={20} />
+                            </button>
+                        </>
                     )}
                 </div>
 
