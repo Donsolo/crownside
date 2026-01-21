@@ -27,7 +27,10 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="bg-[var(--nav-background)] shadow-sm sticky top-0 z-50 border-b border-[var(--border-subtle)] transition-colors duration-300">
+        <nav
+            className="bg-[var(--nav-background)] shadow-sm sticky top-0 z-50 border-b border-[var(--border-subtle)] transition-colors duration-300"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
             <div className="container mx-auto px-4">
                 <div className="flex justify-between items-center h-[70px] md:h-[80px] transition-all duration-300">
                     {/* Brand Block */}
@@ -136,7 +139,13 @@ export default function Navbar() {
                     ></div>
 
                     {/* Drawer */}
-                    <div className="absolute right-0 top-0 h-full w-[300px] bg-white shadow-2xl p-6 animate-slide-in-right flex flex-col">
+                    <div
+                        className="absolute right-0 top-0 h-full w-[300px] bg-white shadow-2xl px-6 animate-slide-in-right flex flex-col"
+                        style={{
+                            paddingTop: 'calc(env(safe-area-inset-top) + 24px)',
+                            paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)'
+                        }}
+                    >
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-2xl font-serif text-crown-dark">Menu</h2>
                             <button

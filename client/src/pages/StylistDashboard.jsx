@@ -4,13 +4,13 @@ import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import PortfolioManager from '../components/PortfolioManager';
-
-import CalendarView from '../components/dashboard/CalendarView'; // [NEW]
-import ClientsView from '../components/dashboard/ClientsView'; // [NEW]
+import AvailabilitySettings from '../components/dashboard/AvailabilitySettings';
+import CalendarView from '../components/dashboard/CalendarView';
+import ClientsView from '../components/dashboard/ClientsView';
 import Hero from '../components/Hero';
 import { SERVICE_CATEGORIES } from '../config/categories';
-import { FEATURE_ELITE_CALENDAR } from '../config/flags'; // [NEW]
-import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes, FaCalendarAlt, FaAddressBook, FaLock } from 'react-icons/fa';
+import { FEATURE_ELITE_CALENDAR } from '../config/flags';
+import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes, FaCalendarAlt, FaAddressBook, FaLock, FaClock } from 'react-icons/fa';
 
 export default function StylistDashboard() {
     const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
@@ -213,6 +213,13 @@ export default function StylistDashboard() {
                         {showCalendarSystem && (
                             <>
                                 <DashboardCard
+                                    title="Availability"
+                                    desc="Set working hours & time off"
+                                    icon={<FaClock className="w-6 h-6 text-white" />}
+                                    color="bg-emerald-600"
+                                    onClick={() => setActiveView('availability')}
+                                />
+                                <DashboardCard
                                     title="Pro Calendar"
                                     desc="Schedule, blockouts & manual events"
                                     icon={<FaCalendarAlt className="w-6 h-6 text-white" />}
@@ -309,6 +316,7 @@ export default function StylistDashboard() {
                             {activeView === 'bookings' && <BookingManager />}
                             {activeView === 'billing' && <BillingManager subscription={subscription} />}
                             {activeView === 'calendar' && <CalendarView stylistId={profile?.id} />}
+                            {activeView === 'availability' && <AvailabilitySettings />}
                             {activeView === 'clients' && <ClientsView />}
                         </div>
                     </div>
@@ -341,7 +349,6 @@ function DashboardCard({ title, desc, icon, color, onClick, badge }) {
     );
 }
 
-// ... imports
 import ChatInterface from '../components/ChatInterface';
 import { MessageSquare } from 'lucide-react';
 
@@ -350,7 +357,7 @@ import CancellationModal from '../components/CancellationModal'; // Import Cance
 function BookingManager() {
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeChat, setActiveChat] = useState(null); // { bookingId, otherName, bookingDate }
+    const [activeChat, setActiveChat] = useState(null); // {bookingId, otherName, bookingDate}
     const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null });
     const [reasonModal, setReasonModal] = useState({ open: false, text: '' });
 
@@ -795,7 +802,7 @@ function ProfileEditor({ onUpdate }) {
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div>
                         <label className="block text-sm font-bold mb-2">Contact Preference (Public visibility)</label>
                         <select
                             name="contactPreference"
@@ -813,7 +820,7 @@ function ProfileEditor({ onUpdate }) {
                     </div>
                 </div>
 
-                {/* Add Location Type */}\
+                {/* Add Location Type */}
                 <div>
                     <label className="block text-sm font-bold mb-2">Location Type</label>
                     <select

@@ -6,6 +6,7 @@ import ManualBookingModal from './ManualBookingModal';
 
 const CalendarView = ({ stylistId }) => {
     const [events, setEvents] = useState([]);
+    const [availability, setAvailability] = useState({ schedule: [], exceptions: [] }); // [NEW]
     const [loading, setLoading] = useState(false);
     const [view, setView] = useState('week'); // 'day', 'week', 'month'
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -63,7 +64,7 @@ const CalendarView = ({ stylistId }) => {
 
     // --- Data Fetching ---
 
-    const fetchEvents = async () => {
+    const fetchEventsAndAvailability = async () => {
         if (!stylistId) return;
         setLoading(true);
         try {
@@ -72,17 +73,22 @@ const CalendarView = ({ stylistId }) => {
             const endDay = new Date(days[days.length - 1]);
             endDay.setHours(23, 59, 59, 999);
 
-            const res = await api.get(`/calendar/events?start=${startDay.toISOString()}&end=${endDay.toISOString()}`);
-            setEvents(res.data);
+            const [eventsRes, availRes] = await Promise.all([
+                api.get(`/calendar/events?start=${startDay.toISOString()}&end=${endDay.toISOString()}`),
+                api.get(`/availability/${stylistId}?start=${startDay.toISOString()}&end=${endDay.toISOString()}`)
+            ]);
+
+            setEvents(eventsRes.data);
+            setAvailability(availRes.data);
         } catch (err) {
-            console.error('Failed to fetch events', err);
+            console.error('Failed to fetch calendar data', err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchEvents();
+        fetchEventsAndAvailability();
     }, [currentDate, view, stylistId]);
 
 
@@ -112,6 +118,25 @@ const CalendarView = ({ stylistId }) => {
 
     const handleToday = () => setCurrentDate(new Date());
 
+    const isSlotAvailable = (date) => {
+        const dayOfWeek = date.getDay();
+        const timeString = date.toTimeString().slice(0, 5); // HH:MM
+
+        // 1. Check Exceptions
+        const exception = availability.exceptions.find(ex => isSameDay(new Date(ex.date), date));
+        if (exception) {
+            if (exception.isOff) return false;
+            // Check if within custom hours
+            return timeString >= exception.startTime && timeString < exception.endTime;
+        }
+
+        // 2. Check Schedule
+        const daySchedule = availability.schedule.find(s => s.dayOfWeek === dayOfWeek);
+        if (!daySchedule || !daySchedule.isWorkingDay) return false;
+
+        return timeString >= daySchedule.startTime && timeString < daySchedule.endTime;
+    };
+
     const handleSlotClick = (day, e) => {
         // Calculate clicked hour (6 AM offset)
         const rect = e.currentTarget.getBoundingClientRect();
@@ -126,6 +151,16 @@ const CalendarView = ({ stylistId }) => {
         const slotDate = new Date(day);
         slotDate.setHours(clickedHour, 0, 0, 0);
 
+        // Strict Check: Don't allow booking if slot is unavailable
+        // We allow booking "near" availability but let's be strict for now or show warning.
+        // Actually, for "Manual Booking" (Admin side), maybe we allow override?
+        // But the user requested "Prevent booking attempts during unavailable times."
+        // Let's enforce it visually and logically here.
+        if (!isSlotAvailable(slotDate)) {
+            alert('This slot is outside of working hours.');
+            return;
+        }
+
         setSelectedSlot(slotDate);
         setShowBookingModal(true);
     };
@@ -133,7 +168,7 @@ const CalendarView = ({ stylistId }) => {
 
     // --- Render Logic ---
 
-    // Hours (6 AM to 10 PM = 16 hours)
+    // Hours (6 AM to 10 PM = 17 hours)
     const hours = Array.from({ length: 17 }, (_, i) => i + 6); // 6 to 22
 
     // Filter events for a specific day
@@ -157,6 +192,64 @@ const CalendarView = ({ stylistId }) => {
             height: `${height}px`,
             minHeight: '20px'
         };
+    };
+
+    // Calculate Unavailable Zones for Rendering
+    const getUnavailableZones = (day) => {
+        const dayOfWeek = day.getDay();
+        const zones = [];
+
+        // Default working hours (empty means closed all day)
+        let workingStart = null;
+        let workingEnd = null;
+
+        // Exception?
+        const exception = availability.exceptions.find(ex => isSameDay(new Date(ex.date), day));
+        if (exception) {
+            if (!exception.isOff) {
+                workingStart = exception.startTime;
+                workingEnd = exception.endTime;
+            }
+        } else {
+            // Regular Schedule
+            const sched = availability.schedule.find(s => s.dayOfWeek === dayOfWeek);
+            if (sched && sched.isWorkingDay) {
+                workingStart = sched.startTime;
+                workingEnd = sched.endTime;
+            }
+        }
+
+        // If closed all day
+        if (!workingStart || !workingEnd) {
+            return [{ top: 0, height: 1360 }]; // Full height (17 * 80)
+        }
+
+        // Parse HH:MM
+        const parseTime = (t) => {
+            const [h, m] = t.split(':').map(Number);
+            return h + m / 60;
+        };
+
+        const startDec = parseTime(workingStart);
+        const endDec = parseTime(workingEnd);
+
+        // Pre-work unavailable zone (6 AM to Start)
+        if (startDec > 6) {
+            const height = (startDec - 6) * 80;
+            zones.push({ top: 0, height });
+        }
+
+        // Post-work unavailable zone (End to 10 PM)
+        // Calendar goes to 23:00 (17 hours from 6 to 22 inclusive) -> 23:00 is end of 22 block?
+        // Hours array is 6..22. Last slot is 22:00-23:00.
+        // So end of day is 23.
+        if (endDec < 23) {
+            const top = (endDec - 6) * 80;
+            const height = (23 - endDec) * 80;
+            zones.push({ top, height });
+        }
+
+        return zones;
     };
 
     return (
@@ -273,8 +366,8 @@ const CalendarView = ({ stylistId }) => {
                                                 <div
                                                     key={event.id}
                                                     className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${event.isBlockout
-                                                            ? 'bg-gray-100 text-gray-500'
-                                                            : 'bg-indigo-50 text-indigo-700 border-l-2 border-indigo-500'
+                                                        ? 'bg-gray-100 text-gray-500'
+                                                        : 'bg-indigo-50 text-indigo-700 border-l-2 border-indigo-500'
                                                         }`}
                                                 >
                                                     {formatTime(event.start)} {event.title}
@@ -339,19 +432,35 @@ const CalendarView = ({ stylistId }) => {
 
                                 {days.map((day, i) => {
                                     const dayEvents = getEventsForDay(day);
+                                    const unavailableZones = getUnavailableZones(day); // [NEW] Get gray zones
+
                                     return (
                                         <div
                                             key={i}
                                             className="relative border-r border-gray-50 h-[1360px] group" // 17 hours * 80px
                                             style={{ gridColumn: view === 'day' ? 'span 7' : 'span 1' }}
                                         >
+                                            {/* Unavailable Overlays */}
+                                            {unavailableZones.map((zone, zIdx) => (
+                                                <div
+                                                    key={`zone-${zIdx}`}
+                                                    className="absolute left-0 right-0 bg-gray-100/50 pointer-events-none z-10"
+                                                    style={{
+                                                        top: `${zone.top}px`,
+                                                        height: `${zone.height}px`,
+                                                        backgroundImage: 'repeating-linear-gradient(45deg, #f3f4f6 25%, transparent 25%, transparent 50%, #f3f4f6 50%, #f3f4f6 75%, transparent 75%, transparent 100%)',
+                                                        backgroundSize: '10px 10px'
+                                                    }}
+                                                />
+                                            ))}
+
                                             {/* Events */}
                                             {dayEvents.map(event => {
                                                 const styles = getEventStyle(event);
                                                 return (
                                                     <div
                                                         key={event.id}
-                                                        className={`absolute left-1 right-1 rounded px-2 py-1 text-xs border overflow-hidden cursor-pointer hover:shadow-lg hover:z-20 transition-all ${event.isBlockout
+                                                        className={`absolute left-1 right-1 rounded px-2 py-1 text-xs border overflow-hidden cursor-pointer hover:shadow-lg hover:z-30 transition-all ${event.isBlockout
                                                             ? 'bg-gray-100 border-gray-200 text-gray-500 bg-stripe opacity-90'
                                                             : 'bg-indigo-50 border-indigo-100 text-indigo-700 border-l-4 border-l-indigo-500'
                                                             }`}
@@ -393,7 +502,7 @@ const CalendarView = ({ stylistId }) => {
                 isOpen={showBlockoutModal}
                 onClose={() => setShowBlockoutModal(false)}
                 onSuccess={() => {
-                    fetchEvents();
+                    fetchEventsAndAvailability(); // Refresh both
                     // Optional: Show toast
                 }}
                 initialDate={currentDate}
@@ -403,7 +512,7 @@ const CalendarView = ({ stylistId }) => {
                 isOpen={showBookingModal}
                 onClose={() => setShowBookingModal(false)}
                 onSuccess={() => {
-                    fetchEvents();
+                    fetchEventsAndAvailability(); // Refresh both
                     // Optional: Show toast
                 }}
                 initialDate={selectedSlot}

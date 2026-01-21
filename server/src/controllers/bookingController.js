@@ -1,8 +1,9 @@
 const prisma = require('../prisma');
+const { checkSlotAvailability } = require('./availabilityController'); // Import Check
 
 const createBooking = async (req, res) => {
     let clientId = req.user.id; // Default to acting user (Client booking for self)
-    const { stylistId, serviceId, appointmentDate, notes, stylistClientId } = req.body;
+    const { stylistId, serviceId, appointmentDate, notes, stylistClientId, durationOverride, force } = req.body;
     console.log(`Creating booking: User ${req.user.id} Role: ${req.user.role}`);
 
     try {
@@ -10,11 +11,29 @@ const createBooking = async (req, res) => {
         const service = await prisma.service.findUnique({ where: { id: serviceId } });
         if (!service) return res.status(404).json({ error: 'Service not found' });
 
+        const duration = durationOverride || service.duration;
+
+        // --- AVAILABILITY CHECK ---
+        // Verify slot is open (unless forced by Stylist)
+        // Stylists can pass force: true to override blocking, but we should default to checking
+        const shouldCheck = !(req.user.role === 'STYLIST' && force === true);
+
+        if (shouldCheck) {
+            const availability = await checkSlotAvailability(stylistId, appointmentDate, duration);
+            if (!availability.available) {
+                return res.status(409).json({
+                    error: 'Slot unavailable',
+                    reason: availability.reason
+                });
+            }
+        }
+
         let status = 'PENDING';
         let bookingData = {
             stylistId,
             serviceId,
             appointmentDate: new Date(appointmentDate),
+            duration,
             notes
         };
 

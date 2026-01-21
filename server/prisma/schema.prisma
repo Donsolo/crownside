@@ -152,6 +152,9 @@ model StylistProfile {
   portfolioImages  PortfolioImage[]
   subscription     ProfessionalSubscription?
   
+  availabilitySchedule AvailabilitySchedule[]
+  availabilityExceptions AvailabilityException[]
+  
   registrationIpHash String? 
 }
 
@@ -551,4 +554,43 @@ model Notification {
   createdAt DateTime         @default(now())
 
   @@index([userId])
+}
+
+// --- AVAILABILITY SYSTEM ---
+
+model AvailabilitySchedule {
+  id           String         @id @default(uuid())
+  stylistId    String
+  stylist      StylistProfile @relation(fields: [stylistId], references: [id])
+  
+  dayOfWeek    Int            // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime    String         @default("09:00") // HH:mm format (24h)
+  endTime      String         @default("17:00") // HH:mm format (24h)
+  isWorkingDay Boolean        @default(true)
+  
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([stylistId, dayOfWeek])
+}
+
+model AvailabilityException {
+  id           String         @id @default(uuid())
+  stylistId    String
+  stylist      StylistProfile @relation(fields: [stylistId], references: [id])
+  
+  date         DateTime       // The specific date (midnight UTC or local)
+  isOff        Boolean        @default(false) // Entire day off?
+  
+  // Optional override hours if not fully off
+  startTime    String?        // HH:mm
+  endTime      String?        // HH:mm
+  
+  reason       String?        // "Vacation", "Doctor", etc.
+  
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([stylistId])
+  @@index([date])
 }
