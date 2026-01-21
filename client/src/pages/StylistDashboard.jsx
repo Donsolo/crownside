@@ -298,14 +298,18 @@ export default function StylistDashboard() {
                 ) : (
                     <div className="bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden animate-fade-in transition-colors duration-300">
                         {/* Editor Header */}
-                        <div className="bg-[var(--bg-tertiary)] border-b border-[var(--card-border)] px-6 py-4 flex items-center justify-between transition-colors duration-300">
+                        {/* Editor Header */}
+                        <div className="bg-[var(--bg-tertiary)] border-b border-[var(--card-border)] px-4 py-4 md:px-6 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors duration-300">
                             <button
                                 onClick={() => setActiveView('home')}
-                                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-crown-dark transition"
+                                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-crown-dark transition self-start md:self-auto"
                             >
                                 <FaArrowLeft /> Back to Dashboard
                             </button>
-                            <h3 className="font-serif font-bold text-lg capitalize">{activeView} Editor</h3>
+                            {/* Title - Right aligned on desktop, Left on mobile (due to flex-col default items-stretch/start) */}
+                            <h3 className="font-serif font-bold text-lg capitalize md:text-right w-full md:w-auto">
+                                {activeView} Editor
+                            </h3>
                         </div>
 
                         {/* Editor Content */}

@@ -124,14 +124,14 @@ export default function AvailabilitySettings() {
 
                 <div className="space-y-3">
                     {schedule.map((day, index) => (
-                        <div key={day.dayOfWeek} className={`flex items-center gap-4 p-3 rounded-lg border ${day.isWorkingDay ? 'bg-white border-gray-200' : 'bg-gray-50 border-transparent'}`}>
+                        <div key={day.dayOfWeek} className={`flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-3 rounded-lg border ${day.isWorkingDay ? 'bg-white border-gray-200' : 'bg-gray-50 border-transparent'}`}>
                             {/* Toggle */}
-                            <div className="w-32 flex items-center gap-3">
+                            <div className="w-full md:w-32 flex items-center gap-3">
                                 <input
                                     type="checkbox"
                                     checked={day.isWorkingDay}
                                     onChange={(e) => handleScheduleChange(index, 'isWorkingDay', e.target.checked)}
-                                    className="w-5 h-5 rounded border-gray-300 text-crown-gold focus:ring-crown-gold"
+                                    className="w-5 h-5 rounded border-gray-300 text-crown-gold focus:ring-crown-gold flex-shrink-0"
                                 />
                                 <span className={`font-bold ${day.isWorkingDay ? 'text-gray-900' : 'text-gray-400'}`}>
                                     {DAYS[day.dayOfWeek]}
@@ -140,24 +140,24 @@ export default function AvailabilitySettings() {
 
                             {/* Hours */}
                             {day.isWorkingDay ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 w-full">
                                     <input
                                         type="time"
                                         value={day.startTime}
                                         onChange={(e) => handleScheduleChange(index, 'startTime', e.target.value)}
-                                        className="p-2 border rounded-md text-sm"
+                                        className="flex-1 p-2 border rounded-md text-sm min-w-0" // min-w-0 allows shrinking in flex
                                     />
-                                    <span className="text-gray-400">to</span>
+                                    <span className="text-gray-400 text-sm">to</span>
                                     <input
                                         type="time"
                                         value={day.endTime}
                                         onChange={(e) => handleScheduleChange(index, 'endTime', e.target.value)}
-                                        className="p-2 border rounded-md text-sm"
+                                        className="flex-1 p-2 border rounded-md text-sm min-w-0"
                                     />
                                     {/* Copy to All Helper? Maybe later */}
                                 </div>
                             ) : (
-                                <span className="text-sm text-gray-400 italic">Unavailable</span>
+                                <span className="text-sm text-gray-400 italic pl-8 md:pl-0">Unavailable</span>
                             )}
                         </div>
                     ))}

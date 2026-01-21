@@ -255,66 +255,72 @@ const CalendarView = ({ stylistId }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-200px)] min-h-[600px]">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-white z-10">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-serif font-bold text-gray-900 capitalize">
+            {/* Header */}
+            <div className="px-4 py-4 md:px-6 border-b border-gray-200 flex flex-col gap-4 bg-white z-10">
+                {/* Top Row: Title + View Switcher */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <h2 className="text-xl md:text-2xl font-serif font-bold text-gray-900 capitalize">
                         {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                     </h2>
-                    <div className="flex bg-gray-100 rounded-lg p-1">
+
+                    <div className="flex bg-gray-100 rounded-lg p-1 self-start md:self-auto w-full md:w-auto">
                         <button
                             onClick={() => setView('day')}
-                            className={`px-3 py-1 rounded text-sm font-medium transition ${view === 'day' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
+                            className={`flex-1 md:flex-none px-3 py-1 rounded text-sm font-medium transition text-center ${view === 'day' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                             Day
                         </button>
                         <button
                             onClick={() => setView('week')}
-                            className={`px-3 py-1 rounded text-sm font-medium transition ${view === 'week' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
+                            className={`flex-1 md:flex-none px-3 py-1 rounded text-sm font-medium transition text-center ${view === 'week' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                             Week
                         </button>
                         <button
                             onClick={() => setView('month')}
-                            className={`px-3 py-1 rounded text-sm font-medium transition ${view === 'month' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
+                            className={`flex-1 md:flex-none px-3 py-1 rounded text-sm font-medium transition text-center ${view === 'month' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-900'}`}
                         >
                             Month
                         </button>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <button onClick={handlePrev} className="p-2 hover:bg-gray-100 rounded-full transition text-gray-500">
-                        <FaChevronLeft size={14} />
-                    </button>
-                    <button onClick={handleToday} className="px-3 py-1 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded transition border border-gray-200">
-                        Today
-                    </button>
-                    <button onClick={handleNext} className="p-2 hover:bg-gray-100 rounded-full transition text-gray-500">
-                        <FaChevronRight size={14} />
-                    </button>
-                </div>
+                {/* Bottom Row: Navigation + Actions */}
+                <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+                    <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-start bg-gray-50 md:bg-transparent p-1 md:p-0 rounded-lg">
+                        <button onClick={handlePrev} className="p-2 hover:bg-gray-200 rounded-full transition text-gray-600">
+                            <FaChevronLeft size={14} />
+                        </button>
+                        <button onClick={handleToday} className="px-4 py-1 text-sm font-bold text-gray-700 hover:bg-white rounded transition border border-transparent hover:border-gray-200 hover:shadow-sm">
+                            Today
+                        </button>
+                        <button onClick={handleNext} className="p-2 hover:bg-gray-200 rounded-full transition text-gray-600">
+                            <FaChevronRight size={14} />
+                        </button>
+                    </div>
 
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => {
-                            setSelectedSlot(new Date()); // Default to now
-                            setShowBlockoutModal(true);
-                        }}
-                        className="btn-secondary text-sm flex items-center gap-2"
-                    >
-                        <FaBan size={12} />
-                        <span>Block Time</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setSelectedSlot(new Date()); // Default to now
-                            setShowBookingModal(true);
-                        }}
-                        className="btn-primary flex items-center gap-2 bg-crown-dark text-white px-4 py-2 rounded-lg text-sm shadow-md hover:bg-black transition"
-                    >
-                        <FaCalendarPlus />
-                        <span>Book Appt</span>
-                    </button>
+                    <div className="flex gap-2 w-full md:w-auto">
+                        <button
+                            onClick={() => {
+                                setSelectedSlot(new Date()); // Default to now
+                                setShowBlockoutModal(true);
+                            }}
+                            className="btn-secondary text-sm flex items-center justify-center gap-2 flex-1 md:flex-none whitespace-nowrap"
+                        >
+                            <FaBan size={12} />
+                            <span>Block Time</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setSelectedSlot(new Date()); // Default to now
+                                setShowBookingModal(true);
+                            }}
+                            className="btn-primary flex items-center justify-center gap-2 bg-crown-dark text-white px-4 py-2 rounded-lg text-sm shadow-md hover:bg-black transition flex-1 md:flex-none whitespace-nowrap"
+                        >
+                            <FaCalendarPlus />
+                            <span>Book Appt</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
