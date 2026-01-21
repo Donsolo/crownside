@@ -43,6 +43,8 @@ import UserProfile from './pages/UserProfile';
 import MessageThread from './pages/MessageThread';
 import ScrollToTop from './components/ScrollToTop';
 
+import { usePullToRefresh } from './hooks/usePullToRefresh';
+
 function App() {
   // Subdomain Logic
   const hostname = window.location.hostname; // e.g., "thecrownside.com" or "queenlashes.thecrownside.com"
@@ -64,6 +66,9 @@ function App() {
     // Localhost testing support
     subdomain = parts[0];
   }
+
+  // Pull to Refresh Polyfill (iOS PWA)
+  usePullToRefresh();
 
   // Unified App Structure
   return (
