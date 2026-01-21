@@ -92,9 +92,16 @@
     --overlay-light: rgba(255, 255, 255, 0.1);
   }
 
+  html {
+    overscroll-behavior-y: auto;
+  }
+
   body {
     @apply bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans transition-colors duration-300;
     padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Momentum scrolling */
   }
 
   h1,
