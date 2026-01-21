@@ -112,6 +112,11 @@
   h6 {
     @apply font-serif font-bold text-[var(--text-primary)];
   }
+
+  /* Utility to prevent wrapping on mobile elements */
+  .whitespace-nowrap {
+    white-space: nowrap;
+  }
 }
 
 @layer components {

@@ -168,7 +168,7 @@ export default function StylistDashboard() {
                                 {businessName}
                             </h2>
                             {/* Pro Level Badge */}
-                            <span className="px-3 py-1 bg-crown-dark text-crown-gold text-[10px] font-bold uppercase tracking-widest rounded-full shadow-sm border border-crown-gold/30">
+                            <span className="px-3 py-1 bg-crown-dark text-crown-gold text-[10px] font-bold uppercase tracking-widest rounded-full shadow-sm border border-crown-gold/30 whitespace-nowrap">
                                 {proLevel}
                             </span>
                         </div>

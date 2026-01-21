@@ -114,7 +114,7 @@ export default function BottomNav() {
                                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#FAF7F2]"></span>
                                 )}
                             </div>
-                            <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+                            <span className="text-[10px] font-medium tracking-wide whitespace-nowrap">{item.label}</span>
                             {isActive && (
                                 <span className="absolute bottom-1 w-1 h-1 bg-crown-gold rounded-full mb-1" />
                             )}

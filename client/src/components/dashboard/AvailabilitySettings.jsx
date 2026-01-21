@@ -107,7 +107,7 @@ export default function AvailabilitySettings() {
         <div className="space-y-8 animate-fade-in text-gray-900">
             {/* 1. WEEKLY SCHEDULE */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>
                         <h2 className="text-2xl font-serif font-bold">Weekly Schedule</h2>
                         <p className="text-gray-500 text-sm">Set your standard recurring working hours.</p>
@@ -115,7 +115,7 @@ export default function AvailabilitySettings() {
                     <button
                         onClick={saveSchedule}
                         disabled={saving}
-                        className="btn-primary flex items-center gap-2 bg-crown-dark text-white px-6 py-2 rounded-lg hover:bg-black transition"
+                        className="btn-primary flex items-center gap-2 bg-crown-dark text-white px-6 py-2 rounded-lg hover:bg-black transition w-full md:w-auto justify-center whitespace-nowrap"
                     >
                         {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
                         Save Schedule
@@ -230,8 +230,8 @@ export default function AvailabilitySettings() {
                         />
                     </div>
 
-                    <button type="submit" className="btn-secondary h-[42px] px-4">
-                        <FaPlus /> Add
+                    <button type="submit" className="btn-secondary h-[42px] px-6 flex items-center justify-center gap-2 whitespace-nowrap min-w-[100px]">
+                        <FaPlus size={14} /> <span>Add</span>
                     </button>
                 </form>
 
