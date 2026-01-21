@@ -75,7 +75,14 @@ function App() {
             <Elements stripe={stripePromise}>
               <div className="min-h-screen flex flex-col">
                 <Navbar />
-                <main className="flex-grow pb-[68px] md:pb-0">
+                <main
+                  className="flex-grow md:pb-0 transition-all duration-300"
+                  style={{
+                    // Mobile: Base nav content (~60px) + Base Padding (12px) + Safe Area
+                    // We use 80px base to be safe and ensure no overlap
+                    paddingBottom: 'calc(80px + env(safe-area-inset-bottom))'
+                  }}
+                >
                   {subdomain ? (
                     // Storefront Mode: Render StylistProfile directly
                     // This preserves the App Shell (Auth, Navbar, etc.) but isolates the view
