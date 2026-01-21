@@ -4,9 +4,13 @@ import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import PortfolioManager from '../components/PortfolioManager';
+
+import CalendarView from '../components/dashboard/CalendarView'; // [NEW]
+import ClientsView from '../components/dashboard/ClientsView'; // [NEW]
 import Hero from '../components/Hero';
 import { SERVICE_CATEGORIES } from '../config/categories';
-import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes } from 'react-icons/fa';
+import { FEATURE_ELITE_CALENDAR } from '../config/flags'; // [NEW]
+import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes, FaCalendarAlt, FaAddressBook, FaLock } from 'react-icons/fa';
 
 export default function StylistDashboard() {
     const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
@@ -99,7 +103,14 @@ export default function StylistDashboard() {
         if (key === 'premier') return 'Pro Premier';
         return 'Pro';
     };
-    const proLevel = getProLevelLabel(subscription?.planKey);
+
+    // Feature Gating
+    const proLevelKey = subscription?.plan?.key;
+    const isEliteOrPremier = proLevelKey === 'elite' || proLevelKey === 'premier';
+    const showCalendarSystem = FEATURE_ELITE_CALENDAR && isEliteOrPremier;
+    const showUpgradeCallout = FEATURE_ELITE_CALENDAR && !isEliteOrPremier;
+
+    const proLevel = getProLevelLabel(subscription?.plan?.key);
     const businessName = profile?.businessName || "My Beauty Business";
     const avatarUrl = profile?.profileImage;
 
@@ -150,7 +161,7 @@ export default function StylistDashboard() {
                         </div>
                     </div>
 
-                    {/* Pro Details */}
+                    {/* Pro details */}
                     <div className="flex-1 text-center md:text-left">
                         <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
                             <h2 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
@@ -198,10 +209,37 @@ export default function StylistDashboard() {
                 {activeView === 'home' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
 
+                        {/* Calendar System (Elite/Premier) */}
+                        {showCalendarSystem && (
+                            <>
+                                <DashboardCard
+                                    title="Pro Calendar"
+                                    desc="Schedule, blockouts & manual events"
+                                    icon={<FaCalendarAlt className="w-6 h-6 text-white" />}
+                                    color="bg-indigo-600"
+                                    onClick={() => setActiveView('calendar')}
+                                />
+                                <DashboardCard
+                                    title="Client Rolodex"
+                                    desc="Manage client list & imports"
+                                    icon={<FaAddressBook className="w-6 h-6 text-white" />}
+                                    color="bg-teal-600"
+                                    onClick={() => setActiveView('clients')}
+                                />
+                            </>
+                        )}
 
-
-
-
+                        {/* Elite Upgrade Teaser (Optional) */}
+                        {showUpgradeCallout && (
+                            <DashboardCard
+                                title="Unlock Calendar"
+                                desc="Upgrade to Elite for Pro Calendar"
+                                icon={<FaLock className="w-6 h-6 text-white" />}
+                                color="bg-gray-400"
+                                onClick={() => navigate('/settings/billing')}
+                                badge={0}
+                            />
+                        )}
 
                         {/* Bookings Card (High Priority) */}
                         <DashboardCard
@@ -265,16 +303,18 @@ export default function StylistDashboard() {
 
                         {/* Editor Content */}
                         <div className="p-0">
-                            {activeView === 'profile' && <ProfileEditor onUpdate={handleProfileUpdate} />}
-                            {activeView === 'services' && <ServiceEditor />}
+                            {activeView === 'profile' && <ProfileEditor onUpdate={handleProfileUpdate} initialProfile={profile} />}
+                            {activeView === 'services' && <ServiceEditor services={profile?.services} />}
                             {activeView === 'portfolio' && <PortfolioManager />}
                             {activeView === 'bookings' && <BookingManager />}
-                            {activeView === 'billing' && <BillingManager />}
+                            {activeView === 'billing' && <BillingManager subscription={subscription} />}
+                            {activeView === 'calendar' && <CalendarView stylistId={profile?.id} />}
+                            {activeView === 'clients' && <ClientsView />}
                         </div>
                     </div>
                 )}
             </div>
-        </div >
+        </div>
     );
 }
 

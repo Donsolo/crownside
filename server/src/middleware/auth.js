@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const prisma = require('../prisma');
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -6,10 +7,24 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.sendStatus(401);
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, userPayload) => {
         if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
+
+        try {
+            // Fetch full user details including StylistProfile
+            const user = await prisma.user.findUnique({
+                where: { id: userPayload.id },
+                include: { stylistProfile: true }
+            });
+
+            if (!user) return res.sendStatus(403);
+
+            req.user = user;
+            next();
+        } catch (dbError) {
+            console.error("Auth Middleware Error:", dbError);
+            return res.sendStatus(500);
+        }
     });
 };
 

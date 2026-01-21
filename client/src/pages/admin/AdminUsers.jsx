@@ -6,12 +6,14 @@ import { useTheme } from '../../context/ThemeContext';
 
 const EditRoleModal = ({ user, onClose, onSave }) => {
     const [role, setRole] = useState(user.role);
+    const [tier, setTier] = useState(user.stylistProfile?.subscription?.planKey?.toUpperCase() || 'PRO');
     const [loading, setLoading] = useState(false);
     const { theme } = useTheme();
 
     const handleSave = async () => {
         setLoading(true);
-        await onSave(user.id, role);
+        // Only pass tier if role is STYLIST
+        await onSave(user.id, role, role === 'STYLIST' ? tier : null);
         setLoading(false);
     };
 
@@ -64,20 +66,46 @@ const EditRoleModal = ({ user, onClose, onSave }) => {
                                             <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
                                                 Change role for <span className="font-bold">{user.email}</span>
                                             </p>
-                                            <div className="mt-4">
-                                                <select
-                                                    value={role}
-                                                    onChange={(e) => setRole(e.target.value)}
-                                                    className={`mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 ring-1 ring-inset focus:ring-2 sm:text-sm sm:leading-6 ${theme === 'dark'
-                                                        ? 'bg-gray-700 text-white ring-gray-600 focus:ring-crown-gold'
-                                                        : 'text-gray-900 ring-gray-300 focus:ring-crown-gold'
-                                                        }`}
-                                                >
-                                                    <option value="CLIENT">Client</option>
-                                                    <option value="STYLIST">Stylist</option>
-                                                    <option value="ADMIN">Admin</option>
-                                                    <option value="MODERATOR">Moderator</option>
-                                                </select>
+                                            <div className="mt-4 space-y-4">
+                                                <div>
+                                                    <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Role</label>
+                                                    <select
+                                                        value={role}
+                                                        onChange={(e) => setRole(e.target.value)}
+                                                        className={`mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 ring-1 ring-inset focus:ring-2 sm:text-sm sm:leading-6 ${theme === 'dark'
+                                                            ? 'bg-gray-700 text-white ring-gray-600 focus:ring-crown-gold'
+                                                            : 'text-gray-900 ring-gray-300 focus:ring-crown-gold'
+                                                            }`}
+                                                    >
+                                                        <option value="CLIENT">Client</option>
+                                                        <option value="STYLIST">Stylist</option>
+                                                        <option value="ADMIN">Admin</option>
+                                                        <option value="MODERATOR">Moderator</option>
+                                                    </select>
+                                                </div>
+
+                                                {role === 'STYLIST' && (
+                                                    <div>
+                                                        <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                            Subscription Tier (Overrides Billing)
+                                                        </label>
+                                                        <select
+                                                            value={tier}
+                                                            onChange={(e) => setTier(e.target.value)}
+                                                            className={`mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 ring-1 ring-inset focus:ring-2 sm:text-sm sm:leading-6 ${theme === 'dark'
+                                                                ? 'bg-gray-700 text-white ring-gray-600 focus:ring-crown-gold'
+                                                                : 'text-gray-900 ring-gray-300 focus:ring-crown-gold'
+                                                                }`}
+                                                        >
+                                                            <option value="PRO">Beauty Pro ($15)</option>
+                                                            <option value="ELITE">Pro Elite ($25)</option>
+                                                            <option value="PREMIER">Pro Premier ($35)</option>
+                                                        </select>
+                                                        <p className="mt-1 text-xs text-amber-500">
+                                                            Warning: Changing this bypasses Stripe billing.
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -133,10 +161,11 @@ export default function AdminUsers() {
         }
     };
 
-    const handleUpdateRole = async (userId, newRole) => {
+    const handleUpdateRole = async (userId, newRole, newTier) => {
         try {
-            const res = await api.put(`/users/${userId}/role`, { role: newRole });
-            setUsers(users.map(u => u.id === userId ? { ...u, role: res.data.role } : u));
+            const res = await api.put(`/users/${userId}/role`, { role: newRole, tier: newTier });
+            // Update local state - backend returns updated user object with nested structure
+            setUsers(users.map(u => u.id === userId ? res.data : u));
             setEditingUser(null);
         } catch (err) {
             console.error("Failed to update role", err);
@@ -160,15 +189,25 @@ export default function AdminUsers() {
         u.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const RoleBadge = ({ role }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-bold ${role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
-            role === 'STYLIST' ? 'bg-crown-gold/10 text-crown-gold' :
-                role === 'MODERATOR' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-600'
-            }`}>
-            {role}
-        </span>
-    );
+    const RoleBadge = ({ user }) => {
+        const role = user.role;
+        const tier = user.stylistProfile?.subscription?.planKey;
+
+        let label = role;
+        if (role === 'STYLIST' && tier) {
+            label = `STYLIST (${tier.toUpperCase()})`;
+        }
+
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-bold ${role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
+                role === 'STYLIST' ? 'bg-crown-gold/10 text-crown-gold' :
+                    role === 'MODERATOR' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-600'
+                }`}>
+                {label}
+            </span>
+        );
+    };
 
     if (loading) return <div>Loading users...</div>;
 
@@ -222,7 +261,7 @@ export default function AdminUsers() {
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <RoleBadge role={user.role} />
+                                    <RoleBadge user={user} />
                                 </td>
                                 <td className="p-4 text-sm text-gray-500">
                                     {new Date(user.createdAt).toLocaleDateString()}
@@ -261,7 +300,7 @@ export default function AdminUsers() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className={`font-medium truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{user.email}</div>
-                                    <RoleBadge role={user.role} />
+                                    <RoleBadge user={user} />
                                 </div>
                             </div>
                         </div>

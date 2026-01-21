@@ -94,6 +94,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/moderation', require('./routes/moderationRoutes'));
 app.use('/api/connections', require('./routes/connectionRoutes'));
 app.use('/api/blocks', require('./routes/blockRoutes'));
+app.use('/api/calendar', require('./routes/calendarRoutes')); // [NEW] ELITE CALENDAR
 
 app.get('/', (req, res) => {
     res.json({ message: 'CrownSide API is running' });

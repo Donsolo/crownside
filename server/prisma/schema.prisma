@@ -18,24 +18,12 @@ enum Role {
   MODERATOR
 }
 
-// ... (Existing Enums)
-
-// (Removed partial User definition)
-
-// ... 
-
 enum PostStatus {
   OPEN
   CLOSED
   REMOVED
   RESOLVED
 }
-
-// (Removed duplicate ForumPost)
-
-// ...
-
-// (Removed duplicate Comment)
 
 enum BookingStatus {
   PENDING
@@ -72,6 +60,10 @@ model User {
   mentionsReceived Comment[] @relation("UserMentions")
   stylistProfile StylistProfile?
   clientBookings Booking[] @relation("ClientBookings")
+  
+  // New: Link to StylistClient records (where this User is the "matched" client)
+  matchedClientRecords StylistClient[]
+
   conversations  Conversation[]
   
   // Forum & Safety
@@ -148,6 +140,10 @@ model StylistProfile {
   
   services         Service[]
   stylistBookings  Booking[] @relation("StylistBookings")
+  
+  // New: Stylist's Client Rolodex
+  clients          StylistClient[]
+
   conversations    Conversation[]
   
   createdAt        DateTime @default(now())
@@ -190,18 +186,30 @@ model Service {
 
 model Booking {
   id          String   @id @default(uuid())
-  clientId    String
-  client      User     @relation("ClientBookings", fields: [clientId], references: [id])
+  
+  // Modified: clientId is now optional (for external/manual bookings)
+  clientId    String?
+  client      User?     @relation("ClientBookings", fields: [clientId], references: [id])
+  
+  // New: Relation to StylistClient (for manual/imported bookings)
+  stylistClientId String?
+  stylistClient   StylistClient? @relation(fields: [stylistClientId], references: [id])
   
   stylistId   String
   stylist     StylistProfile @relation("StylistBookings", fields: [stylistId], references: [id])
   
-  serviceId   String
-  service     Service @relation(fields: [serviceId], references: [id])
+  serviceId   String?
+  service     Service? @relation(fields: [serviceId], references: [id])
   
   appointmentDate DateTime
+  duration    Int?      // Duration in minutes (overrides service duration)
   status      BookingStatus @default(PENDING)
   notes       String?
+  
+  // New: Calendar & Import Fields
+  isBlockout   Boolean @default(false)
+  importSource String? // 'MANUAL', 'BOOKSY', 'STYLESEAT', 'CSV'
+  importId     String?
   
   cancellationReason String?
   cancelledAt        DateTime?
@@ -215,7 +223,32 @@ model Booking {
   updatedAt   DateTime @updatedAt @default(now())
 }
 
+// NEW MODEL: Client Rolodex
+model StylistClient {
+  id        String   @id @default(uuid())
+  stylistId String
+  stylist   StylistProfile @relation(fields: [stylistId], references: [id])
+  
+  userId    String?  // Optional: Linked CrownSide User
+  user      User?    @relation(fields: [userId], references: [id])
 
+  name      String
+  email     String?
+  phone     String?
+  notes     String?
+  
+  importSource String @default("MANUAL") // MANUAL, BOOKSY, STYLESEAT, CSV, CROWNSIDE
+  importId     String? // External ID
+
+  bookings  Booking[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stylistId])
+  @@index([email])
+  @@index([phone])
+}
 
 model Review {
   id          String   @id @default(uuid())
@@ -336,8 +369,6 @@ enum ForumBoardType {
   HELP_FEEDBACK
   ANNOUNCEMENTS
 }
-
-// (Removed duplicate PostStatus)
 
 model ForumPost {
   id          String         @id @default(uuid())

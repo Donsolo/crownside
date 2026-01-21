@@ -10,7 +10,13 @@ const getAllUsers = async (req, res) => {
                 createdAt: true,
                 stylistProfile: {
                     select: {
-                        businessName: true
+                        businessName: true,
+                        subscription: {
+                            select: {
+                                planKey: true,
+                                status: true
+                            }
+                        }
                     }
                 }
             },
@@ -22,7 +28,6 @@ const getAllUsers = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch users' });
     }
 };
-
 
 const getDashboardStats = async (req, res) => {
     try {
@@ -137,16 +142,107 @@ const getPublicProfile = async (req, res) => {
 const updateUserRole = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { role } = req.body;
+        const { role, tier } = req.body; // tier is optional, e.g., 'ELITE'
 
         if (!['CLIENT', 'STYLIST', 'ADMIN', 'MODERATOR'].includes(role)) {
             return res.status(400).json({ error: 'Invalid role' });
         }
 
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: { role },
-            select: { id: true, email: true, role: true }
+        const validTiers = ['PRO', 'ELITE', 'PREMIER']; // Use constants if imported, but safely hardcoded here or check config
+
+        // Execute as transaction to ensure data integrity
+        const updatedUser = await prisma.$transaction(async (tx) => {
+            // 1. Update User Role
+            const user = await tx.user.update({
+                where: { id: userId },
+                data: { role },
+                include: { stylistProfile: true }
+            });
+
+            // 2. Handle Stylist Promotion / Tier Changes
+            if (role === 'STYLIST') {
+                let stylistProfile = user.stylistProfile;
+
+                // Ensure StylistProfile exists
+                if (!stylistProfile) {
+                    const handleBase = (user.displayName || user.email.split('@')[0]).replace(/\s+/g, '-').toLowerCase();
+                    const uniqueHandle = `${handleBase}-${user.id.slice(0, 4)}`;
+
+                    stylistProfile = await tx.stylistProfile.create({
+                        data: {
+                            userId: user.id,
+                            businessName: (user.displayName || user.email.split('@')[0]) + "'s Scheduler",
+                            storefrontHandle: uniqueHandle, // Generate basic handle
+                            locationType: 'SALON', // Default
+                            contactPreference: 'BOOKINGS_ONLY'
+                        }
+                    });
+                }
+
+                // If a Tier is specified (or if we are promoting to Stylist and need a default), set it.
+                // If the user was already a Stylist and we are just changing role to Stylist (no-op) but providing a new Tier, we update it.
+                if (tier) {
+                    const planKey = tier.toLowerCase(); // 'elite'
+                    // Check if legitimate tier
+                    // upsert Subscription
+                    await tx.professionalSubscription.upsert({
+                        where: { stylistId: stylistProfile.id },
+                        create: {
+                            stylistId: stylistProfile.id,
+                            planKey: planKey,
+                            status: 'ACTIVE',
+                            stripeSubscriptionId: 'admin_grant', // Marker for admin override
+                        },
+                        update: {
+                            planKey: planKey,
+                            status: 'ACTIVE',
+                            // Keep existing Stripe ID if it's real? 
+                            // If we are overriding, we probably want to ensure it's ACTIVE. 
+                            // Use 'admin_grant' if not present or if we want to explicitly acknowledge the override?
+                            // Let's keep existing ID if it looks real (starts with sub_) otherwise use admin_grant
+                            // actually, if we are changing logic, let's just force ACTIVE. 
+                            status: 'ACTIVE'
+                        }
+                    });
+
+                    // Also update the StylistProfile subscriptionStatus cache if you rely on it?
+                    // Schema has `subscriptionStatus` on StylistProfile too as a cache/flag?
+                    // Yes: `subscriptionStatus SubscriptionStatus @default(INACTIVE)`
+                    await tx.stylistProfile.update({
+                        where: { id: stylistProfile.id },
+                        data: { subscriptionStatus: 'ACTIVE' }
+                    });
+                }
+            } else {
+                // Demotion (e.g. to CLIENT)
+                // We should probably deactivate their subscription if they had one?
+                if (user.stylistProfile) {
+                    await tx.professionalSubscription.updateMany({
+                        where: { stylistId: user.stylistProfile.id },
+                        data: { status: 'INACTIVE' } // Or CANCELED
+                    });
+
+                    await tx.stylistProfile.update({
+                        where: { id: user.stylistProfile.id },
+                        data: { subscriptionStatus: 'INACTIVE' }
+                    });
+                }
+            }
+
+            // Return updated user with new data
+            return await tx.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
+                    stylistProfile: {
+                        select: {
+                            subscription: { select: { planKey: true, status: true } }
+                        }
+                    }
+                }
+            });
         });
 
         res.json(updatedUser);

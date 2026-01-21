@@ -1,8 +1,8 @@
 const prisma = require('../prisma');
 
 const createBooking = async (req, res) => {
-    const clientId = req.user.id;
-    const { stylistId, serviceId, appointmentDate, notes } = req.body;
+    let clientId = req.user.id; // Default to acting user (Client booking for self)
+    const { stylistId, serviceId, appointmentDate, notes, stylistClientId } = req.body;
     console.log(`Creating booking: User ${req.user.id} Role: ${req.user.role}`);
 
     try {
@@ -10,34 +10,84 @@ const createBooking = async (req, res) => {
         const service = await prisma.service.findUnique({ where: { id: serviceId } });
         if (!service) return res.status(404).json({ error: 'Service not found' });
 
-        // Prevent self-booking if needed, or allow it for testing
-        // if (req.user.role === 'STYLIST') { ... check if stylistId matches profile ... }
+        let status = 'PENDING';
+        let bookingData = {
+            stylistId,
+            serviceId,
+            appointmentDate: new Date(appointmentDate),
+            notes
+        };
+
+        // Override logic for Stylists (Manual Booking)
+        if (req.user.role === 'STYLIST') {
+            // Verify the stylist is booking for themselves
+            const profile = await prisma.stylistProfile.findUnique({ where: { userId: req.user.id } });
+            if (!profile || profile.id !== stylistId) {
+                return res.status(403).json({ error: 'You can only create manual bookings for your own schedule.' });
+            }
+
+            status = 'APPROVED';
+
+            // Handle Manual Client Association
+            if (stylistClientId) {
+                const sc = await prisma.stylistClient.findUnique({ where: { id: stylistClientId } });
+                if (sc) {
+                    bookingData.stylistClientId = sc.id;
+                    // If this Rolodex client is linked to a CrownSide User, associate them
+                    if (sc.userId) {
+                        bookingData.clientId = sc.userId;
+                    } else {
+                        // Rolodex-only client, no User account associated
+                        // bookingData.clientId remains undefined
+                    }
+                } else {
+                    return res.status(404).json({ error: 'Selected client not found in rolodex' });
+                }
+            } else {
+                // Fallback or explicit "Walk-in" handling if no client selected?
+                // For now, require a client (they can create a "Walk-in" client in rolodex)
+                return res.status(400).json({ error: 'Client is required for manual bookings' });
+            }
+        } else {
+            // Standard Client Self-Booking
+            bookingData.clientId = clientId;
+        }
+
+        bookingData.status = status;
 
         // Create Booking
         const booking = await prisma.booking.create({
-            data: {
-                clientId,
-                stylistId,
-                serviceId,
-                appointmentDate: new Date(appointmentDate), // Ensure Date object
-                status: 'PENDING',
-                notes
+            data: bookingData
+        });
+
+        // NOTIFICATION logic
+        // If Client created it -> Notify Stylist (Already handled below)
+        // If Stylist created it -> Notify Client (if they have a User account)
+
+        if (req.user.role === 'CLIENT') {
+            // ... existing notification to Stylist ...
+            const stylistProfile = await prisma.stylistProfile.findUnique({
+                where: { id: stylistId },
+                select: { userId: true }
+            });
+
+            if (stylistProfile) {
+                await prisma.notification.create({
+                    data: {
+                        userId: stylistProfile.userId,
+                        senderId: clientId,
+                        type: 'NEW_BOOKING',
+                        bookingId: booking.id
+                    }
+                });
             }
-        });
-
-        // NOTIFICATION: Trigger NEW_BOOKING for Stylist
-        // Need Stylist's User ID (booking.stylistId is Profile ID)
-        const stylistProfile = await prisma.stylistProfile.findUnique({
-            where: { id: stylistId },
-            select: { userId: true }
-        });
-
-        if (stylistProfile) {
+        } else if (req.user.role === 'STYLIST' && booking.clientId) {
+            // Notify the Client if they have a real account
             await prisma.notification.create({
                 data: {
-                    userId: stylistProfile.userId, // Recipient (Stylist)
-                    senderId: clientId,           // Triggered by Client
-                    type: 'NEW_BOOKING',
+                    userId: booking.clientId,
+                    senderId: req.user.id,
+                    type: 'BOOKING_APPROVED', // Or NEW_BOOKING?
                     bookingId: booking.id
                 }
             });
