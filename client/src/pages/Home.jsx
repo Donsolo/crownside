@@ -159,7 +159,7 @@ function AuthenticatedHome({ user }) {
                                 <Link
                                     key={pro.id}
                                     to={`/stylist/${pro.id}`}
-                                    className="min-w-[260px] md:min-w-[280px] bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden hover:shadow-md transition snap-start flex-shrink-0"
+                                    className="w-[260px] md:w-[280px] min-w-[260px] md:min-w-[280px] bg-[var(--card-bg)] rounded-xl shadow-sm border border-[var(--card-border)] overflow-hidden hover:shadow-md transition snap-start flex-shrink-0"
                                 >
                                     <div className="h-32 bg-gray-200 relative">
                                         {pro.bannerImage ? (
