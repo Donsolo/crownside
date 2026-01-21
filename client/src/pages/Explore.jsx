@@ -94,17 +94,20 @@ export default function Explore() {
                                 // Canonical Subdomain Logic
                                 const hasHandle = !!stylist.storefrontHandle;
                                 const isProd = process.env.NODE_ENV === 'production';
-                                const subdomainUrl = isProd
-                                    ? `https://${stylist.storefrontHandle}.thecrownside.com`
-                                    : `/stylist/${stylist.storefrontHandle || stylist.id}`; // Fallback for dev
+                                // TEMPORARILY DISABLED: Force UUIDs for now
+                                // const subdomainUrl = isProd
+                                //     ? `https://${stylist.storefrontHandle}.thecrownside.com`
+                                //     : `/stylist/${stylist.storefrontHandle || stylist.id}`; // Fallback for dev
 
                                 // If production and handle exists, force external link to subdomain
+                                // DISABLING THIS BLOCK TEMPORARILY
+                                /* 
                                 if (hasHandle && isProd) {
                                     return (
                                         <a key={stylist.id} href={subdomainUrl} className="block group">
                                             <div className="bg-[var(--card-bg)] rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-[var(--card-border)] group-hover:border-crown-gold/30">
                                                 <div className="h-48 bg-gray-200 relative">
-                                                    {/* Image Wrapper for Zoom Effect */}
+                                                    
                                                     <div className="absolute inset-0 overflow-hidden">
                                                         {stylist.bannerImage ? (
                                                             <img src={stylist.bannerImage} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Banner" />
@@ -113,7 +116,7 @@ export default function Explore() {
                                                         )}
                                                     </div>
 
-                                                    {/* Avatar - Now outside the overflow-hidden image wrapper */}
+                                                    
                                                     <div className="absolute -bottom-6 left-6 border-4 border-[var(--card-bg)] rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10 transition-colors duration-300">
                                                         {stylist.profileImage ? (
                                                             <img src={stylist.profileImage} className="w-full h-full object-cover" alt="Profile" />
@@ -141,6 +144,7 @@ export default function Explore() {
                                         </a>
                                     );
                                 }
+                                */
 
                                 // Fallback internal link
                                 return (

@@ -60,12 +60,16 @@ function App() {
   let subdomain = null;
 
   // Simple heuristic for now: 
+  /* TEMPORARILY DISABLED FOR STABILITY
   if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'api') {
     subdomain = parts[0];
   } else if (parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'www') {
     // Localhost testing support
     subdomain = parts[0];
   }
+  */
+  // Force disable subdomains
+  subdomain = null;
 
   // Pull to Refresh Polyfill (iOS PWA)
   usePullToRefresh();

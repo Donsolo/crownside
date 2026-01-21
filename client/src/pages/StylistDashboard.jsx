@@ -698,43 +698,20 @@ function ProfileEditor({ onUpdate }) {
                     />
 
                     {/* Storefront Handle Preview */}
-                    <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                            Your CrownSide Storefront
+                    <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200 opacity-75">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">
+                            Custom Storefront URL (Coming Soon)
                         </label>
                         <div className="flex items-center justify-between gap-2">
-                            <code className="text-sm text-crown-dark font-mono truncate">
-                                {profile.storefrontHandle
-                                    ? `https://${profile.storefrontHandle}.thecrownside.com`
-                                    : (profile.businessName ? `https://${profile.businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}.thecrownside.com` : 'Start typing name...')}
+                            <code className="text-sm text-gray-500 font-mono truncate select-none">
+                                {profile.businessName ? `https://${profile.businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}.thecrownside.com` : 'your-business.thecrownside.com'}
                             </code>
                             <div className="flex gap-2 shrink-0">
-                                {profile.storefrontHandle && (
-                                    <>
-                                        <a
-                                            href={`https://${profile.storefrontHandle}.thecrownside.com`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-xs bg-crown-gold text-white border border-crown-gold hover:bg-yellow-600 px-2 py-1 rounded shadow-sm font-bold flex items-center"
-                                        >
-                                            View
-                                        </a>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(`https://${profile.storefrontHandle}.thecrownside.com`);
-                                                alert('Storefront link copied!');
-                                            }}
-                                            className="text-xs bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-2 py-1 rounded shadow-sm font-bold"
-                                        >
-                                            Copy Link
-                                        </button>
-                                    </>
-                                )}
+                                {/* Actions Hidden/Disabled for now */}
                             </div>
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1">
-                            Preview of your simplified address. Save to reserve.
+                            This feature is coming soon. Your storefront is currently available via your CrownSide profile.
                         </p>
                     </div>
                 </div>
