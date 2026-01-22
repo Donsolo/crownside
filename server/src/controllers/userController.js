@@ -125,7 +125,7 @@ const getPublicProfile = async (req, res) => {
             bio: user.bio,
             location: user.location,
             createdAt: user.createdAt,
-            profileImage: user.stylistProfile?.profileImage, // Use stylist image if exists as fallback or avatar
+            profileImage: user.stylistProfile?.profileImage || user.profileImage, // Use stylist image if exists as fallback or avatar
             stylistProfileId: user.stylistProfile?.id,
             connectionCount,
             connectionStatus

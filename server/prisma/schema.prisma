@@ -54,6 +54,7 @@ model User {
   displayName String?
   themePreference String @default("light")
   mutedUntil DateTime?
+  profileImage String?
   createdAt DateTime @default(now())
   
   // Relations

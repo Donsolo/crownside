@@ -53,8 +53,10 @@ const createComment = async (req, res) => {
                     select: {
                         id: true,
                         displayName: true,
+                        displayName: true,
                         role: true,
-                        stylistProfile: { select: { businessName: true, profileImage: true } }
+                        profileImage: true, // [NEW] Added for Clients
+                        stylistProfile: { select: { id: true, businessName: true, profileImage: true } }
                     }
                 },
                 mentionedUser: {
@@ -132,16 +134,19 @@ const createComment = async (req, res) => {
 
 const getComments = async (req, res) => {
     const { postId } = req.params;
+    const { parentId = null, limit = 50, cursor } = req.query; // limit default 50 for roots? User said "Load ONLY first 2 child". limit needs to be variable.
+    // For roots, maybe 10 or 20. For replies, 2.
+    // I will let frontend pass limit.
+
     const userId = req.user ? req.user.id : null;
 
     try {
-        // Fetch comments with author info and likes
-        // Note: For advanced threading, we might fetch flat and rebuild in JS, or fetch top-level with replies.
-        // Let's fetch flat and let frontend organize, or fetch top-level incld replies.
-        // Simple approach: Fetch all for post, order by createdAt.
-
-        const comments = await prisma.comment.findMany({
-            where: { postId },
+        const queryOptions = {
+            where: {
+                postId,
+                parentId: parentId === 'null' ? null : parentId // Handle string 'null'
+            },
+            take: parseInt(limit),
             orderBy: { createdAt: 'asc' },
             include: {
                 author: {
@@ -149,8 +154,9 @@ const getComments = async (req, res) => {
                         id: true,
                         displayName: true,
                         role: true,
-                        // profileImage: true, // Removed: Field does not exist on User
-                        stylistProfile: { select: { businessName: true, profileImage: true } }
+                        role: true,
+                        profileImage: true, // [NEW] Added for Clients
+                        stylistProfile: { select: { id: true, businessName: true, profileImage: true } }
                     }
                 },
                 mentionedUser: {
@@ -161,25 +167,38 @@ const getComments = async (req, res) => {
                     }
                 },
                 likes: {
-                    where: { userId: userId || '0' }, // Check if current user liked
+                    where: { userId: userId || '0' },
                     select: { id: true }
                 },
                 _count: {
-                    select: { likes: true }
+                    select: { likes: true, replies: true }
                 }
             }
-        });
+        };
 
-        // Transform to add 'isLiked' boolean and 'likeCount'
+        if (cursor) {
+            queryOptions.cursor = { id: cursor };
+            queryOptions.skip = 1; // Skip the cursor itself
+        }
+
+        const comments = await prisma.comment.findMany(queryOptions);
+
         const enhancedComments = comments.map(c => ({
             ...c,
             isLiked: c.likes.length > 0,
-            likeCount: c._count.likes
+            likeCount: c._count.likes,
+            replyCount: c._count.replies
         }));
 
-        res.json(enhancedComments);
+        // Determine next cursor
+        const nextCursor = comments.length === parseInt(limit) ? comments[comments.length - 1].id : null;
+
+        res.json({
+            comments: enhancedComments,
+            nextCursor
+        });
     } catch (error) {
-        console.error(error);
+        console.error("fetchComments Error:", error);
         res.status(500).json({ error: 'Failed to fetch comments' });
     }
 };

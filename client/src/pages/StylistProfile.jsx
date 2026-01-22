@@ -4,8 +4,9 @@ import { Menu, Transition } from '@headlessui/react';
 import api from '../lib/api';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { FaInstagram, FaTiktok, FaPhoneAlt, FaGlobe, FaMapMarkerAlt, FaStar, FaShareAlt, FaUserPlus, FaUserCheck, FaUserTimes, FaComment, FaEllipsisH, FaBan, FaFlag } from 'react-icons/fa';
+import { FaInstagram, FaTiktok, FaPhoneAlt, FaGlobe, FaMapMarkerAlt, FaStar, FaShareAlt, FaUserPlus, FaUserCheck, FaUserTimes, FaComment, FaEllipsisH, FaBan, FaFlag, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import Badge from '../components/Badge';
 
 export default function StylistProfile({ handle }) {
     const { id } = useParams();
@@ -257,6 +258,14 @@ export default function StylistProfile({ handle }) {
                     <div className="w-full h-full bg-crown-dark flex items-center justify-center text-white/20 text-4xl font-serif">CrownSide</div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className="absolute top-4 left-4 z-20 w-10 h-10 bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center text-white hover:bg-white/40 transition shadow-lg"
+                >
+                    <FaArrowLeft size={16} />
+                </button>
             </div>
 
             <div className="container mx-auto px-4 -mt-24 relative z-10 flex flex-col md:flex-row gap-8 pb-20">
@@ -268,7 +277,9 @@ export default function StylistProfile({ handle }) {
                             <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden mb-4 bg-gray-100">
                                 <img src={stylist.profileImage || `https://placehold.co/150?text=Pro`} className="w-full h-full object-cover" alt={stylist.businessName} />
                             </div>
-                            <h1 className="text-2xl font-bold font-serif text-crown-dark mb-1">{stylist.businessName}</h1>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-3xl font-bold text-gray-900">{stylist.businessName}</h1>
+                            </div>
                             <p className="text-gray-500 mb-4 flex items-center gap-1 text-sm">
                                 <FaMapMarkerAlt className="text-crown-gold" /> {stylist.locationType} • Detroit, MI
                             </p>

@@ -4,6 +4,7 @@ import Hero from '../components/Hero';
 import api from '../lib/api';
 import { FaPen, FaArrowLeft, FaFilter } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import Badge from '../components/Badge';
 
 export default function ForumFeed() {
     const [searchParams] = useSearchParams();
@@ -162,15 +163,16 @@ export default function ForumFeed() {
                                         <div
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                const target = post.author.role === 'STYLIST' && post.author.stylistProfile
+                                                const hasProProfile = post.author.role === 'STYLIST' && post.author.stylistProfile?.id;
+                                                const target = hasProProfile
                                                     ? `/stylist/${post.author.stylistProfile.id}`
                                                     : `/user/${post.author.id}`;
                                                 navigate(target);
                                             }}
                                             className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-crown-gold transition"
                                         >
-                                            {post.author.stylistProfile?.profileImage ? (
-                                                <img src={post.author.stylistProfile.profileImage} alt="" className="w-full h-full object-cover" />
+                                            {(post.author.stylistProfile?.profileImage || post.author.profileImage) ? (
+                                                <img src={post.author.stylistProfile?.profileImage || post.author.profileImage} alt="" className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center font-bold">
                                                     {(post.author.displayName || '?')[0].toUpperCase()}
@@ -201,7 +203,7 @@ export default function ForumFeed() {
                                         </span>
                                         {post._count?.comments > 0 && (
                                             <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded flex items-center gap-1">
-                                                <FaPen size={10} /> {post._count.comments} Reply{post._count.comments !== 1 ? 's' : ''}
+                                                <FaPen size={10} /> {post._count.comments} {post._count.comments === 1 ? 'Reply' : 'Replies'}
                                             </span>
                                         )}
                                         {/* "New Reply" Logic: If there are comments and the last activity was recent? 

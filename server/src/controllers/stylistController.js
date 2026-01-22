@@ -61,6 +61,7 @@ const getStylistById = async (req, res) => {
             include: {
                 services: true,
                 portfolioImages: true,
+                subscription: { select: { planKey: true } },
                 stylistBookings: {
                     include: { reviews: true }
                 }

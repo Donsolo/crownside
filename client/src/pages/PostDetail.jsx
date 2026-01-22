@@ -136,8 +136,8 @@ export default function PostDetail() {
                     <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden">
-                                {(post.author.stylistProfile?.profileImage) ? (
-                                    <img src={post.author.stylistProfile.profileImage} alt="" className="w-full h-full object-cover" />
+                                {(post.author.stylistProfile?.profileImage || post.author.profileImage) ? (
+                                    <img src={post.author.stylistProfile?.profileImage || post.author.profileImage} alt="" className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400"><FaUserCircle /></div>
                                 )}

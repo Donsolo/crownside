@@ -78,14 +78,22 @@ export default function Navbar() {
                                     )}
                                 </button>
 
-                                {user.role === 'CLIENT' && (
-                                    <>
-                                        <Link to="/my-bookings" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
-                                            My Bookings
-                                        </Link>
-                                        <Link to="/profile" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition">Profile</Link>
-                                    </>
-                                )}
+                                <>
+                                    <Link to="/my-bookings" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
+                                        My Bookings
+                                    </Link>
+                                    <Link to="/profile" className="flex items-center gap-2 group">
+                                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden border border-transparent group-hover:border-crown-gold transition">
+                                            {(user.profileImage || user.stylistProfile?.profileImage) ? (
+                                                <img src={user.profileImage || user.stylistProfile?.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
+                                                    {user.displayName?.[0] || 'U'}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </Link>
+                                </>
                                 {user.role === 'STYLIST' && (
                                     <Link to="/dashboard" className="text-[var(--nav-text)] hover:text-crown-gold font-medium transition relative">
                                         Dashboard

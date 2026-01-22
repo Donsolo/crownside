@@ -176,6 +176,7 @@ exports.getConnections = async (req, res) => {
                         id: true,
                         displayName: true,
                         role: true,
+                        profileImage: true, // [NEW] Catch Client Avatar
                         stylistProfile: {
                             select: { id: true, businessName: true, profileImage: true }
                         }
@@ -186,6 +187,7 @@ exports.getConnections = async (req, res) => {
                         id: true,
                         displayName: true,
                         role: true,
+                        profileImage: true, // [NEW] Catch Client Avatar
                         stylistProfile: {
                             select: { id: true, businessName: true, profileImage: true }
                         }
@@ -202,6 +204,11 @@ exports.getConnections = async (req, res) => {
             // Explicitly resolve stylistId if role is STYLIST
             const stylistId = friend.role === 'STYLIST' ? friend.stylistProfile?.id : null;
 
+            // Resolve Image: Stylist Profile > User Profile > null
+            const validImage = friend.role === 'STYLIST'
+                ? (friend.stylistProfile?.profileImage || friend.profileImage)
+                : friend.profileImage;
+
             return {
                 id: friend.id, // Keep generic userId
                 stylistId: stylistId, // Explicit stylistId for routing
@@ -209,7 +216,7 @@ exports.getConnections = async (req, res) => {
                 status: c.status,
                 isIncoming: !isRequester && c.status === 'PENDING',
                 name: (friend.role === 'STYLIST' && friend.stylistProfile?.businessName) ? friend.stylistProfile.businessName : friend.displayName,
-                image: friend.stylistProfile?.profileImage, // Fallback need handling on client
+                image: validImage, // Correctly resolved image
                 role: friend.role
             };
         });

@@ -166,15 +166,26 @@ export default function ChatInterface({ bookingId, conversationId, onClose, part
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-[var(--card-bg)] z-10">
-                    <div>
-                        <h3 className="font-serif font-bold text-lg text-[var(--text-primary)]">
-                            {participants?.otherName || 'Chat'}
-                        </h3>
-                        {participants?.bookingDate && (
-                            <p className="text-xs text-[var(--text-secondary)]">
-                                Ref: {format(new Date(participants.bookingDate), 'MMM d, h:mm a')}
-                            </p>
-                        )}
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 border border-gray-100">
+                            {participants?.otherImage ? (
+                                <img src={participants.otherImage} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold bg-gray-100">
+                                    {(participants?.otherName || '?')[0]}
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="font-serif font-bold text-lg text-[var(--text-primary)] leading-tight">
+                                {participants?.otherName || 'Chat'}
+                            </h3>
+                            {participants?.bookingDate && (
+                                <p className="text-xs text-[var(--text-secondary)]">
+                                    Ref: {format(new Date(participants.bookingDate), 'MMM d, h:mm a')}
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <button
                         onClick={onClose}

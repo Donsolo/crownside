@@ -89,8 +89,12 @@ export default function MyBookings() {
             <div className={`bg-white rounded-xl p-5 border transition-all duration-300 ${isPast ? 'border-gray-100 opacity-75 hover:opacity-100' : 'border-gray-200 shadow-sm hover:shadow-md hover:border-crown-gold/30'}`}>
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-serif font-bold ${isPast ? 'bg-gray-300' : 'bg-crown-dark'}`}>
-                            {booking.stylist.businessName[0]}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-serif font-bold overflow-hidden ${isPast ? 'bg-gray-300' : 'bg-crown-dark'}`}>
+                            {booking.stylist.profileImage ? (
+                                <img src={booking.stylist.profileImage} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                booking.stylist.businessName[0]
+                            )}
                         </div>
                         <div>
                             <h4 className="font-bold text-gray-900 leading-tight">{booking.service.name}</h4>
@@ -148,6 +152,7 @@ export default function MyBookings() {
                                 onClick={() => setActiveChat({
                                     bookingId: booking.id,
                                     otherName: booking.stylist.businessName,
+                                    otherImage: booking.stylist.profileImage, // [NEW] Pass Stylist Image
                                     bookingDate: booking.appointmentDate,
                                     status: booking.status // Pass status
                                 })}

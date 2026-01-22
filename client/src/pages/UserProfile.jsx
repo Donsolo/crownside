@@ -2,7 +2,7 @@ import React, { useEffect, useState, Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
 import {
-    FaUserPlus, FaUserCheck, FaUserTimes, FaComment, FaEllipsisH, FaBan, FaFlag
+    FaUserPlus, FaUserCheck, FaUserTimes, FaComment, FaEllipsisH, FaBan, FaFlag, FaArrowLeft
 } from 'react-icons/fa';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -119,6 +119,14 @@ export default function UserProfile() {
                 <div className="text-center text-white z-10 px-4">
                     <h1 className="font-serif text-3xl font-bold mb-2">Crown Connect</h1>
                 </div>
+
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className="absolute top-4 left-4 z-30 w-10 h-10 bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center text-white hover:bg-white/40 transition shadow-lg"
+                >
+                    <FaArrowLeft size={16} />
+                </button>
             </Hero>
 
             <div className="container mx-auto px-4 relative z-20 -mt-16">

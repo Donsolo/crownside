@@ -70,9 +70,13 @@ export default function ClientProfile() {
                     {/* Avatar */}
                     <div className="relative">
                         <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                            <div className="text-5xl font-serif text-crown-dark font-bold">
-                                {(user.displayName || user.email || '?')[0].toUpperCase()}
-                            </div>
+                            {user.profileImage ? (
+                                <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="text-5xl font-serif text-crown-dark font-bold">
+                                    {(user.displayName || user.email || '?')[0].toUpperCase()}
+                                </div>
+                            )}
                         </div>
                         <div className="absolute bottom-1 right-1 bg-green-500 w-6 h-6 rounded-full border-2 border-white"></div>
                     </div>

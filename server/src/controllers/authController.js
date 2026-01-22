@@ -174,7 +174,20 @@ const login = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
-        res.json({ token, user: { id: user.id, email: user.email, role: user.role, displayName: user.displayName } });
+        // Add stylistProfile AND profileImage to response
+        const userResponse = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                displayName: true,
+                profileImage: true,
+                stylistProfile: { select: { profileImage: true, id: true, businessName: true } }
+            }
+        });
+
+        res.json({ token, user: userResponse });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -185,7 +198,7 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, displayName: true, themePreference: true, createdAt: true, stylistProfile: true }
+            select: { id: true, email: true, role: true, displayName: true, themePreference: true, profileImage: true, createdAt: true, stylistProfile: true }
         });
         res.json(user);
     } catch (error) {
@@ -196,14 +209,15 @@ const getMe = async (req, res) => {
 
 const updateMe = async (req, res) => {
     try {
-        const { displayName, themePreference } = req.body;
+        const { displayName, themePreference, profileImage } = req.body;
         const updated = await prisma.user.update({
             where: { id: req.user.id },
             data: {
                 displayName: displayName ? displayName.trim() : undefined,
-                themePreference: themePreference ? themePreference : undefined
+                themePreference: themePreference ? themePreference : undefined,
+                profileImage: profileImage !== undefined ? profileImage : undefined // Allow setting to null? or just string
             },
-            select: { id: true, email: true, role: true, displayName: true, themePreference: true, createdAt: true }
+            select: { id: true, email: true, role: true, displayName: true, themePreference: true, profileImage: true, createdAt: true }
         });
         res.json(updated);
     } catch (error) {

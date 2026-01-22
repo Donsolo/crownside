@@ -71,7 +71,7 @@ const createPost = async (req, res) => {
                     create: images?.map(url => ({ url })) || []
                 }
             },
-            include: { images: true, author: { select: { displayName: true, role: true, stylistProfile: { select: { businessName: true, profileImage: true } } } } }
+            include: { images: true, author: { select: { displayName: true, role: true, stylistProfile: { select: { businessName: true, profileImage: true, subscription: { select: { planKey: true } } } } } } }
         });
 
         res.status(201).json(post);
@@ -105,9 +105,9 @@ const getPosts = async (req, res) => {
                         id: true,
                         displayName: true,
                         role: true,
-                        // profileImage: true, 
+                        profileImage: true, // [NEW] Added for Clients
                         stylistProfile: {
-                            select: { businessName: true, profileImage: true }
+                            select: { id: true, businessName: true, profileImage: true, subscription: { select: { planKey: true } } }
                         }
                     }
                 },
@@ -169,8 +169,9 @@ const getPostDetails = async (req, res) => {
                         id: true,
                         displayName: true,
                         role: true,
+                        profileImage: true, // [NEW] Added for Clients
                         stylistProfile: {
-                            select: { businessName: true, profileImage: true }
+                            select: { id: true, businessName: true, profileImage: true, subscription: { select: { planKey: true } } }
                         }
                     }
                 }

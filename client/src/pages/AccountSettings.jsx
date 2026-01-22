@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { FaUser, FaLock, FaBell, FaShieldAlt, FaSignOutAlt, FaChevronLeft, FaSave, FaCheckCircle } from 'react-icons/fa';
+import { FaUser, FaLock, FaBell, FaShieldAlt, FaSignOutAlt, FaChevronLeft, FaSave, FaCheckCircle, FaCamera } from 'react-icons/fa';
 
 export default function AccountSettings() {
     const { user, login, logout } = useAuth();
     const navigate = useNavigate();
 
     const [displayName, setDisplayName] = useState(user?.displayName || '');
+    const [profileImage, setProfileImage] = useState(user?.profileImage || '');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
     // Notification Toggles (UI Only for now)
@@ -23,8 +25,31 @@ export default function AccountSettings() {
     useEffect(() => {
         if (user) {
             setDisplayName(user.displayName || '');
+            setProfileImage(user.profileImage || ''); // Load existing or empty
         }
     }, [user]);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        const data = new FormData();
+        data.append('image', file);
+
+        try {
+            // Reusing forum upload endpoint for general image upload
+            const res = await api.post('/forum/upload', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setProfileImage(res.data.url);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to upload image');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
@@ -32,12 +57,12 @@ export default function AccountSettings() {
         setMessage({ type: '', text: '' });
 
         try {
-            const res = await api.patch('/auth/me', { displayName });
-            // Update context (this might need a better way if login() expects full payload, but assuming it updates state)
-            // Ideally we re-fetch 'me', but for now let's just assume success or reload
-            // Actually, we can use the response to update context if login() supports it, or just rely on re-fetch on profile page.
-            // For immediate feedback, we might want to manually update user object if exposed, but context is read-only usually.
-            // We'll just show success.
+            const res = await api.patch('/auth/me', {
+                displayName,
+                profileImage // Include new image URL
+            });
+            // Update context
+            login(res.data, localStorage.getItem('token')); // Resync context with new user data
             setMessage({ type: 'success', text: 'Profile updated successfully' });
         } catch (err) {
             setMessage({ type: 'error', text: 'Failed to update profile' });
@@ -76,16 +101,41 @@ export default function AccountSettings() {
                         <h2 className="font-bold text-lg text-gray-900">Personal Information</h2>
                     </div>
                     <div className="p-6">
-                        <form onSubmit={handleUpdateProfile} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    value={user?.email || ''}
-                                    disabled
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
-                                />
-                                <p className="text-xs text-gray-400 mt-1">Email cannot be changed securely at this time.</p>
+                        <form onSubmit={handleUpdateProfile} className="space-y-6">
+
+                            {/* Avatar Upload */}
+                            <div className="flex flex-col items-center justify-center mb-6">
+                                <div className="relative group cursor-pointer w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 hover:border-crown-gold overflow-hidden transition-all">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                        onChange={handleImageUpload}
+                                        disabled={uploading}
+                                    />
+                                    {profileImage ? (
+                                        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                                            {uploading ? (
+                                                <div className="animate-spin w-6 h-6 border-2 border-crown-gold border-t-transparent rounded-full" />
+                                            ) : (
+                                                <>
+                                                    <FaCamera size={20} />
+                                                    <span className="text-[10px] mt-1 font-bold">Upload</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Overlay on Hover (if image exists) */}
+                                    {profileImage && !uploading && (
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center z-10">
+                                            <FaCamera className="text-white" />
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">Tap to change profile picture</p>
                             </div>
 
                             <div>
@@ -109,7 +159,7 @@ export default function AccountSettings() {
                             <div className="pt-2">
                                 <button
                                     type="submit"
-                                    disabled={isSaving || displayName === user?.displayName}
+                                    disabled={isSaving || (displayName === (user?.displayName || '') && profileImage === (user?.profileImage || ''))}
                                     className="btn-primary py-2.5 px-6 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     {isSaving ? 'Saving...' : <><FaSave /> Save Changes</>}

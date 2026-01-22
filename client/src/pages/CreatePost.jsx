@@ -224,7 +224,21 @@ export default function CreatePost() {
                                             placeholder="$100 - $150"
                                             className="w-full p-3 bg-gray-50 rounded-lg border border-gray-200"
                                             value={formData.content.budget}
-                                            onChange={(e) => handleContentChange('budget', e.target.value)}
+                                            onFocus={() => {
+                                                if (!formData.content.budget) handleContentChange('budget', '$');
+                                            }}
+                                            onBlur={() => {
+                                                if (formData.content.budget === '$') handleContentChange('budget', '');
+                                            }}
+                                            onChange={(e) => {
+                                                let val = e.target.value;
+                                                // If taking valid input, ensure prefix.
+                                                // If matching '$' only and user deletes, allow clear.
+                                                if (val && !val.startsWith('$')) {
+                                                    val = '$' + val;
+                                                }
+                                                handleContentChange('budget', val);
+                                            }}
                                         />
                                     </div>
                                     <div>

@@ -10,6 +10,7 @@ import ClientsView from '../components/dashboard/ClientsView';
 import Hero from '../components/Hero';
 import { SERVICE_CATEGORIES } from '../config/categories';
 import { FEATURE_ELITE_CALENDAR } from '../config/flags';
+import Badge from '../components/Badge';
 import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes, FaCalendarAlt, FaAddressBook, FaLock, FaClock } from 'react-icons/fa';
 
 export default function StylistDashboard() {

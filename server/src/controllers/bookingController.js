@@ -1,5 +1,7 @@
 const prisma = require('../prisma');
 const { checkSlotAvailability } = require('./availabilityController'); // Import Check
+const smsService = require('../services/smsService'); // Import SMS Service
+
 
 const createBooking = async (req, res) => {
     let clientId = req.user.id; // Default to acting user (Client booking for self)
@@ -83,11 +85,15 @@ const createBooking = async (req, res) => {
         // If Client created it -> Notify Stylist (Already handled below)
         // If Stylist created it -> Notify Client (if they have a User account)
 
+        // NOTIFICATION & SMS logic
+        // If Client created it -> Notify Stylist (Already handled below)
+        // If Stylist created it -> Notify Client (if they have a User account)
+
         if (req.user.role === 'CLIENT') {
             // ... existing notification to Stylist ...
             const stylistProfile = await prisma.stylistProfile.findUnique({
                 where: { id: stylistId },
-                select: { userId: true }
+                select: { userId: true, businessName: true, phoneNumber: true } // Added phone/name for SMS
             });
 
             if (stylistProfile) {
@@ -99,17 +105,58 @@ const createBooking = async (req, res) => {
                         bookingId: booking.id
                     }
                 });
+
+                // NOTE: We do NOT send SMS to Stylist on PENDING creation, only on CONFIRMED (Approved).
             }
-        } else if (req.user.role === 'STYLIST' && booking.clientId) {
-            // Notify the Client if they have a real account
-            await prisma.notification.create({
-                data: {
-                    userId: booking.clientId,
-                    senderId: req.user.id,
-                    type: 'BOOKING_APPROVED', // Or NEW_BOOKING?
-                    bookingId: booking.id
+        } else if (req.user.role === 'STYLIST') { // Manual Booking (Auto-Approved)
+            if (booking.clientId) {
+                // Notify the Client if they have a real account
+                await prisma.notification.create({
+                    data: {
+                        userId: booking.clientId,
+                        senderId: req.user.id,
+                        type: 'BOOKING_APPROVED', // Or NEW_BOOKING?
+                        bookingId: booking.id
+                    }
+                });
+
+                // SMS: Send Confirmation to Client
+                // Need to fetch Client Profile or User to get Phone (Assuming User has it or Profile)
+                // Let's assume User has 'phoneNumber' or we fetch via StylistClient if linked?
+                // Just in case, let's look up the client user again to be safe
+                const clientUser = await prisma.user.findUnique({
+                    where: { id: booking.clientId },
+                    include: { stylistProfile: true } // Maybe they are a stylist too? Just default user fields needed.
+                });
+
+                // Stylist Info for the message
+                const stylistPro = await prisma.stylistProfile.findUnique({ where: { userId: req.user.id } });
+
+                // Check schema for phone... (Placeholder logic until schema verified in next step, but writing robustly)
+                const clientPhone = clientUser.phoneNumber || (clientUser.stylistProfile?.phoneNumber);
+
+                if (clientPhone) {
+                    smsService.sendAppointmentConfirmationClient({
+                        phoneNumber: clientPhone,
+                        appointmentDate: booking.appointmentDate,
+                        stylistName: stylistPro.businessName
+                    });
                 }
-            });
+            } else {
+                // Rolodex Client (No User ID)
+                // If stylistClientId exists, fetch that record for phone number
+                if (booking.stylistClientId) {
+                    const sc = await prisma.stylistClient.findUnique({ where: { id: booking.stylistClientId } });
+                    if (sc && sc.phoneNumber) {
+                        const stylistPro = await prisma.stylistProfile.findUnique({ where: { userId: req.user.id } });
+                        smsService.sendAppointmentConfirmationClient({
+                            phoneNumber: sc.phoneNumber,
+                            appointmentDate: booking.appointmentDate,
+                            stylistName: stylistPro.businessName
+                        });
+                    }
+                }
+            }
         }
 
         res.status(201).json(booking);
@@ -144,7 +191,7 @@ const getMyBookings = async (req, res) => {
             where: whereClause,
             include: {
                 service: true,
-                stylist: { select: { businessName: true, userId: true } },
+                stylist: { select: { businessName: true, userId: true, profileImage: true } },
                 client: { select: { email: true, displayName: true } },
                 conversation: {
                     select: {
@@ -209,6 +256,67 @@ const updateBookingStatus = async (req, res) => {
                 bookingId: booking.id
             }
         });
+
+        // --- SMS LOGIC (If Approved) ---
+        if (status === 'APPROVED') {
+            try {
+                // Fetch details for SMS
+                const detailedBooking = await prisma.booking.findUnique({
+                    where: { id },
+                    include: {
+                        service: true,
+                        stylist: { select: { businessName: true, userId: true, phoneNumber: true } },
+                        client: { select: { displayName: true, email: true } }, // User (might not have phone)
+                        stylistClient: { select: { phone: true, name: true } } // Rolodex (has phone)
+                    }
+                });
+
+                // 1. Notify Client (Confirmation)
+                let clientPhone = null;
+                // If it's a Manual Booking (StylistClient)
+                if (detailedBooking.stylistClient && detailedBooking.stylistClient.phone) {
+                    clientPhone = detailedBooking.stylistClient.phone;
+                }
+                // If it's a Registered User (Client)
+                // Note: Schema Check required. If User doesn't have phone, we check if they have a StylistProfile (maybe a pro booking another pro?)
+                else if (detailedBooking.client) {
+                    // Try to find phone on User (if added) or linked Profile
+                    const userWithPhone = await prisma.user.findUnique({
+                        where: { id: detailedBooking.clientId },
+                        include: { stylistProfile: true }
+                    });
+                    // Fallback to stylist profile phone if user is also a stylist
+                    clientPhone = userWithPhone.stylistProfile?.phoneNumber;
+
+                    // Future: Add phoneNumber to User model if missing
+                }
+
+                if (clientPhone) {
+                    await smsService.sendAppointmentConfirmationClient({
+                        phoneNumber: clientPhone,
+                        appointmentDate: detailedBooking.appointmentDate,
+                        stylistName: detailedBooking.stylist.businessName
+                    });
+                } else {
+                    console.log(`[SMS SKIP] Could not find phone number for Client in booking ${id}`);
+                }
+
+                // 2. Notify Stylist (New Confirmed Booking) -> "New Crownside booking confirmed..."
+                // Only if Stylist has phone number
+                if (detailedBooking.stylist.phoneNumber) {
+                    await smsService.sendAppointmentConfirmationStylist({
+                        phoneNumber: detailedBooking.stylist.phoneNumber,
+                        appointmentDate: detailedBooking.appointmentDate,
+                        clientName: detailedBooking.stylistClient?.name || detailedBooking.client?.displayName || "Client",
+                        serviceName: detailedBooking.service.name
+                    });
+                }
+
+            } catch (smsError) {
+                console.error("[SMS ERROR] Failed in updateBookingStatus:", smsError);
+                // Swallow error to not fail the request
+            }
+        }
 
         res.json(updated);
     } catch (error) {

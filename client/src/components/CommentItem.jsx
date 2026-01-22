@@ -4,8 +4,11 @@ import { FaHeart, FaRegHeart, FaReply, FaFlag, FaTrash } from 'react-icons/fa';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
+import CommentThread from './CommentThread';
 
-export default function CommentItem({ comment, depth = 0, onRefresh }) {
+export default function CommentItem({ comment, postId, onReply, isLast }) {
+    // Props access fallback
+    const props = { isLast };
     const { user } = useAuth();
     const navigate = useNavigate();
     const [isReplying, setIsReplying] = useState(false);
@@ -14,23 +17,103 @@ export default function CommentItem({ comment, depth = 0, onRefresh }) {
     const [isLiked, setIsLiked] = useState(comment.isLiked);
     const [likeCount, setLikeCount] = useState(comment.likeCount || 0);
 
+    // Thread State
+    const [showReplies, setShowReplies] = useState(false);
+    const [localReplyCount, setLocalReplyCount] = useState(comment.replyCount || 0);
+
+    // Sync effect
+    React.useEffect(() => {
+        setLocalReplyCount(comment.replyCount || 0);
+    }, [comment.replyCount]);
+
     const handleLike = async () => {
         if (!user) return alert('Please log in to like comments');
-
-        // Optimistic update
         const newVal = !isLiked;
         setIsLiked(newVal);
         setLikeCount(prev => newVal ? prev + 1 : prev - 1);
-
         try {
             await api.post('/comments/like', { type: 'COMMENT', id: comment.id });
         } catch (err) {
             console.error(err);
-            // Revert on error
             setIsLiked(!newVal);
             setLikeCount(prev => newVal ? prev - 1 : prev + 1);
         }
     };
+
+
+
+    const handleDelete = async () => {
+        if (!window.confirm('Delete this comment?')) return;
+        try {
+            await api.delete(`/comments/${comment.id}`);
+            if (onReply) onReply();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete');
+        }
+    };
+
+    const isRoot = !comment.parentId;
+    const isRemoved = comment.isRemoved;
+    const authorName = comment.author.displayName || comment.author.stylistProfile?.businessName || 'User';
+    // const avatarSize = isRoot ? 'w-10 h-10' : 'w-8 h-8'; // Consistent size looks better with lines
+    const avatarSize = 'w-8 h-8';
+
+    // Helper to render content with mentions
+    const renderContent = (text) => {
+        if (!text) return null;
+
+        const linkedUser = comment.mentionedUser;
+        let parts = [];
+
+        // If we have a verified separate user, strict match their name
+        if (linkedUser) {
+            const nameToMatch = linkedUser.displayName || linkedUser.stylistProfile?.businessName;
+            if (nameToMatch) {
+                // Escape regex special chars in name just in case
+                const escapedName = nameToMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Split by @Name, case insensitive? strict for now.
+                // We wrap in capturing group to keep the delimiter
+                parts = text.split(new RegExp(`(@${escapedName})`, 'g'));
+            } else {
+                parts = [text];
+            }
+        } else {
+            // Fallback: Use a less greedy regex if no linked user (e.g. legacy/manual)
+            // Stop at first punctuation or newline? Or just don't link?
+            // We will just return text if no linkedUser is found to avoid error.
+            parts = [text];
+        }
+
+        return parts.map((part, i) => {
+            // Check if this part IS the mention
+            if (linkedUser && part.startsWith('@')) {
+                const targetUrl = linkedUser.role === 'STYLIST'
+                    ? `/stylist/${linkedUser.stylistProfile?.id}`
+                    : `/user/${linkedUser.id}`;
+                return (
+                    <span key={i} onClick={(e) => { e.stopPropagation(); navigate(targetUrl); }} className="font-bold text-crown-gold hover:underline cursor-pointer">
+                        {part}
+                    </span>
+                );
+            }
+            return <span key={i} className="text-gray-900">{part}</span>;
+        });
+    };
+
+    const handleReplyClick = () => {
+        setIsReplying(!isReplying);
+        if (!isReplying) {
+            // Only prepend mention if we are NOT the author
+            if (user && user.id !== comment.authorId) {
+                setReplyContent(`@${authorName} `);
+            } else {
+                setReplyContent('');
+            }
+        }
+    };
+
+    // ...
 
     const handleReplySubmit = async (e) => {
         e.preventDefault();
@@ -38,91 +121,24 @@ export default function CommentItem({ comment, depth = 0, onRefresh }) {
 
         setSubmitting(true);
         try {
-            // Logic: Nested replies always store the immediate parent's ID in DB
-            await api.post(`/comments/${comment.postId}`, {
-                content: replyContent,
-                parentId: comment.id
-            });
-            setIsReplying(false);
-            setReplyContent('');
-            if (onRefresh) onRefresh();
-        } catch (err) {
-            console.error(err);
-            alert('Failed to post reply');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // VISUAL DEPTH RULES
-    // Depth 0: Full UI
-    // Depth 1: Compact UI
-    // Depth 2+: Minimal UI (Micro avatar, hidden timestamp, grouped actions)
-    const isDeep = depth >= 2;
-    const isRoot = depth === 0;
-
-    // EXPANSION LOGIC
-    // Depth 0 & 1: Fully expanded by default
-    // Depth 2+: Start with 2 visible, expand in batches
-    const [visibleCount, setVisibleCount] = useState(depth < 2 ? 999 : 2);
-
-    // Actions Menu State (for Deep threads)
-    const [showActionsMenu, setShowActionsMenu] = useState(false);
-
-    // Helpers for styles
-    const avatarSize = isRoot ? 'w-8 h-8' : (isDeep ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-xs');
-    const textSize = isDeep ? 'text-xs' : 'text-sm';
-
-    // Handlers
-    const handleShowMore = () => setVisibleCount(prev => prev + 3);
-    const handleShowLess = () => setVisibleCount(2);
-
-    const handleRemove = async () => {
-        if (!window.confirm('Delete this comment?')) return;
-        try {
-            if (user && user.id === comment.authorId) {
-                await api.delete(`/comments/${comment.id}`);
-            } else {
-                await api.post('/moderation/action', {
-                    action: 'REMOVE',
-                    targetType: 'COMMENT',
-                    targetId: comment.id
-                });
+            // Determine if we are mentioning the parent author
+            // Simple heuristic: If content starts with @{authorName}, we tag them.
+            // WE MUST SEND mentionedUserId to backend for it to be saved!
+            let mentionedUserId = null;
+            if (replyContent.startsWith(`@${authorName}`)) {
+                mentionedUserId = comment.author.id; // The user ID of who we are replying to
             }
-            if (onRefresh) onRefresh();
-        } catch (err) {
-            console.error(err);
-            alert('Failed to remove comment');
-        }
-    };
 
-    const isMod = user && (user.role === 'ADMIN' || user.role === 'MODERATOR');
-    const isRemoved = comment.isRemoved;
-    const authorName = comment.author.displayName || comment.author.stylistProfile?.businessName || 'User';
-    const removedText = comment.removedBy === comment.authorId ? "This comment was deleted by its author." : "Comment removed by moderator.";
-
-    // MENTION HANDLER
-    const [replyToUser, setReplyToUser] = useState(null);
-
-    const startReply = () => {
-        setIsReplying(true);
-        const targetUser = comment.author;
-        setReplyToUser(targetUser);
-    };
-
-    const handleReplySubmitInternal = async (e) => {
-        e.preventDefault();
-        if (!replyContent.trim()) return;
-        setSubmitting(true);
-        try {
-            await api.post(`/comments/${comment.postId}`, {
+            await api.post(`/comments/${postId}`, {
                 content: replyContent,
                 parentId: comment.id,
-                mentionedUserId: replyToUser?.id
+                mentionedUserId
             });
-            setReplyContent('');
             setIsReplying(false);
-            if (onRefresh) onRefresh();
+            setReplyContent('');
+            setLocalReplyCount(prev => prev + 1);
+            setShowReplies(true);
+            if (onReply) onReply();
         } catch (err) {
             console.error(err);
             alert('Failed to post reply');
@@ -131,175 +147,158 @@ export default function CommentItem({ comment, depth = 0, onRefresh }) {
         }
     };
 
-    if (isRemoved && !isMod) {
+    if (isRemoved) {
         return (
-            <div className={`mb-3 ${depth > 0 ? 'ml-3 pl-3 border-l-2 border-gray-100' : 'mb-6'}`}>
-                <div className="text-gray-400 italic text-xs py-1">{removedText}</div>
-                {comment.replies?.length > 0 && (
-                    <div className="mt-2">
-                        {comment.replies.map(reply => (
-                            <CommentItem key={reply.id} comment={reply} depth={depth + 1} onRefresh={onRefresh} />
-                        ))}
-                    </div>
+            <div className="relative pl-8">
+                {/* Line Placeholder for cleared comments to maintain tree structure visually if needed */}
+                {!isRoot && (
+                    <>
+                        {/* Vertical line from parent */}
+                        <div className="absolute left-0 top-0 bottom-0 w-4 border-l-2 border-gray-200" style={{ height: onReply && props?.isLast ? '20px' : '100%' }}></div>
+                        {/* Curve */}
+                        <div className="absolute left-0 top-4 w-6 h-4 border-l-2 border-b-2 border-gray-200 rounded-bl-2xl"></div>
+                    </>
                 )}
+
+                <div className="text-gray-400 italic text-sm py-2 px-4 bg-gray-50 rounded mb-2 ml-2">
+                    Comment removed.
+                    {localReplyCount > 0 && (
+                        <div className="mt-2 ml-4">
+                            <button onClick={() => setShowReplies(!showReplies)} className="text-xs font-bold text-gray-500">
+                                {showReplies ? 'Hide' : `Display replies (${localReplyCount})`}
+                            </button>
+                            {showReplies && (
+                                <div className="mt-2 pl-2">
+                                    <CommentThread postId={postId} parentId={comment.id} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         );
     }
 
     return (
-        <div className={`
-            ${depth > 0 ? 'ml-3 pl-3 border-l-2 border-gray-100' : 'mb-6 pb-2 border-b border-gray-50 last:border-0'}
-            transition-all duration-300
-        `}>
-            {/* Comment Row */}
-            <div className="flex gap-2 group relative">
-                {/* Avatar */}
-                <div
-                    className="flex-shrink-0 mt-0.5 cursor-pointer hover:opacity-80 transition"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(
-                            comment.author.role === 'STYLIST' && comment.author.stylistProfile
-                                ? `/stylist/${comment.author.stylistProfile.id}`
-                                : `/user/${comment.author.id}`
-                        );
-                    }}
-                >
-                    {comment.author.profileImage ? (
-                        <img src={comment.author.profileImage} alt="User" className={`rounded-full object-cover ${avatarSize}`} />
+        <div className="group animate-fade-in-up relative">
+            {/* Visual Lines for Replies */}
+            {!isRoot && (
+                <>
+                    {/* Vertical Line: Goes full height usually, but if last item, stops at curve */}
+                    {/* Position: absolute left defined by parent padding */}
+                    {/* We need these to be OUTSIDE the flex container but relative to the group */}
+                    {/* We used pl-3 in parent thread. Let's adjust. */}
+
+                    {/* The vertical spine */}
+                    <div
+                        className="absolute -left-[18px] top-0 border-l-2 border-gray-200"
+                        style={{ height: props.isLast ? '24px' : '100%' }} // 24px approximates center of avatar (mt-0 top)
+                    ></div>
+
+                    {/* The curve connector */}
+                    <div className="absolute -left-[18px] top-0 w-[18px] h-[24px] border-l-2 border-b-2 border-gray-200 rounded-bl-xl z-0"></div>
+                </>
+            )}
+
+            {/* Main Parent Row */}
+            <div className="flex gap-3 relative z-10">
+                {/* Avatar Column */}
+                <div onClick={() => navigate(comment.author.role === 'STYLIST' ? `/stylist/${comment.author.stylistProfile?.id}` : `/user/${comment.author.id}`)}
+                    className={`${avatarSize} rounded-full bg-gray-200 flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition relative z-10 ring-2 ring-white`}>
+                    {(comment.author.stylistProfile?.profileImage || comment.author.profileImage) ? (
+                        <img
+                            src={comment.author.stylistProfile?.profileImage || comment.author.profileImage}
+                            alt=""
+                            className="w-full h-full object-cover"
+                        />
                     ) : (
-                        <div className={`bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold ${avatarSize}`}>
-                            {comment.author.displayName?.[0] || 'U'}
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] font-bold">
+                            {authorName[0]}
                         </div>
                     )}
                 </div>
 
-                {/* Content Body */}
-                <div className="flex-grow min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(
-                                    comment.author.role === 'STYLIST' && comment.author.stylistProfile
-                                        ? `/stylist/${comment.author.stylistProfile.id}`
-                                        : `/user/${comment.author.id}`
-                                );
-                            }}
-                            className={`font-bold text-gray-900 ${isDeep ? 'text-xs' : 'text-sm'} cursor-pointer hover:text-crown-gold hover:underline transition`}
-                        >
-                            {authorName}
-                        </span>
+                <div className="flex-1 min-w-0">
+                    {/* Content Block */}
+                    <div className="inline-block px-4 py-2 rounded-2xl bg-gray-100/80 border border-transparent hover:bg-gray-100 transition">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <h4
+                                onClick={() => navigate(comment.author.role === 'STYLIST' ? `/stylist/${comment.author.stylistProfile?.id}` : `/user/${comment.author.id}`)}
+                                className="font-bold text-xs text-gray-900 hover:underline cursor-pointer"
+                            >
+                                {authorName}
+                            </h4>
+                            <span className="text-[10px] text-gray-400 font-normal">{formatDistanceToNow(new Date(comment.createdAt))}</span>
+                        </div>
+                        <p className="text-gray-800 text-sm leading-snug whitespace-pre-wrap mt-0.5">
+                            {renderContent(comment.content)}
+                        </p>
+                    </div>
 
-                        {/* MENTION DISPLAY */}
-                        {comment.mentionedUser && (() => {
-                            const mentionedName = comment.mentionedUser.displayName ||
-                                comment.mentionedUser.stylistProfile?.businessName ||
-                                'User';
-                            return (
-                                <span className="text-crown-gold font-medium text-xs">
-                                    @{mentionedName}
-                                </span>
-                            );
-                        })()}
+                    {/* Actions Line */}
+                    <div className="flex items-center gap-4 mt-1 ml-2 text-[10px] font-bold text-gray-500">
+                        <button onClick={handleLike} className={`hover:text-crown-gold flex items-center gap-1 ${isLiked ? 'text-crown-gold' : ''}`}>
+                            {isLiked ? 'Like' : 'Like'} {likeCount > 0 && <span className="font-normal opacity-70">({likeCount})</span>}
+                        </button>
+                        <button onClick={handleReplyClick} className="hover:text-crown-gold">Reply</button>
+                        {user && user.id === comment.authorId && (
+                            <button onClick={handleDelete} className="hover:text-red-500 font-normal">Delete</button>
+                        )}
 
-                        {!isDeep && (
-                            <span className="text-[10px] text-gray-400">{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</span>
+                        {/* Thread Toggle (Inline) */}
+                        {localReplyCount > 0 && !showReplies && (
+                            <button
+                                onClick={() => setShowReplies(true)}
+                                className="flex items-center gap-1 text-crown-gold hover:underline"
+                            >
+                                <FaReply className="rotate-180" size={10} /> {localReplyCount === 1 ? '1 Reply' : `${localReplyCount} Replies`}
+                            </button>
                         )}
                     </div>
 
-                    <div className={`${textSize} text-gray-700 whitespace-pre-wrap ${isDeep ? 'mt-0' : 'mt-0.5'} leading-snug`}>
-                        {comment.content}
-                    </div>
-
-                    {/* Actions Bar */}
-                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        {/* Standard Actions (Depth 0-1) */}
-                        {!isDeep && (
-                            <>
-                                <button onClick={handleLike} className={`text-xs font-bold flex items-center gap-1 ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-black py-1'}`}>
-                                    {isLiked ? <FaHeart size={10} /> : <FaRegHeart size={10} />} {likeCount > 0 ? likeCount : 'Like'}
-                                </button>
-
-                                <button onClick={startReply} className="text-xs font-bold text-gray-400 hover:text-crown-gold flex items-center gap-1 py-1">
-                                    <FaReply size={10} /> Reply
-                                </button>
-
-                                <button className="text-[10px] font-medium text-gray-300 hover:text-gray-500 flex items-center gap-1 py-1">
-                                    <FaFlag size={8} /> Report
-                                </button>
-
-                                {(isMod || (user?.id === comment.authorId)) && (
-                                    <button onClick={handleRemove} className="text-[10px] text-gray-300 hover:text-red-500 flex items-center gap-1 py-1">
-                                        <FaTrash size={8} />
-                                    </button>
-                                )}
-                            </>
-                        )}
-
-                        {/* Minimal Actions (Depth 2+) */}
-                        {isDeep && (
-                            <>
-                                <button onClick={startReply} className="text-[10px] font-bold text-gray-500 hover:text-crown-gold py-0.5">
-                                    Reply
-                                </button>
-
-                                {/* Overflow Menu Trigger */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowActionsMenu(!showActionsMenu)}
-                                        className="text-gray-300 hover:text-gray-600 px-1 py-0.5"
-                                    >
-                                        •••
-                                    </button>
-
-                                    {showActionsMenu && (
-                                        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-100 shadow-md rounded-md z-10 py-1 min-w-[100px] flex flex-col">
-                                            <button
-                                                onClick={() => { handleLike(); setShowActionsMenu(false); }}
-                                                className={`text-xs text-left px-3 py-2 w-full hover:bg-gray-50 ${isLiked ? 'text-red-500 font-bold' : 'text-gray-600'}`}
-                                            >
-                                                {isLiked ? 'Unlike' : 'Like'} ({likeCount})
-                                            </button>
-                                            <button className="text-xs text-left text-gray-600 px-3 py-2 w-full hover:bg-gray-50">
-                                                Report
-                                            </button>
-                                            {(isMod || (user?.id === comment.authorId)) && (
-                                                <button onClick={handleRemove} className="text-xs text-left text-red-500 px-3 py-2 w-full hover:bg-red-50">
-                                                    Delete
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Inline Reply Form */}
+                    {/* Inline Reply Input */}
                     {isReplying && (
-                        <div className="mt-2 animate-fade-in-down mb-2">
-                            {/* Visual Mention Badge */}
-                            <div className="text-xs text-crown-gold font-bold mb-1">
-                                Replying to @{replyToUser?.displayName || authorName}
-                            </div>
+                        <div className="mt-2 flex gap-2 w-full max-w-lg animate-enter relative">
+                            {/* Connector for reply input */}
+                            {!isRoot && <div className="absolute -left-[26px] top-[-10px] bottom-[20px] border-l-2 border-gray-200"></div>}
+                            {!isRoot && <div className="absolute -left-[26px] top-[18px] w-5 h-6 border-l-2 border-b-2 border-gray-200 rounded-bl-xl"></div>}
 
-                            <form onSubmit={handleReplySubmitInternal} className="flex gap-2 items-start">
-                                <div className="flex-grow">
-                                    <input
-                                        type="text"
-                                        value={replyContent}
-                                        onChange={(e) => setReplyContent(e.target.value)}
-                                        placeholder="Write a reply..."
-                                        className="w-full text-sm bg-transparent border-b border-crown-gold/50 focus:border-crown-gold transition-colors px-0 py-1 outline-none"
-                                        autoFocus
-                                    />
-                                    <div className="flex justify-end gap-2 mt-1.5">
-                                        <button type="button" onClick={() => setIsReplying(false)} className="text-[10px] text-gray-400 hover:text-gray-600">Cancel</button>
-                                        <button type="submit" disabled={submitting || !replyContent.trim()} className="text-[10px] bg-black text-white px-2 py-0.5 rounded font-bold disabled:opacity-50">
-                                            Send
-                                        </button>
+                            <div className="w-6 h-6 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden relative z-10">
+                                {(user?.stylistProfile?.profileImage || user?.profileImage) ? (
+                                    <img src={user.stylistProfile?.profileImage || user.profileImage} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                        {user?.displayName?.[0] || 'U'}
                                     </div>
+                                )}
+                            </div>
+                            <form onSubmit={handleReplySubmit} className="flex-1 relative">
+                                <textarea
+                                    autoFocus
+                                    rows={1}
+                                    value={replyContent}
+                                    onChange={(e) => {
+                                        setReplyContent(e.target.value);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                    }}
+                                    onFocus={(e) => {
+                                        const val = e.target.value;
+                                        e.target.setSelectionRange(val.length, val.length);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleReplySubmit(e);
+                                        }
+                                    }}
+                                    className="w-full bg-gray-100 rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-crown-gold resize-none overflow-hidden"
+                                    placeholder={user?.id === comment.authorId ? "Replying to yourself..." : `Reply to ${authorName}...`}
+                                    style={{ minHeight: '38px' }}
+                                />
+                                <div className="flex justify-end gap-2 mt-1">
+                                    <button type="button" onClick={() => setIsReplying(false)} className="text-[10px] text-gray-400 hover:text-gray-600">Cancel</button>
+                                    <button type="submit" disabled={submitting || !replyContent} className="text-[10px] bg-black text-white px-3 py-0.5 rounded-full">Send</button>
                                 </div>
                             </form>
                         </div>
@@ -307,46 +306,31 @@ export default function CommentItem({ comment, depth = 0, onRefresh }) {
                 </div>
             </div>
 
-            {/* Children Rendering with Batch Expansion */}
-            {comment.replies && comment.replies.length > 0 && (
-                <div className={`mt-2 ${isRoot ? 'space-y-4' : 'space-y-2'}`}>
-                    {(() => {
-                        const allReplies = comment.replies;
-                        const visibleReplies = allReplies.slice(0, visibleCount);
-                        const hiddenCount = allReplies.length - visibleReplies.length;
+            {/* Thread Container - Sibling to Main Row */}
+            {localReplyCount > 0 && showReplies && (
+                <div className="mt-2 w-full pl-9 relative">
+                    {/* Continuous Spine Line from this parent down to children */}
+                    {/* Only if we are NOT the last child of OUR parent, do we draw a line? 
+                        Wait, this line is for *our* children. 
+                        Relative to 'this' comment, the children are indented. 
+                        We need a line descending from OUR avatar center.
+                    */}
+                    {!isRoot && (
+                        <div className="absolute left-[13px] -top-2 bottom-0 border-l-2 border-gray-200"></div>
+                    )}
+                    {/* Actually, the Thread Component handles the loop, and we pass isLast.
+                        The logic: 
+                        - If I have children (replies open), I provide the vertical spine 'slot' on the left.
+                    */}
 
-                        return (
-                            <>
-                                {visibleReplies.map(reply => (
-                                    <CommentItem
-                                        key={reply.id}
-                                        comment={reply}
-                                        depth={depth + 1}
-                                        onRefresh={onRefresh}
-                                    />
-                                ))}
-
-                                {hiddenCount > 0 ? (
-                                    <button
-                                        onClick={handleShowMore}
-                                        className="text-xs font-bold text-crown-gold hover:underline flex items-center gap-1 ml-2 py-1"
-                                    >
-                                        View {Math.min(3, hiddenCount)} more {hiddenCount === 1 ? 'reply' : 'replies'}...
-                                    </button>
-                                ) : (
-                                    // Only show hide option if we actually expanded something (count > 2) and used to adhere to batch limit
-                                    visibleCount > 2 && allReplies.length > 2 && depth >= 2 && (
-                                        <button
-                                            onClick={handleShowLess}
-                                            className="text-[10px] text-gray-300 hover:text-gray-500 ml-2 py-1 block"
-                                        >
-                                            Hide replies
-                                        </button>
-                                    )
-                                )}
-                            </>
-                        );
-                    })()}
+                    <div className="relative z-10">
+                        <CommentThread
+                            key={localReplyCount}
+                            postId={postId}
+                            parentId={comment.id}
+                            onReply={() => setLocalReplyCount(prev => prev + 1)}
+                        />
+                    </div>
                 </div>
             )}
         </div>
