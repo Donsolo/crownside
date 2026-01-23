@@ -156,8 +156,9 @@ export default function UserProfile() {
                         {profile.bio && <p className="text-gray-600 mt-4 max-w-sm mx-auto">{profile.bio}</p>}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-3 w-full justify-center">
+                    {/* Actions - Only for Logged In Users */}
+                    {currentUser && (
+                        <div className="flex items-center gap-3 w-full justify-center">
                         {/* Connection Button Logic */}
                         {connectionStatus === 'NONE' && (
                             <button onClick={handleConnect} disabled={actionLoading} className="btn-primary py-2 px-6 flex items-center gap-2 text-sm">
@@ -238,6 +239,7 @@ export default function UserProfile() {
                             </Transition>
                         </Menu>
                     </div>
+                    )}
 
                 </div>
             </div>

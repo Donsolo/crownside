@@ -54,7 +54,7 @@ export default function Explore() {
                 </div>
             </Hero>
 
-            <div className="container mx-auto px-4 relative z-20 -mt-20">
+            <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 relative z-20 -mt-20">
                 <div className="bg-[var(--card-bg)] rounded-3xl shadow-xl p-6 md:p-8 border border-[var(--border-subtle)] transition-colors duration-300" >
 
                     {/* Filter Toggles */}

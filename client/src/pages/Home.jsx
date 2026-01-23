@@ -57,7 +57,7 @@ function AuthenticatedHome({ user }) {
                 className="h-[35vh] min-h-[300px] flex items-center justify-center text-center relative"
                 overlayOpacity={0.5}
             >
-                <div className="relative z-10 container mx-auto px-4">
+                <div className="relative z-10 w-full max-w-[1920px] mx-auto px-4 md:px-8">
                     <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-2 drop-shadow-md">
                         {greeting}, {displayName}.
                     </h1>
@@ -67,7 +67,7 @@ function AuthenticatedHome({ user }) {
                 </div>
             </Hero>
 
-            <div className="container mx-auto px-4 -mt-10 relative z-20">
+            <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 -mt-10 relative z-20">
 
                 {/* 2. QUICK ACTIONS CARD ROW */}
                 {/* 2. QUICK ACTIONS CARD ROW */}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { X, LayoutDashboard, Image, Users, Scissors, Calendar, Star, Settings, Activity, Bell } from 'lucide-react';
+import { X, LayoutDashboard, Image, Users, Scissors, Calendar, Star, Settings, Activity, Bell, Menu } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 import { useNotifications } from '../context/NotificationContext';
@@ -12,13 +12,13 @@ export default function Navbar() {
     const { counts } = useNotifications(); // Access counts
 
     const navigate = useNavigate();
-    const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
+    const [menuOpen, setMenuOpen] = React.useState(false);
     const [panelOpen, setPanelOpen] = React.useState(false);
     const location = useLocation();
 
     // Close menu when route changes
     React.useEffect(() => {
-        setAdminMenuOpen(false);
+        setMenuOpen(false);
     }, [location.pathname]);
 
     const handleLogout = () => {
@@ -31,20 +31,20 @@ export default function Navbar() {
             className="bg-[var(--nav-background)] shadow-sm sticky top-0 z-50 border-b border-[var(--border-subtle)] transition-colors duration-300"
             style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-            <div className="container mx-auto px-4">
+            <div className="w-full px-4 md:px-8 lg:px-12">
                 <div className="flex justify-between items-center h-[70px] md:h-[80px] transition-all duration-300">
                     {/* Brand Block */}
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <Link to="/" className="brand-logo relative flex items-center shrink-0 h-full w-[100px] md:w-[130px] group">
+                    <div className="flex items-center gap-2 md:gap-8">
+                        <Link to="/" className="brand-logo relative flex items-center shrink-0 h-full w-[100px] md:w-[180px] group">
                             <img
                                 src={logo}
                                 alt="CrownSide"
-                                className="absolute left-0 top-1/2 -translate-y-1/2 h-[90px] md:h-[140px] w-auto max-w-none object-contain pointer-events-none"
+                                className="absolute left-0 top-1/2 -translate-y-1/2 h-[90px] md:h-[140px] w-auto max-w-none object-contain"
                             />
                         </Link>
 
                         {/* Location Context - Desktop & Tablet */}
-                        <div className="hidden md:flex flex-col justify-center border-l border-crown-gold/30 pl-4 h-full py-1">
+                        <div className="hidden md:flex flex-col justify-center border-l border-crown-gold/30 pl-6 h-full py-1">
                             <span className="text-3xl text-[#8F6A2D] font-medium tracking-wider [text-shadow:0_0.5px_0_rgba(0,0,0,0.15)]" style={{ fontFamily: '"Great Vibes", cursive' }}>
                                 Serving Metro Detroit
                             </span>
@@ -115,6 +115,14 @@ export default function Navbar() {
                             </>
                         )}
 
+                        {/* Desktop Hamburger */}
+                        <button
+                            onClick={() => setMenuOpen(true)}
+                            className="text-[var(--nav-text)] hover:text-crown-gold transition p-2"
+                            aria-label="Open Menu"
+                        >
+                            <Menu size={24} />
+                        </button>
                     </div>
 
                     {/* Mobile Actions (Menu Only) */}
@@ -130,7 +138,6 @@ export default function Navbar() {
                                 )}
                             </button>
                         )}
-
                     </div>
                 </div>
             </div>
@@ -138,12 +145,12 @@ export default function Navbar() {
             <NotificationPanel open={panelOpen} setOpen={setPanelOpen} />
 
             {/* Navigation Drawer / Side Menu */}
-            {adminMenuOpen && ( // Assuming we rename this or use it for the main menu now
+            {menuOpen && (
                 <div className="fixed inset-0 z-[100]">
                     {/* Overlay */}
                     <div
                         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-                        onClick={() => setAdminMenuOpen(false)}
+                        onClick={() => setMenuOpen(false)}
                     ></div>
 
                     {/* Drawer */}
@@ -157,7 +164,7 @@ export default function Navbar() {
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-2xl font-serif text-crown-dark">Menu</h2>
                             <button
-                                onClick={() => setAdminMenuOpen(false)}
+                                onClick={() => setMenuOpen(false)}
                                 className="p-2 hover:bg-gray-100 rounded-full transition"
                             >
                                 <X size={24} />
@@ -168,21 +175,24 @@ export default function Navbar() {
                             {/* Main Links */}
                             <div className="space-y-4">
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Navigation</p>
-                                <Link to="/" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Home</Link>
-                                <Link to="/explore" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Explore</Link>
-                                <Link to="/forum" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Crown Connect</Link>
+                                <Link to="/" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Home</Link>
+                                <Link to="/explore" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Explore</Link>
+                                <Link to="/forum" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Crown Connect</Link>
                                 {user?.role === 'CLIENT' && (
                                     <>
-                                        <Link to="/my-bookings" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">
+                                        <Link to="/my-bookings" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">
                                             Bookings
                                             {counts.bookings > 0 && <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{counts.bookings}</span>}
                                         </Link>
-                                        <Link to="/profile" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Profile</Link>
+                                        <Link to="/profile" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Profile</Link>
                                     </>
                                 )}
-                                <Link to="/about" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">About Us</Link>
-                                <Link to="/contact" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Contact</Link>
-                                <Link to="/faq" onClick={() => setAdminMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Freq. Asked Questions</Link>
+                                {user && (
+                                    <Link to="/connections" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">My Connections</Link>
+                                )}
+                                <Link to="/about" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">About Us</Link>
+                                <Link to="/contact" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Contact</Link>
+                                <Link to="/faq" onClick={() => setMenuOpen(false)} className="block text-lg font-medium text-gray-800 hover:text-crown-gold">Freq. Asked Questions</Link>
                             </div>
 
                             {/* Admin Links (If Admin) */}
@@ -191,9 +201,14 @@ export default function Navbar() {
                                     <p className="text-xs font-bold text-crown-gold uppercase tracking-wider flex items-center gap-2">
                                         <LayoutDashboard size={14} /> Admin Panel
                                     </p>
-                                    <Link to="/admin" onClick={() => setAdminMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Dashboard</Link>
-                                    <Link to="/admin/pricing" onClick={() => setAdminMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Pricing & Subs</Link>
-                                    <Link to="/admin/users" onClick={() => setAdminMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Users</Link>
+                                    <Link to="/admin" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Dashboard</Link>
+                                    <Link to="/admin/heroes" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Hero Manager</Link>
+                                    <Link to="/admin/users" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Users</Link>
+                                    <Link to="/admin/pros" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Beauty Pros</Link>
+                                    <Link to="/admin/bookings" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Bookings</Link>
+                                    <Link to="/admin/reviews" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Reviews</Link>
+                                    <Link to="/admin/pricing" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Pricing & Subs</Link>
+                                    <Link to="/admin/settings" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Settings</Link>
                                 </div>
                             )}
 
@@ -203,13 +218,14 @@ export default function Navbar() {
                                 {user ? (
                                     <>
                                         {user.role === 'STYLIST' && (
-                                            <Link to="/dashboard" onClick={() => setAdminMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">
+                                            <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">
                                                 My Dashboard
                                                 {counts.total - counts.forum > 0 && <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{counts.total - counts.forum}</span>}
                                             </Link>
                                         )}
+                                        <Link to="/account-settings" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Account Settings</Link>
                                         <button
-                                            onClick={() => { handleLogout(); setAdminMenuOpen(false); }}
+                                            onClick={() => { handleLogout(); setMenuOpen(false); }}
                                             className="text-red-500 hover:text-red-700 font-medium"
                                         >
                                             Log Out
@@ -217,10 +233,19 @@ export default function Navbar() {
                                     </>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-4">
-                                        <Link to="/login" onClick={() => setAdminMenuOpen(false)} className="btn-secondary text-center py-2 text-sm justify-center">Log In</Link>
-                                        <Link to="/register" onClick={() => setAdminMenuOpen(false)} className="btn-primary bg-crown-dark text-white text-center py-2 text-sm justify-center">Sign Up</Link>
+                                        <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary text-center py-2 text-sm justify-center">Log In</Link>
+                                        <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary bg-crown-dark text-white text-center py-2 text-sm justify-center">Sign Up</Link>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Legal Footer in Drawer */}
+                            <div className="pt-4 border-t border-gray-100">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Legal</p>
+                                <div className="space-y-2">
+                                    <Link to="/privacy" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-500 hover:text-crown-gold">Privacy Policy</Link>
+                                    <Link to="/terms" onClick={() => setMenuOpen(false)} className="block text-sm text-gray-500 hover:text-crown-gold">Terms of Service</Link>
+                                </div>
                             </div>
                         </div>
 

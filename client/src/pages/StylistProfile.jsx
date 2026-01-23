@@ -181,8 +181,8 @@ export default function StylistProfile({ handle }) {
                     </>
                 )}
 
-                {/* Social Actions */}
-                {!isMe && (
+                {/* Social Actions - Only for Logged In Users */}
+                {currentUser && !isMe && (
                     <>
                         {/* Connect Button */}
                         {connectionStatus === 'NONE' && (
