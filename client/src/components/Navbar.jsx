@@ -6,6 +6,8 @@ import logo from '../assets/logo.png';
 
 import { useNotifications } from '../context/NotificationContext';
 import NotificationPanel from './NotificationPanel';
+import FounderWelcomeModal from './FounderWelcomeModal';
+import Avatar from './Avatar';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -14,6 +16,7 @@ export default function Navbar() {
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = React.useState(false);
     const [panelOpen, setPanelOpen] = React.useState(false);
+    const [founderModalOpen, setFounderModalOpen] = React.useState(false);
     const location = useLocation();
 
     // Close menu when route changes
@@ -142,7 +145,9 @@ export default function Navbar() {
                 </div>
             </div>
 
-            <NotificationPanel open={panelOpen} setOpen={setPanelOpen} />
+            <NotificationPanel open={panelOpen} setOpen={setPanelOpen} onShowFounderWelcome={() => setFounderModalOpen(true)} />
+
+            <FounderWelcomeModal isOpen={founderModalOpen} onClose={() => setFounderModalOpen(false)} />
 
             {/* Navigation Drawer / Side Menu */}
             {menuOpen && (

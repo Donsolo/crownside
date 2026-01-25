@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Hero from '../components/Hero';
 import api from '../lib/api';
+import CreatePost from './CreatePost';
+import PostDetail from './PostDetail';
+import Avatar from '../components/Avatar';
 import { FaPen, FaArrowLeft, FaFilter } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
@@ -82,7 +85,7 @@ export default function ForumFeed() {
                     <h1 className="font-serif text-3xl md:text-5xl font-bold mb-2 drop-shadow-xl text-white">
                         {currentBoard.title}
                     </h1>
-                    <p className="text-white/90 text-lg font-medium drop-shadow-md">
+                    <p className="text-crown-gold text-lg font-medium drop-shadow-md">
                         {currentBoard.subtitle}
                     </p>
                 </div>
@@ -171,13 +174,12 @@ export default function ForumFeed() {
                                             }}
                                             className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-crown-gold transition"
                                         >
-                                            {(post.author.stylistProfile?.profileImage || post.author.profileImage) ? (
-                                                <img src={post.author.stylistProfile?.profileImage || post.author.profileImage} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center font-bold">
-                                                    {(post.author.displayName || '?')[0].toUpperCase()}
-                                                </div>
-                                            )}
+                                            {/* Avatar */}
+                                            <Avatar
+                                                user={post.author}
+                                                size="md"
+                                                className="flex-shrink-0"
+                                            />
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-sm text-gray-900 leading-tight">

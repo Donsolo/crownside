@@ -1,12 +1,13 @@
 import React, { useEffect, useState, Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Menu, Transition } from '@headlessui/react';
+import { Dialog, Menu, Transition } from '@headlessui/react';
 import api from '../lib/api';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { FaInstagram, FaTiktok, FaPhoneAlt, FaGlobe, FaMapMarkerAlt, FaStar, FaShareAlt, FaUserPlus, FaUserCheck, FaUserTimes, FaComment, FaEllipsisH, FaBan, FaFlag, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
+import Avatar from '../components/Avatar';
 
 export default function StylistProfile({ handle }) {
     const { id } = useParams();
@@ -28,6 +29,9 @@ export default function StylistProfile({ handle }) {
     const [selectedService, setSelectedService] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [isBooking, setIsBooking] = useState(false);
+    const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+    const [bookingSuccess, setBookingSuccess] = useState(false);
+    const [availability, setAvailability] = useState({ schedule: [], exceptions: [] });
 
     useEffect(() => {
         const fetchStylist = async () => {
@@ -38,9 +42,18 @@ export default function StylistProfile({ handle }) {
                 setServices(res.data.services || []);
                 setPortfolio(res.data.portfolioImages || []);
 
+                // Fetch Availability
+                if (res.data.id) {
+                    try {
+                        const availRes = await api.get(`/availability/${res.data.id}`);
+                        setAvailability(availRes.data || { schedule: [], exceptions: [] });
+                    } catch (e) {
+                        console.warn('Availability fetch failed', e);
+                    }
+                }
+
                 // Fetch Connection Status if logged in
                 if (currentUser && res.data.userId !== currentUser.id) {
-                    // Check Status
                     checkConnectionStatus(res.data.userId);
                 }
             } catch (err) {
@@ -119,12 +132,95 @@ export default function StylistProfile({ handle }) {
         }
     };
 
-    const handleBook = async () => {
-        // ... (Existing)
+    // Availability Helpers
+    const isDateAvailable = (date) => {
+        if (!stylist || !availability) return true;
+
+        const dayOfWeek = date.getDay(); // 0 = Sun
+
+        // 1. Check Exceptions (Primary Override)
+        // Note: Exceptions are usually specific dates.
+        const dateString = date.toDateString();
+        const exception = availability.exceptions?.find(e => new Date(e.date).toDateString() === dateString);
+
+        if (exception) {
+            return !exception.isOff;
+        }
+
+        // 2. Check Weekly Schedule
+        const schedule = availability.schedule?.find(s => s.dayOfWeek === dayOfWeek);
+        if (schedule) {
+            return schedule.isWorkingDay;
+        }
+
+        return false; // Default closed if not defined
+    };
+
+    const getDayHours = (date) => {
+        if (!date || !availability) return { min: undefined, max: undefined };
+
+        const dayOfWeek = date.getDay();
+        let startStr = "09:00";
+        let endStr = "17:00";
+
+        // Find constraints
+        const dateString = date.toDateString();
+        const exception = availability.exceptions?.find(e => new Date(e.date).toDateString() === dateString);
+
+        if (exception && !exception.isOff) {
+            if (exception.startTime) startStr = exception.startTime;
+            if (exception.endTime) endStr = exception.endTime;
+        } else {
+            const schedule = availability.schedule?.find(s => s.dayOfWeek === dayOfWeek);
+            if (schedule && schedule.isWorkingDay) {
+                startStr = schedule.startTime;
+                endStr = schedule.endTime;
+            }
+        }
+
+        const [startH, startM] = startStr.split(':').map(Number);
+        const [endH, endM] = endStr.split(':').map(Number);
+
+        const minTime = new Date(date); minTime.setHours(startH, startM, 0);
+        const maxTime = new Date(date); maxTime.setHours(endH, endM, 0);
+
+        return { minTime, maxTime };
+    };
+
+    const isTimeExcluded = (time) => {
+        if (!stylist?.stylistBookings) return false;
+
+        const timeVal = time.getTime();
+
+        // 20 min slot duration check logic? 
+        // DatePicker calls this for specific intervals. 
+        // We just need to check if 'time' is INSIDE a booked slot.
+        return stylist.stylistBookings.some(booking => {
+            if (['CANCELED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_TECH'].includes(booking.status)) return false;
+
+            const start = new Date(booking.appointmentDate).getTime();
+            // Default 60 min if missing, or use service duration if available? 
+            // Better to trust booking record duration.
+            const duration = booking.duration || 60;
+            const end = start + (duration * 60000);
+
+            // Inclusive start, exclusive end? 
+            // Usually start is occupied. End is free.
+            return timeVal >= start && timeVal < end;
+        });
+    };
+
+    const handleBook = () => {
         if (!selectedService || !selectedDate) return alert('Please select a service and date');
         const token = localStorage.getItem('token');
         if (!token) return navigate('/login');
 
+        // Open Confirmation Modal instead of immediate book
+        setConfirmModalOpen(true);
+    };
+
+    const submitBooking = async () => {
+        setConfirmModalOpen(false);
         setIsBooking(true);
         try {
             await api.post('/bookings', {
@@ -132,11 +228,16 @@ export default function StylistProfile({ handle }) {
                 serviceId: selectedService.id,
                 appointmentDate: selectedDate
             });
-            alert('Booking request sent!');
+            setBookingSuccess(true); // Show success state
             setSelectedService(null);
             setSelectedDate(null);
         } catch (err) {
-            alert(err.response?.data?.error || 'Booking failed');
+            // Handle availability errors gracefully
+            if (err.response?.status === 409 || err.response?.data?.error?.includes('available')) {
+                alert("This time is no longer available. Please select another time or stylist.");
+            } else {
+                alert(err.response?.data?.error || 'Booking failed');
+            }
         } finally {
             setIsBooking(false);
         }
@@ -274,11 +375,21 @@ export default function StylistProfile({ handle }) {
                 <div className="md:w-1/3 animate-enter animate-delay-1">
                     <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                         <div className="flex flex-col items-center text-center">
-                            <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden mb-4 bg-gray-100">
-                                <img src={stylist.profileImage || `https://placehold.co/150?text=Pro`} className="w-full h-full object-cover" alt={stylist.businessName} />
+                            <div className="mb-4">
+                                <Avatar
+                                    src={stylist.profileImage}
+                                    user={stylist.user}
+                                    size="2xl"
+                                    className={`shadow-lg ${stylist.user?.isFounderEnrolled ? '' : 'border-4 border-white'}`}
+                                    alt={stylist.businessName}
+                                />
                             </div>
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-3 mb-2 justify-center">
+                                {stylist.user?.isFounderEnrolled && <Badge tier="FOUNDER" size="40px" />}
                                 <h1 className="text-3xl font-bold text-gray-900">{stylist.businessName}</h1>
+                                {stylist.subscription?.planKey && !stylist.user?.isFounderEnrolled && (
+                                    <Badge tier={stylist.subscription.planKey} size="24px" />
+                                )}
                             </div>
                             <p className="text-gray-500 mb-4 flex items-center gap-1 text-sm">
                                 <FaMapMarkerAlt className="text-crown-gold" /> {stylist.locationType} • Detroit, MI
@@ -334,29 +445,136 @@ export default function StylistProfile({ handle }) {
                     {/* Simple Date Picker (Only if service selected) */}
                     {selectedService && (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 animate-fade-in-up">
-                            <h2 className="text-xl font-serif font-bold mb-4">Choose Date & Time</h2>
-                            <div className="mb-6">
-                                <DatePicker
-                                    selected={selectedDate}
-                                    onChange={(date) => setSelectedDate(date)}
-                                    showTimeSelect
-                                    dateFormat="MMMM d, yyyy h:mm aa"
-                                    className="w-full p-3 border rounded-lg"
-                                    placeholderText="Click to select date"
-                                    minDate={new Date()}
-                                />
-                            </div>
+                            {bookingSuccess ? (
+                                <div className="text-center py-8 animate-fade-in">
+                                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <FaUserCheck size={28} />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-2">Pending stylist confirmation</h3>
+                                    <p className="text-gray-600">
+                                        You’ll be notified once the stylist confirms availability and next steps.
+                                    </p>
+                                    <button
+                                        onClick={() => setBookingSuccess(false)}
+                                        className="mt-6 text-crown-gold font-bold text-sm hover:underline"
+                                    >
+                                        Book Another Service
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <h2 className="text-xl font-serif font-bold mb-4">Choose Date & Time</h2>
+                                    <div className="mb-2">
+                                        <DatePicker
+                                            selected={selectedDate}
+                                            onChange={(date) => setSelectedDate(date)}
+                                            showTimeSelect
+                                            dateFormat="MMMM d, yyyy h:mm aa"
+                                            className="w-full p-3 border rounded-lg cursor-pointer caret-transparent"
+                                            placeholderText="Click to select date"
+                                            minDate={new Date()}
+                                            filterDate={isDateAvailable}
+                                            filterTime={(time) => !isTimeExcluded(time)}
+                                            minTime={selectedDate ? getDayHours(selectedDate).minTime : undefined}
+                                            maxTime={selectedDate ? getDayHours(selectedDate).maxTime : undefined}
+                                            onKeyDown={(e) => e.preventDefault()}
+                                        />
+                                    </div>
+                                    {/* Availability Micro-copy (Strict) */}
+                                    <div className="mb-6 flex gap-2 items-start text-xs text-gray-500">
+                                        <span className="mt-0.5 inline-block w-4 h-4 text-[10px] text-center bg-gray-100 rounded-full font-bold flex-shrink-0">i</span>
+                                        <div>
+                                            <p className="font-bold text-gray-700">Availability shown is set by the stylist.</p>
+                                            <p className="text-[10px]">Only available times can be requested.</p>
+                                        </div>
+                                    </div>
 
-                            <button
-                                onClick={handleBook}
-                                disabled={isBooking || !selectedDate}
-                                className="w-full btn-primary py-4 text-lg shadow-lg flex justify-center items-center gap-2"
-                            >
-                                {isBooking ? 'Processing...' : `Request Appointment • $${selectedService.price}`}
-                            </button>
-                            <p className="text-center text-xs text-gray-400 mt-4">You won't be charged until the stylist approves.</p>
+                                    {/* Pre-Booking Disclaimer */}
+                                    <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                        <p className="text-xs font-bold text-gray-800 mb-1">
+                                            Appointment times are based on stylist availability and are confirmed by the stylist.
+                                        </p>
+                                        <p className="text-[10px] text-gray-500 leading-snug">
+                                            Pricing and any deposits are set and collected by the stylist. CrownSide does not collect deposits or service charges.
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={handleBook}
+                                        disabled={isBooking || !selectedDate}
+                                        className="w-full btn-primary py-4 text-lg shadow-lg flex justify-center items-center gap-2"
+                                    >
+                                        Request Appointment • ${selectedService.price}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     )}
+
+                    {/* Booking Confirmation Modal */}
+                    <Transition appear show={confirmModalOpen} as={Fragment}>
+                        <Dialog as="div" className="relative z-50" onClose={() => setConfirmModalOpen(false)}>
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0"
+                                enterTo="opacity-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100"
+                                leaveTo="opacity-0"
+                            >
+                                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+                            </Transition.Child>
+
+                            <div className="fixed inset-0 overflow-y-auto">
+                                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                                    <Transition.Child
+                                        as={Fragment}
+                                        enter="ease-out duration-300"
+                                        enterFrom="opacity-0 scale-95"
+                                        enterTo="opacity-100 scale-100"
+                                        leave="ease-in duration-200"
+                                        leaveFrom="opacity-100 scale-100"
+                                        leaveTo="opacity-0 scale-95"
+                                    >
+                                        <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all border border-gray-100">
+                                            <Dialog.Title
+                                                as="h3"
+                                                className="text-lg font-bold leading-6 text-gray-900 mb-2"
+                                            >
+                                                Request Appointment?
+                                            </Dialog.Title>
+                                            <div className="mt-2 text-left">
+                                                <p className="text-sm text-gray-700 font-medium mb-4">
+                                                    This appointment is a request based on the stylist’s available time. The stylist will confirm or decline.
+                                                </p>
+                                                <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                    Service pricing and any required deposits are handled directly by the stylist. CrownSide does not process deposits or service charges.
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-6 flex gap-3 justify-end">
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex justify-center rounded-lg border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none"
+                                                    onClick={() => setConfirmModalOpen(false)}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex justify-center rounded-lg border border-transparent bg-crown-gold px-4 py-2 text-sm font-bold text-white hover:bg-black focus:outline-none transition-colors"
+                                                    onClick={submitBooking}
+                                                >
+                                                    Send Request
+                                                </button>
+                                            </div>
+                                        </Dialog.Panel>
+                                    </Transition.Child>
+                                </div>
+                            </div>
+                        </Dialog>
+                    </Transition>
 
                     {/* Portfolio Grid */}
                     {portfolio.length > 0 && (

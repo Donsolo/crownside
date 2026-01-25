@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CommentThread from './CommentThread';
 import api from '../lib/api';
@@ -6,6 +7,7 @@ import { FaPaperPlane } from 'react-icons/fa';
 
 export default function CommentSection({ postId }) {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     // We need a way to refresh the root thread when a new top-level comment is added.
@@ -48,7 +50,16 @@ export default function CommentSection({ postId }) {
             {/* Root Input */}
             <div className="flex gap-4">
                 <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold overflow-hidden">
+                    <div
+                        onClick={() => {
+                            if (!user) return;
+                            const target = user.role === 'STYLIST' && user.stylistProfile?.id
+                                ? `/stylist/${user.stylistProfile.id}`
+                                : `/user/${user.id}`;
+                            navigate(target);
+                        }}
+                        className={`w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold overflow-hidden ${user ? 'cursor-pointer hover:opacity-80 transition' : ''}`}
+                    >
                         {(user?.stylistProfile?.profileImage || user?.profileImage) ? (
                             <img src={user.stylistProfile?.profileImage || user.profileImage} className="w-full h-full object-cover" alt="" />
                         ) : (

@@ -9,6 +9,7 @@ import { FaUserCircle, FaStar, FaMapMarkerAlt, FaSearch, FaCalendarAlt, FaCut } 
 
 import { useNotifications } from '../context/NotificationContext';
 import MyConnections from '../components/MyConnections';
+import Avatar from '../components/Avatar';
 
 export default function Home() {
     const { user } = useAuth();
@@ -61,7 +62,7 @@ function AuthenticatedHome({ user }) {
                     <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-2 drop-shadow-md">
                         {greeting}, {displayName}.
                     </h1>
-                    <p className="text-white/90 text-lg font-medium">
+                    <p className="text-crown-gold text-lg font-medium">
                         Your beauty, beautifully booked.
                     </p>
                 </div>
@@ -167,14 +168,14 @@ function AuthenticatedHome({ user }) {
                                         ) : (
                                             <div className="w-full h-full bg-cover bg-center opacity-50" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=500&q=60)` }} />
                                         )}
-                                        <div className="absolute -bottom-6 left-4 border-4 border-[var(--card-bg)] rounded-full w-14 h-14 bg-gray-100 overflow-hidden shadow-sm">
-                                            {pro.profileImage ? (
-                                                <img src={pro.profileImage} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-crown-dark text-white font-serif font-bold text-lg">
-                                                    {pro.businessName[0]}
-                                                </div>
-                                            )}
+                                        <div className="absolute -bottom-6 left-4 z-10">
+                                            <Avatar
+                                                src={pro.profileImage}
+                                                user={pro.user}
+                                                size="lg" // w-14 is 3.5rem (56px). lg is usually ~48px-56px.
+                                                className={`bg-gray-100 shadow-sm ${pro.user?.isFounderEnrolled ? '' : 'border-4 border-[var(--card-bg)]'}`}
+                                                alt={pro.businessName}
+                                            />
                                         </div>
                                     </div>
                                     <div className="pt-8 pb-4 px-4">

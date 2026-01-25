@@ -60,7 +60,8 @@ const getUnreadCount = async (req, res) => {
             bookings: unread.filter(n => n.type === 'NEW_BOOKING' || n.type === 'BOOKING_UPDATE').length,
             messages: unread.filter(n => n.type === 'NEW_MESSAGE').length,
             forum: unread.filter(n => ['NEW_COMMENT', 'REPLY', 'MENTION', 'LIKE_POST', 'LIKE_COMMENT'].includes(n.type)).length,
-            connections: unread.filter(n => n.type === 'CONNECTION_REQUEST' || n.type === 'CONNECTION_ACCEPTED').length
+            connections: unread.filter(n => n.type === 'CONNECTION_REQUEST' || n.type === 'CONNECTION_ACCEPTED').length,
+            system: unread.filter(n => n.type === 'FOUNDER_INVITE').length
         };
 
         res.json({ counts });

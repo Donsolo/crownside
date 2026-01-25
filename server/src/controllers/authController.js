@@ -116,6 +116,44 @@ const register = async (req, res) => {
                 }
             }
 
+            // --- FOUNDERS CIRCLE LOGIC ---
+            // Check eligibility (First 100 per role)
+            // Filter by existing founders of this role (Eligible OR Enrolled)
+            // STRICT RULE: Admin-added founders do NOT count toward the limit.
+            const founderCount = await tx.user.count({
+                where: {
+                    founderType: userRole,
+                    OR: [
+                        { isFounderEligible: true },
+                        { isFounderEnrolled: true }
+                    ],
+                    founderAssignedBy: 'SYSTEM' // Only count system-assigned Limit
+                }
+            });
+
+            if (founderCount < 100) {
+                // Grant Eligibility
+                await tx.user.update({
+                    where: { id: user.id },
+                    data: {
+                        isFounderEligible: true,
+                        founderType: userRole, // "CLIENT" or "STYLIST"
+                        founderAssignedBy: 'SYSTEM',
+                        founderAssignedAt: new Date()
+                    }
+                });
+
+                // Send Invite Notification (Self-sender as System)
+                await tx.notification.create({
+                    data: {
+                        userId: user.id,
+                        senderId: user.id,
+                        type: 'FOUNDER_INVITE'
+                    }
+                });
+                console.log(`User ${user.id} marked as Founder Eligible (${userRole} #${founderCount + 1})`);
+            }
+
             return user;
         });
 
@@ -183,6 +221,7 @@ const login = async (req, res) => {
                 role: true,
                 displayName: true,
                 profileImage: true,
+                isFounderEnrolled: true,
                 stylistProfile: { select: { profileImage: true, id: true, businessName: true } }
             }
         });
@@ -198,7 +237,18 @@ const getMe = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
-            select: { id: true, email: true, role: true, displayName: true, themePreference: true, profileImage: true, createdAt: true, stylistProfile: true }
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                displayName: true,
+                themePreference: true,
+                profileImage: true,
+                createdAt: true,
+                isFounderEligible: true,
+                isFounderEnrolled: true,
+                stylistProfile: true
+            }
         });
         res.json(user);
     } catch (error) {

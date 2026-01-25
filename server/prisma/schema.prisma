@@ -78,6 +78,14 @@ model User {
   notificationsReceived Notification[] @relation("NotificationsReceived")
   notificationsSent     Notification[] @relation("NotificationsSent")
 
+  // Founders Circle
+  isFounderEligible Boolean  @default(false)
+  isFounderEnrolled Boolean  @default(false)
+  founderType       String?  // "CLIENT" or "STYLIST"
+  founderAssignedAt DateTime? // When eligibility was granted
+  founderAssignedBy String?   // "SYSTEM" or "ADMIN"
+  founderAcceptedAt DateTime? // When user accepted via notification
+
   // Social
   bio           String?
   location      String?
@@ -527,6 +535,7 @@ enum NotificationType {
   NEW_MESSAGE
   CONNECTION_REQUEST
   CONNECTION_ACCEPTED
+  FOUNDER_INVITE
 }
 
 model Notification {

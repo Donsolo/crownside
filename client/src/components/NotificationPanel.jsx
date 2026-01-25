@@ -11,15 +11,31 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
 import { useTheme } from '../context/ThemeContext';
+import { FaCrown } from 'react-icons/fa';
+import api from '../lib/api';
 
-// Add useAuth import
 import { useAuth } from '../context/AuthContext';
 
-export default function NotificationPanel({ open, setOpen }) {
-    const { notifications, markRead, markAllRead } = useNotifications();
+export default function NotificationPanel({ open, setOpen, onShowFounderWelcome }) {
+    const { notifications, markRead, markAllRead, fetchNotifications } = useNotifications();
     const { user } = useAuth(); // Get user for role-based routing
     const navigate = useNavigate();
     const { theme } = useTheme();
+
+    const handleAcceptFounder = async (notification) => {
+        try {
+            await api.post('/founders/accept');
+            // Optimistic update or refetch
+            // markRead might not remove it if it's special type? 
+            // Better to re-fetch to clear it as DB deletes it.
+            await fetchNotifications();
+            setOpen(false);
+            if (onShowFounderWelcome) onShowFounderWelcome();
+        } catch (err) {
+            console.error("Failed to accept founder invite", err);
+            alert("Failed to accept invitation. Please try again.");
+        }
+    };
 
     // Determine Icon and Color based on Type
     const getIcon = (type) => {
@@ -171,30 +187,69 @@ export default function NotificationPanel({ open, setOpen }) {
                                                 </div>
                                             ) : (
                                                 <ul className="divide-y divide-gray-100">
-                                                    {notifications.map((notification) => (
-                                                        <li
-                                                            key={notification.id}
-                                                            className={`py-4 cursor-pointer hover:bg-opacity-50 ${!notification.isRead ? (theme === 'dark' ? 'bg-gray-800' : 'bg-blue-50') : ''}`}
-                                                            onClick={() => handleClick(notification)}
-                                                        >
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="flex-shrink-0">
-                                                                    {getIcon(notification.type)}
+                                                    {notifications.map((notification) => {
+                                                        if (notification.type === 'FOUNDER_INVITE') {
+                                                            return (
+                                                                <li key={notification.id} className="py-4 bg-crown-gold/5 border border-crown-gold/20 rounded-xl my-2 p-4 shadow-sm relative overflow-hidden">
+                                                                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                                                                        <FaCrown size={80} />
+                                                                    </div>
+                                                                    <div className="flex gap-4 relative z-10">
+                                                                        <div className="shrink-0">
+                                                                            <div className="w-10 h-10 bg-crown-gold/20 rounded-full flex items-center justify-center text-crown-dark">
+                                                                                <FaCrown size={20} />
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <h4 className="font-serif font-bold text-crown-dark text-lg mb-1">You’re Invited to the Founders Circle 👑</h4>
+                                                                            <p className="text-sm text-gray-700 mb-3">
+                                                                                As one of the first 100 members, you’re eligible to join the CrownSide Founders Circle.
+                                                                            </p>
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleAcceptFounder(notification); }}
+                                                                                    className="px-4 py-2 bg-crown-dark text-white text-xs font-bold rounded-full hover:bg-black transition shadow-md"
+                                                                                >
+                                                                                    Accept Invitation
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleAcceptFounder(notification); /* Just open modal too? Or separate learn more? Keeping simple: Accept acts as entry */ }}
+                                                                                    className="px-4 py-2 bg-white text-gray-600 border border-gray-200 text-xs font-bold rounded-full hover:bg-gray-50 transition"
+                                                                                >
+                                                                                    Learn More
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <li
+                                                                key={notification.id}
+                                                                className={`py-4 cursor-pointer hover:bg-opacity-50 ${!notification.isRead ? (theme === 'dark' ? 'bg-gray-800' : 'bg-blue-50') : ''}`}
+                                                                onClick={() => handleClick(notification)}
+                                                            >
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="flex-shrink-0">
+                                                                        {getIcon(notification.type)}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                                            {getMessage(notification)}
+                                                                        </p>
+                                                                        <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} truncate`}>
+                                                                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                                                        </p>
+                                                                    </div>
+                                                                    {!notification.isRead && (
+                                                                        <div className="h-2 w-2 rounded-full bg-crown-gold flex-shrink-0" />
+                                                                    )}
                                                                 </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                                        {getMessage(notification)}
-                                                                    </p>
-                                                                    <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} truncate`}>
-                                                                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                                                                    </p>
-                                                                </div>
-                                                                {!notification.isRead && (
-                                                                    <div className="h-2 w-2 rounded-full bg-crown-gold flex-shrink-0" />
-                                                                )}
-                                                            </div>
-                                                        </li>
-                                                    ))}
+                                                            </li>
+                                                        )
+                                                    })}
                                                 </ul>
                                             )}
 

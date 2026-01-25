@@ -5,6 +5,7 @@ import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import CommentThread from './CommentThread';
+import Avatar from './Avatar';
 
 export default function CommentItem({ comment, postId, onReply, isLast }) {
     // Props access fallback
@@ -204,18 +205,12 @@ export default function CommentItem({ comment, postId, onReply, isLast }) {
             <div className="flex gap-3 relative z-10">
                 {/* Avatar Column */}
                 <div onClick={() => navigate(comment.author.role === 'STYLIST' ? `/stylist/${comment.author.stylistProfile?.id}` : `/user/${comment.author.id}`)}
-                    className={`${avatarSize} rounded-full bg-gray-200 flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition relative z-10 ring-2 ring-white`}>
-                    {(comment.author.stylistProfile?.profileImage || comment.author.profileImage) ? (
-                        <img
-                            src={comment.author.stylistProfile?.profileImage || comment.author.profileImage}
-                            alt=""
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] font-bold">
-                            {authorName[0]}
-                        </div>
-                    )}
+                    className={`flex-shrink-0 cursor-pointer hover:opacity-80 transition relative z-10`}>
+                    <Avatar
+                        user={comment.author}
+                        size={isRoot ? "md" : "sm"}
+                        className=""
+                    />
                 </div>
 
                 <div className="flex-1 min-w-0">

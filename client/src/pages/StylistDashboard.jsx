@@ -11,6 +11,7 @@ import Hero from '../components/Hero';
 import { SERVICE_CATEGORIES } from '../config/categories';
 import { FEATURE_ELITE_CALENDAR } from '../config/flags';
 import Badge from '../components/Badge';
+import Avatar from '../components/Avatar';
 import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes, FaCalendarAlt, FaAddressBook, FaLock, FaClock } from 'react-icons/fa';
 
 export default function StylistDashboard() {
@@ -135,7 +136,7 @@ export default function StylistDashboard() {
             >
                 <div className="text-center text-white z-10 px-4">
                     <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg text-white">Pro Studio</h1>
-                    <p className="text-white/80 text-lg font-medium text-white">Manage your services, bookings, and brand</p>
+                    <p className="text-crown-gold text-lg font-medium">Manage your services, bookings, and brand</p>
                 </div>
             </Hero>
 
@@ -147,28 +148,32 @@ export default function StylistDashboard() {
 
                     {/* Avatar */}
                     <div className="relative group cursor-pointer" onClick={() => setActiveView('profile')}>
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                            {avatarUrl ? (
-                                <img src={avatarUrl} alt="Pro" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="text-4xl font-serif text-crown-dark font-bold">
-                                    {businessName[0]}
-                                </div>
-                            )}
-                        </div>
+                        <Avatar
+                            src={avatarUrl}
+                            user={user}
+                            size="2xl"
+                            className={`bg-gray-100 shadow-lg ${user?.isFounderEnrolled ? '' : 'border-4 border-white'}`}
+                        />
                         {/* Edit Overlay Hint */}
-                        <div className="absolute inset-0 bg-black/30 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-xs font-bold">
+                        <div className="absolute inset-0 bg-black/30 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-xs font-bold pointer-events-none">
                             Edit
                         </div>
                     </div>
 
                     {/* Pro details */}
                     <div className="flex-1 text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
-                            <h2 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
+                        {/* Name & Founder Badge Row */}
+                        <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                            {user?.isFounderEnrolled && <Badge tier="FOUNDER" size="48px" />}
+                            <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 leading-tight whitespace-nowrap">
                                 {businessName}
                             </h2>
-                            {/* Pro Level Badge */}
+                            {/* Phantom Spacer to ensure true centering of name on mobile */}
+                            {user?.isFounderEnrolled && <div style={{ width: '48px' }} aria-hidden="true" />}
+                        </div>
+
+                        {/* Pro Badge Row */}
+                        <div className="flex justify-center md:justify-start mb-4">
                             <span className="px-3 py-1 bg-crown-dark text-crown-gold text-[10px] font-bold uppercase tracking-widest rounded-full shadow-sm border border-crown-gold/30 whitespace-nowrap">
                                 {proLevel}
                             </span>
@@ -327,7 +332,7 @@ export default function StylistDashboard() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import Hero from '../components/Hero';
+import Avatar from '../components/Avatar';
 import { SERVICE_CATEGORIES } from '../config/categories';
 import { FaStar } from 'react-icons/fa';
 
@@ -50,7 +51,7 @@ export default function Explore() {
             >
                 <div>
                     <h1 className="text-4xl md:text-6xl font-serif font-bold text-white drop-shadow-lg mb-4">Find a Beauty Pro</h1>
-                    <p className="text-lg text-white/90 drop-shadow-md max-w-xl mx-auto">Discover and book the best beauty professionals in your area.</p>
+                    <p className="text-lg text-crown-gold drop-shadow-md max-w-xl mx-auto">Discover and book the best beauty professionals in your area.</p>
                 </div>
             </Hero>
 
@@ -161,14 +162,14 @@ export default function Explore() {
                                                 </div>
 
                                                 {/* Avatar - Now outside the overflow-hidden image wrapper */}
-                                                <div className="absolute -bottom-6 left-6 border-4 border-[var(--card-bg)] rounded-full w-16 h-16 bg-gray-100 overflow-hidden shadow-sm flex items-center justify-center z-10 transition-colors duration-300">
-                                                    {stylist.profileImage ? (
-                                                        <img src={stylist.profileImage} className="w-full h-full object-cover" alt="Profile" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center bg-crown-dark text-white font-serif font-bold text-xl">
-                                                            {stylist.businessName ? stylist.businessName[0] : 'S'}
-                                                        </div>
-                                                    )}
+                                                <div className="absolute -bottom-6 left-6 z-10">
+                                                    <Avatar
+                                                        src={stylist.profileImage}
+                                                        user={stylist.user}
+                                                        size="lg"
+                                                        className={`shadow-sm bg-gray-100 ${stylist.user?.isFounderEnrolled ? '' : 'border-4 border-[var(--card-bg)]'}`}
+                                                        alt={stylist.businessName}
+                                                    />
                                                 </div>
                                             </div>
                                             <div className="p-6 pt-10">

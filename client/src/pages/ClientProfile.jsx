@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import Hero from '../components/Hero';
+import { FaUser, FaPhoneAlt, FaEnvelope, FaCalendarAlt, FaHistory, FaMapMarkerAlt, FaEdit, FaCamera, FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
+import Avatar from '../components/Avatar';
+import Badge from '../components/Badge';
 import { useAuth } from '../context/AuthContext';
-import { FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
 
 export default function ClientProfile() {
     const { logout } = useAuth();
@@ -69,15 +71,7 @@ export default function ClientProfile() {
 
                     {/* Avatar */}
                     <div className="relative">
-                        <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                            {user.profileImage ? (
-                                <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="text-5xl font-serif text-crown-dark font-bold">
-                                    {(user.displayName || user.email || '?')[0].toUpperCase()}
-                                </div>
-                            )}
-                        </div>
+                        <Avatar user={user} size="2xl" className={`shadow-lg bg-white ${user?.isFounderEnrolled ? '' : 'border-4 border-white'}`} />
                         <div className="absolute bottom-1 right-1 bg-green-500 w-6 h-6 rounded-full border-2 border-white"></div>
                     </div>
 
@@ -96,7 +90,8 @@ export default function ClientProfile() {
                                 <button onClick={() => setIsEditingName(false)} className="text-gray-500 underline text-sm">Cancel</button>
                             </div>
                         ) : (
-                            <div className="group flex items-center gap-2 justify-center mb-2">
+                            <div className="group flex items-center gap-3 justify-center mb-2">
+                                {user.isFounderEnrolled && <Badge tier="FOUNDER" size="40px" />}
                                 <h2 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
                                     {user.displayName || user.email?.split('@')[0] || 'Member'}
                                 </h2>
@@ -108,7 +103,7 @@ export default function ClientProfile() {
 
                         <p className="text-gray-500 mb-6">{user.email}</p>
 
-                        <div className="flex justify-center gap-2 mb-8">
+                        <div className="flex justify-center gap-2 mb-8 items-center">
                             <span className="px-4 py-1.5 bg-crown-gold/10 text-crown-gold font-bold rounded-full uppercase tracking-wider text-xs">
                                 Client Member
                             </span>

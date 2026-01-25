@@ -8,6 +8,10 @@ const getAllUsers = async (req, res) => {
                 email: true,
                 role: true,
                 createdAt: true,
+                isFounderEligible: true,
+                isFounderEnrolled: true,
+                founderType: true,
+                founderAssignedBy: true,
                 stylistProfile: {
                     select: {
                         businessName: true,
@@ -79,6 +83,44 @@ const getPublicProfile = async (req, res) => {
             }
         });
 
+        // Fetch a few connections for the preview (mix of sent/received)
+        // Prisma doesn't easily union in one query for relation "connections", so we might fetch them separately or use a trick.
+        // Simplest: Fetch top 4 connections involved.
+        const recentConnectionsData = await prisma.connection.findMany({
+            where: {
+                OR: [{ requesterId: userId }, { addresseeId: userId }],
+                status: 'ACCEPTED'
+            },
+            take: 4,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                requester: { select: { id: true, displayName: true, profileImage: true } },
+                addressee: { select: { id: true, displayName: true, profileImage: true } }
+            }
+        });
+
+        // Normalize connections list
+        const recentConnections = recentConnectionsData.map(c => {
+            const isRequester = c.requesterId === userId;
+            const other = isRequester ? c.addressee : c.requester;
+            return {
+                id: other.id,
+                displayName: other.displayName,
+                profileImage: other.profileImage
+            };
+        });
+
+        // 2b. Fetch Recent Reviews separately
+        const recentReviewsData = await prisma.review.findMany({
+            where: { booking: { clientId: userId } },
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                booking: { select: { stylist: { select: { businessName: true } } } }
+            }
+        });
+
+
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         // 3. Transform Connection Count
@@ -128,7 +170,15 @@ const getPublicProfile = async (req, res) => {
             profileImage: user.stylistProfile?.profileImage || user.profileImage, // Use stylist image if exists as fallback or avatar
             stylistProfileId: user.stylistProfile?.id,
             connectionCount,
-            connectionStatus
+            connectionStatus,
+            recentConnections,
+            recentReviews: recentReviewsData.map(r => ({
+                id: r.id,
+                rating: r.rating,
+                comment: r.comment,
+                createdAt: r.createdAt,
+                stylistName: r.booking?.stylist?.businessName || 'Unknown Stylist'
+            }))
         };
 
         res.json(publicProfile);

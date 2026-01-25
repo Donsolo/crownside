@@ -5,7 +5,7 @@ const listStylists = async (req, res) => {
         const stylists = await prisma.stylistProfile.findMany({
             include: {
                 services: true,
-                user: { select: { email: true } }
+                user: { select: { email: true, isFounderEnrolled: true } }
             }
             // Contact info is included by default in Prisma unless explicitly selected.
             // Goal: Do NOT include in list/search.
@@ -59,6 +59,7 @@ const getStylistById = async (req, res) => {
         const stylist = await prisma.stylistProfile.findFirst({
             where: whereClause,
             include: {
+                user: { select: { isFounderEnrolled: true } },
                 services: true,
                 portfolioImages: true,
                 subscription: { select: { planKey: true } },

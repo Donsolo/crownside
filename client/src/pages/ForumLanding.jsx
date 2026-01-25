@@ -17,7 +17,7 @@ export default function ForumLanding() {
                     <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4 drop-shadow-xl leading-tight text-white">
                         Crown Connect
                     </h1>
-                    <p className="text-white/90 text-lg md:text-xl font-medium max-w-2xl mx-auto drop-shadow-md">
+                    <p className="text-crown-gold text-lg md:text-xl font-medium max-w-2xl mx-auto drop-shadow-md">
                         Connect with Detroit's best beauty professionals and clients.
                     </p>
                 </div>

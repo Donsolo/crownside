@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import api from '../../lib/api';
-import { Search, Trash2, Mail, Shield, Edit, X, Save } from 'lucide-react';
+import { Search, Trash2, Mail, Shield, Edit, X, Save, Crown } from 'lucide-react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -184,6 +184,28 @@ export default function AdminUsers() {
         }
     };
 
+    const handleInviteFounder = async (user) => {
+        const isFounder = user.isFounderEligible || user.isFounderEnrolled;
+        const action = isFounder ? 'REMOVE' : 'INVITE';
+
+        const confirmMsg = isFounder
+            ? `Remove ${user.email} from Founders Circle? \n\nThis will revoke their status and badge. If they were a system-assigned founder, their spot will be replenished.`
+            : `Invite ${user.email} to Founders Circle? \n\nNOTE: This is an ADMIN OVERRIDE and will NOT count toward the system quota.`;
+
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            const endpoint = isFounder ? '/founders/admin/remove' : '/founders/admin/invite';
+            const res = await api.post(endpoint, { email: user.email });
+            alert(res.data.message);
+            // Re-fetch users to update UI state
+            fetchUsers();
+        } catch (err) {
+            console.error(`${action} failed`, err);
+            alert(err.response?.data?.error || `Failed to ${action.toLowerCase()} user`);
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -275,6 +297,16 @@ export default function AdminUsers() {
                                         <Edit size={18} />
                                     </button>
                                     <button
+                                        className={`p-1 ${(user.isFounderEligible || user.isFounderEnrolled)
+                                            ? 'text-crown-gold hover:text-red-500' // Gold normally, Red on hover (Remove)
+                                            : 'text-gray-400 hover:text-crown-gold' // Gray normally, Gold on hover (Invite)
+                                            }`}
+                                        title={(user.isFounderEligible || user.isFounderEnrolled) ? "Remove from Founders Circle" : "Invite to Founders Circle"}
+                                        onClick={() => handleInviteFounder(user)}
+                                    >
+                                        <Crown size={18} fill={(user.isFounderEligible || user.isFounderEnrolled) ? "currentColor" : "none"} />
+                                    </button>
+                                    <button
                                         className="text-red-400 hover:text-red-600 p-1"
                                         title="Delete User"
                                         onClick={() => handleDeleteUser(user.id)}
@@ -313,6 +345,15 @@ export default function AdminUsers() {
                                     onClick={() => setEditingUser(user)}
                                 >
                                     <Edit size={18} />
+                                </button>
+                                <button
+                                    className={`p-2 rounded-lg ${(user.isFounderEligible || user.isFounderEnrolled)
+                                            ? 'bg-crown-gold/10 text-crown-gold hover:bg-red-50 hover:text-red-500'
+                                            : 'bg-gray-100 text-gray-400 hover:bg-crown-gold/10 hover:text-crown-gold'
+                                        } ${theme === 'dark' ? 'dark:bg-gray-700' : ''}`}
+                                    onClick={() => handleInviteFounder(user)}
+                                >
+                                    <Crown size={18} fill={(user.isFounderEligible || user.isFounderEnrolled) ? "currentColor" : "none"} />
                                 </button>
                                 <button
                                     className="p-2 bg-red-50 text-red-600 rounded-lg dark:bg-red-900/30 dark:text-red-400"

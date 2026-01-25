@@ -4,7 +4,8 @@ import { FaArrowLeft, FaExclamationTriangle, FaUserCircle, FaMapMarkerAlt, FaCal
 import Hero from '../components/Hero';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import ChatInterface from '../components/ChatInterface';
+import Avatar from '../components/Avatar';
+import Badge from '../components/Badge';
 import CommentSection from '../components/CommentSection';
 
 export default function PostDetail() {
@@ -135,15 +136,26 @@ export default function PostDetail() {
                     {/* Author Header */}
                     <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden">
-                                {(post.author.stylistProfile?.profileImage || post.author.profileImage) ? (
-                                    <img src={post.author.stylistProfile?.profileImage || post.author.profileImage} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400"><FaUserCircle /></div>
-                                )}
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const target = post.author.role === 'STYLIST' && post.author.stylistProfile?.id
+                                        ? `/stylist/${post.author.stylistProfile.id}`
+                                        : `/user/${post.author.id}`;
+                                    navigate(target);
+                                }}
+                                className="cursor-pointer hover:opacity-80 transition flex-shrink-0"
+                            >
+                                <Avatar
+                                    user={post.author}
+                                    size="md"
+                                />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900">{post.author.stylistProfile?.businessName || post.author.displayName || 'Crown User'}</h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-gray-900">{post.author.stylistProfile?.businessName || post.author.displayName || 'Crown User'}</h3>
+                                    {post.author.isFounderEnrolled && <Badge tier="FOUNDER" size="20px" />}
+                                </div>
                                 <span className="text-xs text-crown-gold font-bold uppercase">{post.author.role}</span>
                             </div>
                         </div>
