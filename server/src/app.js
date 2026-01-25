@@ -70,6 +70,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const userRoutes = require('./routes/userRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes'); // Added analyticsRoutes
 
 // Routes
 app.use('/api/auth', authRoutes);

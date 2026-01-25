@@ -50,6 +50,28 @@ function App() {
   const hostname = window.location.hostname; // e.g., "thecrownside.com" or "queenlashes.thecrownside.com"
   const parts = hostname.split('.');
 
+  // Analytics Tracking
+  // We use a ref to prevent double-firing in React 18 Strict Mode dev, 
+  // though backend also handles IP hashing.
+  const location = window.location;
+  React.useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        // Wait a moment to ensure route is settled? 
+        // Actually, just fire.
+        await import('./lib/api').then(module => {
+          const api = module.default;
+          api.post('/analytics/visit', {
+            path: location.pathname + location.search
+          }).catch(err => console.debug("Analytics skipped", err));
+        });
+      } catch (e) {
+        // Silent fail
+      }
+    };
+    trackVisit();
+  }, [window.location.pathname]); // Re-run on path change
+
   // Logic: 
   // localhost: parts = ['localhost'] (len 1) -> No subdomain
   // queenlashes.localhost: parts = ['queenlashes', 'localhost'] (len 2) -> Subdomain 'queenlashes'

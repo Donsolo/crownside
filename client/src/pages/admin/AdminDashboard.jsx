@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Calendar, Scissors, Star, ArrowRight, TrendingUp } from 'lucide-react';
 import api from '../../lib/api';
+import TrafficCard from '../../components/admin/TrafficCard';
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
@@ -65,6 +66,12 @@ export default function AdminDashboard() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Analytics Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <TrafficCard />
+                {/* Future card placeholder or leave empty for now, maybe move Quick Actions here? */}
             </div>
 
             {/* Quick Actions */}

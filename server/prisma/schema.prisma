@@ -604,3 +604,19 @@ model AvailabilityException {
   @@index([stylistId])
   @@index([date])
 }
+
+// --- ANALYTICS SYSTEM ---
+
+model TrafficLog {
+  id           String   @id @default(uuid())
+  ipHash       String   // Anonymized IP (hashed daily or permanently)
+  sessionToken String?  // Optional session ID if available (frontend gen)
+  userId       String?  // Optional if logged in
+  path         String   // Route visited
+  userAgent    String?  // Browser info
+  
+  createdAt    DateTime @default(now())
+  
+  @@index([createdAt])
+  @@index([ipHash])
+}
