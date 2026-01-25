@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
+const { PrismaClient } = require('@prisma/client');
+const crypto = require('crypto');
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,7 @@ const hashIp = (ip) => {
     return crypto.createHash('sha256').update(ip || 'unknown').digest('hex');
 };
 
-export const logVisit = async (req, res) => {
+const logVisit = async (req, res) => {
     try {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const ipHash = hashIp(ip);
@@ -37,7 +37,7 @@ export const logVisit = async (req, res) => {
     }
 };
 
-export const getTrafficStats = async (req, res) => {
+const getTrafficStats = async (req, res) => {
     try {
         const now = new Date();
         const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -106,4 +106,9 @@ export const getTrafficStats = async (req, res) => {
         console.error('Stats Error:', error);
         res.status(500).json({ error: 'Failed to fetch stats' });
     }
+};
+
+module.exports = {
+    logVisit,
+    getTrafficStats
 };

@@ -1,6 +1,6 @@
-import express from 'express';
-import { logVisit, getTrafficStats } from '../controllers/analyticsController.js';
-import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.js';
+const express = require('express');
+const { logVisit, getTrafficStats } = require('../controllers/analyticsController');
+const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.post('/visit', logVisit);
 // Admin: Get stats
 router.get('/stats', authenticateToken, authorizeRole(['ADMIN']), getTrafficStats);
 
-export default router;
+module.exports = router;

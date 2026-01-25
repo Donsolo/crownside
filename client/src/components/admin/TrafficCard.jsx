@@ -1,24 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
-import { FaChartBar, FaUsers, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaArrowUp, FaArrowDown, FaSync } from 'react-icons/fa';
 
 export default function TrafficCard() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchStats = async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true);
+        try {
+            const res = await api.get('/analytics/stats');
+            setStats(res.data);
+        } catch (err) {
+            console.error("Failed to load traffic stats", err);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await api.get('/analytics/stats');
-                setStats(res.data);
-            } catch (err) {
-                console.error("Failed to load traffic stats", err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchStats();
     }, []);
+
+    const handleRefresh = () => {
+        fetchStats(true);
+    };
 
     // Fallback if loading or error
     if (loading) return (
@@ -34,15 +42,16 @@ export default function TrafficCard() {
     );
 
     if (!stats) return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-center text-gray-400 h-64">
-            Analytics Unavailable
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center text-gray-400 h-64 gap-4">
+            <p>Analytics Unavailable</p>
+            <button onClick={handleRefresh} className="btn-secondary text-sm flex items-center gap-2">
+                <FaSync /> Retry
+            </button>
         </div>
     );
 
     // Chart Logic: Normalize heights based on max value
     const chartData = stats.chart || [];
-    // Ensure we have at least 7 days of labels ideally, but for now just show what we have
-    // If empty, show "No Data" placeholder
     const maxCount = Math.max(...chartData.map(d => d.count), 1); // Avoid div by zero
 
     return (
@@ -54,9 +63,19 @@ export default function TrafficCard() {
                     </div>
                     <h3 className="font-bold text-gray-800">Site Traffic</h3>
                 </div>
-                <div className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded-full flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                    Live
+                <div className="flex items-center gap-2">
+                    <div className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded-full flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                        Live
+                    </div>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className={`p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all ${refreshing ? 'animate-spin text-blue-600' : ''}`}
+                        title="Refresh Data"
+                    >
+                        <FaSync size={12} />
+                    </button>
                 </div>
             </div>
 

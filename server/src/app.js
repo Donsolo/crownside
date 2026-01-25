@@ -98,6 +98,7 @@ app.use('/api/blocks', require('./routes/blockRoutes'));
 app.use('/api/calendar', require('./routes/calendarRoutes'));
 app.use('/api/availability', require('./routes/availabilityRoutes')); // [NEW] Availability System
 app.use('/api/founders', require('./routes/founderRoutes'));
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'CrownSide API is running' });
