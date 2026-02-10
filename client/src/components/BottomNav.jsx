@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Home, Search, Calendar, User, LogIn, LayoutDashboard, Image, Users, Scissors, Star, Settings, Activity, MessageSquare } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 
 export default function BottomNav() {
     const location = useLocation();
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const { user } = useAuth();
     const isLoggedIn = !!user;
     const isStylist = user?.role === 'STYLIST';
     const { counts } = useNotifications() || { counts: { total: 0, bookings: 0, messages: 0, forum: 0 } };

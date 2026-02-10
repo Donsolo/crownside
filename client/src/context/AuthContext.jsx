@@ -1,4 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../lib/api';
 
 const AuthContext = createContext(null);
 
@@ -6,46 +8,48 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+    const logout = () => {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        navigate('/');
+    };
 
     useEffect(() => {
+        // Listen for logout events from api interceptor
+        const handleLogoutEvent = () => logout();
+        window.addEventListener('auth:logout', handleLogoutEvent);
+
         const initializeAuth = async () => {
-            // 1. Try LocalStorage first (Fastest)
-            const storedUser = localStorage.getItem('user');
-            const storedToken = localStorage.getItem('token');
-
-            if (storedUser && storedToken) {
-                setUser(JSON.parse(storedUser));
-                setToken(storedToken);
-                setLoading(false);
-                return;
-            }
-
-            // 2. Fallback: Check Session Cookie (Cross-Subdomain Support)
-            // This allows 'queenlashes.thecrownside.com' to be logged in if 'thecrownside.com' has a cookie.
             try {
-                // api is configured with includes: credentials (cookies)
+                // Attempt to fetch current user to validate session
+                // api.js interceptor will attach token from localStorage if present
                 const res = await api.get('/auth/me');
+
                 if (res.data) {
-                    console.log('Session hydrated from cookie');
-                    // We don't have the raw jwt string here usually, unless endpoint returns it.
-                    // But we have the user.
-                    // Important: If api.js relies on `token` state for headers, we might be in trouble for *future* requests
-                    // UNLESS the backend accepts cookies as fallback (which we implemented).
+                    // Session is valid
                     setUser(res.data);
-                    // access token might be missing in client state, but cookie handles it.
+                    const storedToken = localStorage.getItem('token');
+                    if (storedToken) setToken(storedToken);
                 }
             } catch (err) {
-                // Not logged in or session expired
-                console.warn('Session hydration failed:', err.message);
-                if (err.message && err.message.includes('Network Error')) {
-                    console.error('Possible CORS or Cookie Domain Issue', err);
-                }
+                // Session invalid or network error
+                console.debug('Session initialization failed:', err.message);
+                // If it was a 401, the interceptor already cleared localStorage and fired logout event
+                // which cleans up our state.
             } finally {
                 setLoading(false);
             }
         };
 
         initializeAuth();
+
+        return () => {
+            window.removeEventListener('auth:logout', handleLogoutEvent);
+        };
     }, []);
 
     const login = (userData, authToken) => {
@@ -53,13 +57,6 @@ export const AuthProvider = ({ children }) => {
         setToken(authToken);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', authToken);
-    };
-
-    const logout = () => {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
     };
 
     return (
