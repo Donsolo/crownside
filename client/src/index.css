@@ -164,4 +164,31 @@
       transform: none;
     }
   }
+
+  /* Premium Scrollbar */
+  .scrollbar-premium {
+    scrollbar-width: thin;
+    scrollbar-color: var(--crown-gold) transparent;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar {
+    height: 4px;
+    /* Thin horizontal scrollbar */
+    width: 4px;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar-thumb {
+    background-color: var(--crown-gold);
+    border-radius: 9999px;
+    opacity: 0.5;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar-thumb:hover {
+    background-color: #D4B675;
+    /* Lighter gold */
+  }
 }
