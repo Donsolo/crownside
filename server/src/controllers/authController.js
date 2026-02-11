@@ -276,4 +276,25 @@ const updateMe = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getMe, updateMe };
+const logout = (req, res) => {
+    try {
+        const isProd = process.env.NODE_ENV === 'production';
+
+        // Clear the token cookie
+        // Options must match EXACTLY what was used to set it
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            domain: isProd ? '.thecrownside.com' : undefined,
+            path: '/' // Implicit default usually, but good to be explicit if issues arise
+        });
+
+        res.status(200).json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout Error:', error);
+        res.status(500).json({ error: 'Failed to log out' });
+    }
+};
+
+module.exports = { register, login, getMe, updateMe, logout };
