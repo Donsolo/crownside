@@ -280,14 +280,23 @@ const logout = (req, res) => {
     try {
         const isProd = process.env.NODE_ENV === 'production';
 
-        // Clear the token cookie
-        // Options must match EXACTLY what was used to set it
+        // 1. Attempt to clear domain-specific cookie (from Register)
+        if (isProd) {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                domain: '.thecrownside.com',
+                path: '/'
+            });
+        }
+
+        // 2. Attempt to clear host-only cookie (from Login)
         res.clearCookie('token', {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            domain: isProd ? '.thecrownside.com' : undefined,
-            path: '/' // Implicit default usually, but good to be explicit if issues arise
+            path: '/'
         });
 
         res.status(200).json({ message: 'Logged out successfully' });
