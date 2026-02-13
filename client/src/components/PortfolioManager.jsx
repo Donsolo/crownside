@@ -132,13 +132,20 @@ const PortfolioManager = () => {
                     </div>
                 ) : (
                     <>
+                        {!currentTier.videoAllowed && (
+                            <div className="bg-stone-50 border border-stone-100 rounded-lg p-3 mb-4 flex justify-between items-center">
+                                <span className="text-xs text-stone-500 font-medium">✨ Want to upload videos?</span>
+                                <button className="text-xs font-bold text-crown-gold hover:underline">Upgrade to Elite</button>
+                            </div>
+                        )}
+
                         <div className="flex gap-4 items-center mb-4">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="bg-crown-gold text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors flex items-center gap-2"
                                 disabled={submitting}
                             >
-                                <Upload size={20} /> Upload Photo {currentTier.videoAllowed && '/ Video'}
+                                <Upload size={20} /> Upload {currentTier.videoAllowed ? 'Photo / Video' : 'Photo'}
                             </button>
                             <input
                                 type="file"
