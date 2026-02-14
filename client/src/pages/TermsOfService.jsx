@@ -8,13 +8,16 @@ export default function TermsOfService() {
     return (
         <div className="container mx-auto px-4 py-12 max-w-4xl">
             <h1 className="text-4xl font-serif font-bold mb-8 text-crown-dark">Terms of Service</h1>
+            <p className="text-sm text-gray-500 mb-4">
+                This application is owned and operated by Tektriq LLC (“Company”, “we”, “our”, or “us”), a limited liability company registered in the United States. For legal inquiries, contact <a href="mailto:legal@tektriq.com" className="hover:underline text-crown-gold">legal@tektriq.com</a>.
+            </p>
             <p className="text-gray-600 mb-8">Effective Date: {new Date().toLocaleDateString()}</p>
 
             <div className="prose prose-lg text-gray-700">
                 <section className="mb-8">
                     <h2 className="text-2xl font-bold mb-4 text-crown-dark">1. Introduction</h2>
                     <p className="mb-4">
-                        Welcome to CrownSide. By accessing or using our platform, you agree to be bound by these Terms of Service.
+                        Welcome to CrownSide (operated by Tektriq LLC). By accessing or using our platform, you agree to be bound by these Terms of Service.
                         CrownSide acts as a marketplace connecting clients with independent beauty professionals. We do not provide beauty services directly.
                     </p>
                 </section>
@@ -43,7 +46,7 @@ export default function TermsOfService() {
                     <h2 className="text-2xl font-bold mb-4 text-crown-dark">4. Bookings & Cancellations</h2>
                     <p className="mb-4">
                         Booking agreements are directly between the Client and the Professional. Professionals may set their own cancellation policies.
-                        CrownSide is not responsible for disputes arising from cancellations or no-shows, though we facilitate communication to resolve such issues.
+                        CrownSide (Tektriq LLC) is not responsible for disputes arising from cancellations or no-shows, though we facilitate communication to resolve such issues.
                     </p>
                 </section>
 
@@ -65,7 +68,7 @@ export default function TermsOfService() {
                 <section className="mb-8">
                     <h2 className="text-2xl font-bold mb-4 text-crown-dark">7. Contact</h2>
                     <p>
-                        Questions regarding these Terms should be sent to <a href="mailto:legal@crownside.com" className="text-crown-gold hover:underline">legal@crownside.com</a>.
+                        Questions regarding these Terms should be sent to <a href="mailto:legal@tektriq.com" className="text-crown-gold hover:underline">legal@tektriq.com</a>.
                     </p>
                 </section>
             </div>

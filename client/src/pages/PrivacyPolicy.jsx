@@ -8,13 +8,16 @@ export default function PrivacyPolicy() {
     return (
         <div className="container mx-auto px-4 py-12 max-w-4xl">
             <h1 className="text-4xl font-serif font-bold mb-8 text-crown-dark">Privacy Policy</h1>
+            <p className="text-sm text-gray-500 mb-4">
+                This application is owned and operated by Tektriq LLC (“Company”, “we”, “our”, or “us”), a limited liability company registered in the United States. For legal inquiries, contact <a href="mailto:legal@tektriq.com" className="hover:underline text-crown-gold">legal@tektriq.com</a>.
+            </p>
             <p className="text-gray-600 mb-8">Last Updated: {new Date().toLocaleDateString()}</p>
 
             <div className="prose prose-lg text-gray-700">
                 <section className="mb-8">
                     <h2 className="text-2xl font-bold mb-4 text-crown-dark">1. Information We Collect</h2>
                     <p className="mb-4">
-                        At CrownSide, we collect information to provide better beauty booking services. This includes:
+                        At CrownSide (a Tektriq LLC product), we collect information to provide better beauty booking services. This includes:
                     </p>
                     <ul className="list-disc pl-6 mb-4 space-y-2">
                         <li><strong>Account Information:</strong> Name, email address, password, and phone number when you register.</li>
@@ -59,7 +62,7 @@ export default function PrivacyPolicy() {
                 <section className="mb-8">
                     <h2 className="text-2xl font-bold mb-4 text-crown-dark">5. Contact Us</h2>
                     <p>
-                        If you have any questions about this Privacy Policy, please contact us at <a href="mailto:privacy@crownside.com" className="text-crown-gold hover:underline">privacy@crownside.com</a>.
+                        If you have any questions about this Privacy Policy, please contact us at <a href="mailto:legal@tektriq.com" className="text-crown-gold hover:underline">legal@tektriq.com</a>.
                     </p>
                 </section>
             </div>
