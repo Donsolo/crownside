@@ -13,6 +13,8 @@ import { FEATURE_ELITE_CALENDAR } from '../config/flags';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
 import { FaUserCircle, FaCut, FaCamera, FaCalendarCheck, FaCreditCard, FaStore, FaArrowLeft, FaCheckCircle, FaMapMarkerAlt, FaTrash, FaInfoCircle, FaTimes, FaCalendarAlt, FaAddressBook, FaLock, FaClock } from 'react-icons/fa';
+import { canAccessNativeBilling } from '../lib/billingGuard';
+import WebPortalCTA from '../components/safe/WebPortalCTA';
 
 export default function StylistDashboard() {
     const [activeView, setActiveView] = useState('home'); // 'home', 'profile', 'services', 'portfolio', 'bookings', 'billing'
@@ -243,7 +245,7 @@ export default function StylistDashboard() {
                         )}
 
                         {/* Elite Upgrade Teaser (Optional) */}
-                        {showUpgradeCallout && (
+                        {showUpgradeCallout && canAccessNativeBilling() && (
                             <DashboardCard
                                 title="Unlock Calendar"
                                 desc="Upgrade to Elite for Pro Calendar"
@@ -324,7 +326,11 @@ export default function StylistDashboard() {
                             {activeView === 'services' && <ServiceEditor services={profile?.services} />}
                             {activeView === 'portfolio' && <PortfolioManager />}
                             {activeView === 'bookings' && <BookingManager />}
-                            {activeView === 'billing' && <BillingManager subscription={subscription} />}
+                            {activeView === 'billing' && (
+                                canAccessNativeBilling() ? 
+                                <BillingManager subscription={subscription} /> : 
+                                <div className="p-8 max-w-lg mx-auto"><WebPortalCTA url="https://thecrownside.com/settings/billing" /></div>
+                            )}
                             {activeView === 'calendar' && <CalendarView stylistId={profile?.id} />}
                             {activeView === 'availability' && <AvailabilitySettings />}
                             {activeView === 'clients' && <ClientsView />}

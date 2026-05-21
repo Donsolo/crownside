@@ -1,4 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js';
+import { canAccessNativeBilling } from './billingGuard';
 
 // Centralized Stripe Initialization
 // This ensures we only load Stripe once and handle missing keys gracefully in dev.
@@ -10,5 +11,5 @@ if (!STRIPE_KEY) {
 }
 
 // Export the promise directly. unique singleton.
-// If key is missing, this is null.
-export const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
+// If key is missing, or we are on native (which shouldn't use billing), this resolves to null.
+export const stripePromise = (STRIPE_KEY && canAccessNativeBilling()) ? loadStripe(STRIPE_KEY) : Promise.resolve(null);

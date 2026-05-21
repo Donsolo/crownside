@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+import { isNativeMobile } from './platform';
+
 const getBaseUrl = () => {
     let url = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:3000' : '');
 
@@ -9,7 +11,12 @@ const getBaseUrl = () => {
     }
 
     // If empty (prod fallback failure), default relative
-    if (!url) return '/api';
+    if (!url) {
+        if (isNativeMobile) {
+            return 'https://thecrownside.com/api';
+        }
+        return '/api';
+    }
 
     // Append /api if not present
     if (!url.endsWith('/api')) {

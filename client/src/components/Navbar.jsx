@@ -8,6 +8,7 @@ import { useNotifications } from '../context/NotificationContext';
 import NotificationPanel from './NotificationPanel';
 import FounderWelcomeModal from './FounderWelcomeModal';
 import Avatar from './Avatar';
+import { canAccessNativeBilling } from '../lib/billingGuard';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -212,7 +213,9 @@ export default function Navbar() {
                                     <Link to="/admin/pros" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Beauty Pros</Link>
                                     <Link to="/admin/bookings" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Bookings</Link>
                                     <Link to="/admin/reviews" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Reviews</Link>
-                                    <Link to="/admin/pricing" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Pricing & Subs</Link>
+                                    {canAccessNativeBilling() && (
+                                        <Link to="/admin/pricing" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Pricing & Subs</Link>
+                                    )}
                                     <Link to="/admin/settings" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-crown-gold">Settings</Link>
                                 </div>
                             )}

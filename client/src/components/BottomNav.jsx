@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Home, Search, Calendar, User, LogIn, LayoutDashboard, Image, Users, Scissors, Star, Settings, Activity, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { canAccessNativeBilling } from '../lib/billingGuard';
 
 export default function BottomNav() {
     const location = useLocation();
@@ -81,9 +82,11 @@ export default function BottomNav() {
                             <Link to="/admin/reviews" onClick={() => setAdminMenuOpen(false)} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg text-gray-700">
                                 <Star size={20} /> <span className="font-medium">Reviews</span>
                             </Link>
-                            <Link to="/admin/pricing" onClick={() => setAdminMenuOpen(false)} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg text-gray-700">
-                                <Activity size={20} /> <span className="font-medium">Pricing & Subs</span>
-                            </Link>
+                            {canAccessNativeBilling() && (
+                                <Link to="/admin/pricing" onClick={() => setAdminMenuOpen(false)} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg text-gray-700">
+                                    <Activity size={20} /> <span className="font-medium">Pricing & Subs</span>
+                                </Link>
+                            )}
                             <Link to="/admin/settings" onClick={() => setAdminMenuOpen(false)} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg text-gray-700">
                                 <Settings size={20} /> <span className="font-medium">Settings</span>
                             </Link>

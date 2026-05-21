@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">crownside</string>
+    <string name="title_activity_main">crownside</string>
+    <string name="package_name">com.crownside.app</string>
+    <string name="custom_url_scheme">com.crownside.app</string>
+</resources>

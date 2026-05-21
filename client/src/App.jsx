@@ -42,6 +42,9 @@ import ModeratorDashboard from './pages/ModeratorDashboard';
 import UserProfile from './pages/UserProfile';
 import MessageThread from './pages/MessageThread';
 import ScrollToTop from './components/ScrollToTop';
+import MobileBillingInfo from './pages/MobileBillingInfo';
+import { canAccessNativeBilling } from './lib/billingGuard';
+import { Navigate } from 'react-router-dom';
 
 import { usePullToRefresh } from './hooks/usePullToRefresh';
 
@@ -159,6 +162,16 @@ function App() {
                         <Route path="pricing" element={<AdminSubscriptions />} />
                         <Route path="settings" element={<AdminSettings />} />
                       </Route>
+
+                      {/* Fallback & Compliance Routes */}
+                      <Route path="/mobile-billing-info" element={<MobileBillingInfo />} />
+                      <Route path="/pricing" element={!canAccessNativeBilling() ? <MobileBillingInfo /> : <Navigate to="/" />} />
+                      <Route path="/billing" element={!canAccessNativeBilling() ? <MobileBillingInfo /> : <Navigate to="/" />} />
+                      <Route path="/upgrade" element={!canAccessNativeBilling() ? <MobileBillingInfo /> : <Navigate to="/" />} />
+                      <Route path="/subscribe" element={!canAccessNativeBilling() ? <MobileBillingInfo /> : <Navigate to="/" />} />
+                      <Route path="/membership" element={!canAccessNativeBilling() ? <MobileBillingInfo /> : <Navigate to="/" />} />
+                      <Route path="/plans" element={!canAccessNativeBilling() ? <MobileBillingInfo /> : <Navigate to="/" />} />
+                      
                     </Routes>
                   )}
                 </main>

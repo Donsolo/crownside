@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { SUBSCRIPTION_TIERS } from '../config/constants';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise } from '../lib/stripe';
+import { canAccessNativeBilling } from '../lib/billingGuard';
+import WebPortalCTA from '../components/safe/WebPortalCTA';
 
 
 const CARD_ELEMENT_OPTIONS = {
@@ -223,9 +225,15 @@ function RegisterContent() {
                                     <span className="text-xl">✨</span>
                                     <div>
                                         <h4 className="font-bold text-crown-dark text-sm">Full Earnings Guarantee</h4>
-                                        <p className="text-xs text-crown-dark/80 mt-1">
-                                            You keep 100% of your service earnings. CrownSide only charges a flat monthly subscription to host your business.
-                                        </p>
+                                        {canAccessNativeBilling() ? (
+                                            <p className="text-xs text-crown-dark/80 mt-1">
+                                                You keep 100% of your service earnings. CrownSide only charges a flat monthly subscription to host your business.
+                                            </p>
+                                        ) : (
+                                            <p className="text-xs text-crown-dark/80 mt-1">
+                                                You keep 100% of your service earnings. Manage your business hosting securely online.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -379,7 +387,21 @@ function RegisterContent() {
                     )}
 
                     {/* STEP 3: Plan Selection (Stylist Only) */}
-                    {step === 3 && role === 'STYLIST' && (
+                    {step === 3 && role === 'STYLIST' && !canAccessNativeBilling() && (
+                        <div className="animate-fade-in space-y-6">
+                            <WebPortalCTA url="https://thecrownside.com/register" text="Register on Web Portal" />
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={prevStep}
+                                    className="px-6 py-3 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={18} /> Back
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {step === 3 && role === 'STYLIST' && canAccessNativeBilling() && (
                         <div className="animate-fade-in space-y-6">
                             <div className="text-center space-y-2">
                                 <h3 className="text-xl font-bold font-serif text-[var(--text-primary)]">Choose Your Plan</h3>
@@ -516,7 +538,21 @@ function RegisterContent() {
                     )}
 
                     {/* STEP 4: Payment (Split Fields Redesign) */}
-                    {step === 4 && role === 'STYLIST' && (
+                    {step === 4 && role === 'STYLIST' && !canAccessNativeBilling() && (
+                         <div className="animate-fade-in space-y-6">
+                            <WebPortalCTA url="https://thecrownside.com/register" text="Complete Registration Online" />
+                             <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={prevStep}
+                                    className="px-6 py-3 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={18} /> Back
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {step === 4 && role === 'STYLIST' && canAccessNativeBilling() && (
                         <div className="animate-fade-in space-y-8">
 
                             {/* Header Section */}
