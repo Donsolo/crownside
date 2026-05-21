@@ -96,10 +96,11 @@ export default function BottomNav() {
             )}
 
             <nav
-                className="fixed bottom-0 left-0 right-0 z-50 bg-[#FAF7F2] border-t border-black/5 flex justify-around items-center md:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.02)] pt-3 transition-all duration-300"
+                className="fixed z-50 flex justify-around items-center md:hidden transition-all duration-300 bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl shadow-black/10 rounded-full py-3 px-2 mx-4"
                 style={{
-                    paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
-                    height: 'auto'
+                    bottom: 'calc(env(safe-area-inset-bottom) + 16px)',
+                    left: '0',
+                    right: '0'
                 }}
             >
                 {navItems.map((item) => {
