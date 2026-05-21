@@ -5,6 +5,7 @@ import Hero from '../components/Hero';
 import { useAuth } from '../context/AuthContext';
 import { SERVICE_CATEGORIES } from '../config/categories';
 import api from '../lib/api';
+import { canAccessNativeBilling } from '../lib/billingGuard';
 import { FaUserCircle, FaStar, FaMapMarkerAlt, FaSearch, FaCalendarAlt, FaCut } from 'react-icons/fa';
 import {
     LayoutDashboard,
@@ -387,67 +388,69 @@ function LandingPage() {
                 ))}
             </section>
 
-            {/* 5. PRICING PREVIEW */}
-            <section className="py-24 bg-[#1a1614] overflow-hidden">
-                <div className="container mx-auto px-4">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple Plans. Real Growth.</h2>
-                        <p className="text-gray-400">Choose the tier that fits your stage of business.</p>
-                    </div>
-
-                    <div className="flex flex-row overflow-x-auto md:grid md:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto relative px-4 md:px-0 pb-6 snap-x snap-mandatory scrollbar-premium">
-                        {/* Beauty Pro */}
-                        <div className="min-w-[85vw] md:min-w-0 snap-center p-8 rounded-2xl bg-[#0f0c0b] border border-white/10 flex flex-col hover:border-white/20 transition-colors">
-                            <h3 className="text-xl font-bold mb-2 text-white">{proPlan.label || 'Beauty Pro'}</h3>
-                            <p className="text-sm text-gray-400 mb-6">Essential tools for independent pros.</p>
-                            <div className="text-3xl font-bold mb-8 text-white">${proPlan.price ?? 0}<span className="text-lg font-normal text-gray-500">/mo</span></div>
-                            <ul className="space-y-4 mb-8 flex-1">
-                                {['Booking Management', 'Basic Storefront', 'Direct Messaging', 'Standard Support'].map(f => (
-                                    <li key={f} className="flex items-center gap-3 text-sm text-gray-300">
-                                        <Check className="w-4 h-4 text-crown-gold flex-shrink-0" /> {f}
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link to="/register" className="w-full py-3 rounded-lg border border-white/20 text-white font-medium hover:bg-white/5 text-center transition-colors">Start Free</Link>
+            {/* 5. PRICING PREVIEW (Web Only) */}
+            {canAccessNativeBilling() && (
+                <section className="py-24 bg-[#1a1614] overflow-hidden">
+                    <div className="container mx-auto px-4">
+                        <div className="text-center max-w-3xl mx-auto mb-16">
+                            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple Plans. Real Growth.</h2>
+                            <p className="text-gray-400">Choose the tier that fits your stage of business.</p>
                         </div>
 
-                        {/* Elite */}
-                        <div className="min-w-[85vw] md:min-w-0 snap-center p-8 rounded-2xl bg-[#2C2420] border border-crown-gold/40 shadow-2xl relative transform md:-translate-y-4 flex flex-col">
-                            <div className="absolute top-0 right-0 bg-crown-gold text-black text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wide">Most Popular</div>
-                            <h3 className="text-xl font-bold mb-2 text-crown-gold">{elitePlan.label || 'Elite'}</h3>
-                            <p className="text-sm text-gray-400 mb-6">Advanced power for busy schedules.</p>
-                            <div className="text-3xl font-bold mb-8 text-white">${elitePlan.price ?? 29}<span className="text-lg font-normal text-gray-500">/mo</span></div>
-                            <ul className="space-y-4 mb-8 flex-1">
-                                {['Everything in Pro', 'Advanced Calendar', 'Future Import', 'Priority Visibility', 'Analytics Dashboard'].map(f => (
-                                    <li key={f} className="flex items-center gap-3 text-sm text-white">
-                                        <Check className="w-4 h-4 text-crown-gold flex-shrink-0" /> {f}
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link to="/register" className="w-full py-3 rounded-lg bg-crown-gold text-black font-bold hover:bg-crown-gold/90 text-center transition-colors shadow-lg shadow-crown-gold/20">Get Elite</Link>
+                        <div className="flex flex-row overflow-x-auto md:grid md:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto relative px-4 md:px-0 pb-6 snap-x snap-mandatory scrollbar-premium">
+                            {/* Beauty Pro */}
+                            <div className="min-w-[85vw] md:min-w-0 snap-center p-8 rounded-2xl bg-[#0f0c0b] border border-white/10 flex flex-col hover:border-white/20 transition-colors">
+                                <h3 className="text-xl font-bold mb-2 text-white">{proPlan.label || 'Beauty Pro'}</h3>
+                                <p className="text-sm text-gray-400 mb-6">Essential tools for independent pros.</p>
+                                <div className="text-3xl font-bold mb-8 text-white">${proPlan.price ?? 0}<span className="text-lg font-normal text-gray-500">/mo</span></div>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    {['Booking Management', 'Basic Storefront', 'Direct Messaging', 'Standard Support'].map(f => (
+                                        <li key={f} className="flex items-center gap-3 text-sm text-gray-300">
+                                            <Check className="w-4 h-4 text-crown-gold flex-shrink-0" /> {f}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Link to="/register" className="w-full py-3 rounded-lg border border-white/20 text-white font-medium hover:bg-white/5 text-center transition-colors">Start Free</Link>
+                            </div>
+
+                            {/* Elite */}
+                            <div className="min-w-[85vw] md:min-w-0 snap-center p-8 rounded-2xl bg-[#2C2420] border border-crown-gold/40 shadow-2xl relative transform md:-translate-y-4 flex flex-col">
+                                <div className="absolute top-0 right-0 bg-crown-gold text-black text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wide">Most Popular</div>
+                                <h3 className="text-xl font-bold mb-2 text-crown-gold">{elitePlan.label || 'Elite'}</h3>
+                                <p className="text-sm text-gray-400 mb-6">Advanced power for busy schedules.</p>
+                                <div className="text-3xl font-bold mb-8 text-white">${elitePlan.price ?? 29}<span className="text-lg font-normal text-gray-500">/mo</span></div>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    {['Everything in Pro', 'Advanced Calendar', 'Future Import', 'Priority Visibility', 'Analytics Dashboard'].map(f => (
+                                        <li key={f} className="flex items-center gap-3 text-sm text-white">
+                                            <Check className="w-4 h-4 text-crown-gold flex-shrink-0" /> {f}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Link to="/register" className="w-full py-3 rounded-lg bg-crown-gold text-black font-bold hover:bg-crown-gold/90 text-center transition-colors shadow-lg shadow-crown-gold/20">Get Elite</Link>
+                            </div>
+
+                            {/* Premier */}
+                            <div className="min-w-[85vw] md:min-w-0 snap-center p-8 rounded-2xl bg-[#0f0c0b] border border-white/10 flex flex-col hover:border-white/20 transition-colors">
+                                <h3 className="text-xl font-bold mb-2 text-white">{premierPlan.label || 'Premier'}</h3>
+                                <p className="text-sm text-gray-400 mb-6">Maximum visibility and control.</p>
+                                <div className="text-3xl font-bold mb-8 text-white">${premierPlan.price ?? 49}<span className="text-lg font-normal text-gray-500">/mo</span></div>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    {['Everything in Elite', 'Top Search Ranking', 'Concierge Onboarding', 'Verified Badge', 'Featured Spots'].map(f => (
+                                        <li key={f} className="flex items-center gap-3 text-sm text-gray-300">
+                                            <Check className="w-4 h-4 text-crown-gold flex-shrink-0" /> {f}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Link to="/register" className="w-full py-3 rounded-lg border border-white/20 text-white font-medium hover:bg-white/5 text-center transition-colors">Get Premier</Link>
+                            </div>
                         </div>
 
-                        {/* Premier */}
-                        <div className="min-w-[85vw] md:min-w-0 snap-center p-8 rounded-2xl bg-[#0f0c0b] border border-white/10 flex flex-col hover:border-white/20 transition-colors">
-                            <h3 className="text-xl font-bold mb-2 text-white">{premierPlan.label || 'Premier'}</h3>
-                            <p className="text-sm text-gray-400 mb-6">Maximum visibility and control.</p>
-                            <div className="text-3xl font-bold mb-8 text-white">${premierPlan.price ?? 49}<span className="text-lg font-normal text-gray-500">/mo</span></div>
-                            <ul className="space-y-4 mb-8 flex-1">
-                                {['Everything in Elite', 'Top Search Ranking', 'Concierge Onboarding', 'Verified Badge', 'Featured Spots'].map(f => (
-                                    <li key={f} className="flex items-center gap-3 text-sm text-gray-300">
-                                        <Check className="w-4 h-4 text-crown-gold flex-shrink-0" /> {f}
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link to="/register" className="w-full py-3 rounded-lg border border-white/20 text-white font-medium hover:bg-white/5 text-center transition-colors">Get Premier</Link>
+                        <div className="text-center mt-12 pb-8">
+                            <Link to="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm border-b border-gray-700 hover:border-white pb-0.5">View Full Pricing details</Link>
                         </div>
                     </div>
-
-                    <div className="text-center mt-12 pb-8">
-                        <Link to="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm border-b border-gray-700 hover:border-white pb-0.5">View Full Pricing details</Link>
-                    </div>
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* 6. WHY CROWNSIDE */}
             <section className="py-24 bg-[#0f0c0b] border-t border-white/5">
