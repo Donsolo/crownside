@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Home, Search, Calendar, User, LogIn, LayoutDashboard, Image, Users, Scissors, Star, Settings, Activity, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,51 @@ export default function BottomNav() {
     const isLoggedIn = !!user;
     const isStylist = user?.role === 'STYLIST';
     const { counts } = useNotifications() || { counts: { total: 0, bookings: 0, messages: 0, forum: 0 } };
+
+    const [isVisible, setIsVisible] = useState(true);
+    const lastScrollY = useRef(0);
+    const isKeyboardOpen = useRef(false);
+    const initialHeight = useRef(window.innerHeight);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (isKeyboardOpen.current) return;
+            
+            const currentScrollY = window.scrollY;
+            if (currentScrollY > lastScrollY.current + 15) {
+                setIsVisible(false);
+            } else if (currentScrollY < lastScrollY.current - 15 || currentScrollY < 50) {
+                setIsVisible(true);
+            }
+            lastScrollY.current = currentScrollY;
+        };
+
+        const handleResize = () => {
+            // Detect if keyboard is open by checking if height dropped by > 150px
+            if (initialHeight.current - window.innerHeight > 150) {
+                isKeyboardOpen.current = true;
+                setIsVisible(false);
+            } else {
+                isKeyboardOpen.current = false;
+                setIsVisible(true);
+                // Only update initialHeight if it gets larger (to prevent shrinking issues)
+                if (window.innerHeight > initialHeight.current) {
+                    initialHeight.current = window.innerHeight;
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', handleResize);
+
+        // Initial check for height
+        initialHeight.current = window.innerHeight;
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
 
     const navItems = [
         {
@@ -96,7 +141,9 @@ export default function BottomNav() {
             )}
 
             <nav
-                className="fixed z-50 flex justify-around items-center md:hidden transition-all duration-300 bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl shadow-black/10 rounded-full py-3 px-2 mx-4"
+                className={`fixed z-50 flex justify-around items-center md:hidden transition-all duration-300 bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl shadow-black/10 rounded-full py-3 px-2 mx-4 ${
+                    isVisible ? 'translate-y-0 opacity-100' : 'translate-y-[150%] opacity-0 pointer-events-none'
+                }`}
                 style={{
                     bottom: 'calc(env(safe-area-inset-bottom) + 16px)',
                     left: '0',
