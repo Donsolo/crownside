@@ -37,6 +37,7 @@ app.use(cors({
             origin === "http://localhost:5173" ||
             origin === "http://localhost:3000" ||
             origin === "http://localhost" ||
+            origin === "https://localhost" ||
             origin === "capacitor://localhost"
         ) {
             return callback(null, origin);
