@@ -35,7 +35,9 @@ app.use(cors({
             origin === "https://www.thecrownside.com" ||
             origin === "https://crownside-lovat.vercel.app" ||
             origin === "http://localhost:5173" ||
-            origin === "http://localhost:3000"
+            origin === "http://localhost:3000" ||
+            origin === "http://localhost" ||
+            origin === "capacitor://localhost"
         ) {
             return callback(null, origin);
         }
