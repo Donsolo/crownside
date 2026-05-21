@@ -1,10 +1,5 @@
 {
   "appId": "com.crownside.app",
   "appName": "crownside",
-  "webDir": "dist",
-  "plugins": {
-    "CapacitorHttp": {
-      "enabled": true
-    }
-  }
+  "webDir": "dist"
 }
