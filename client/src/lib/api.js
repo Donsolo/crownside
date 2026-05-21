@@ -13,7 +13,7 @@ const getBaseUrl = () => {
     // If empty (prod fallback failure), default relative
     if (!url) {
         if (isNativeMobile) {
-            return 'https://thecrownside.com/api';
+            return 'https://crownside.up.railway.app/api';
         }
         return '/api';
     }
