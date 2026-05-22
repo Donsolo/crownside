@@ -12,6 +12,8 @@ import Footer from './components/Footer';
 import CookieConsent from './components/CookieConsent';
 import InstallPrompt from './components/InstallPrompt';
 import Home from './pages/Home';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import StylistDashboard from './pages/StylistDashboard';
@@ -95,6 +97,15 @@ function App() {
   */
   // Force disable subdomains
   subdomain = null;
+
+  // Initialize native status bar if applicable
+  React.useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: '#D4AF37' }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+    }
+  }, []);
 
   // Pull to Refresh Polyfill (iOS PWA)
   usePullToRefresh();

@@ -26,7 +26,13 @@ import MyConnections from '../components/MyConnections';
 import Avatar from '../components/Avatar';
 
 export default function Home() {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col items-center justify-center transition-colors duration-300">
+            {/* Optional branding while loading */}
+        </div>;
+    }
 
     if (user) {
         return <AuthenticatedHome user={user} />;
