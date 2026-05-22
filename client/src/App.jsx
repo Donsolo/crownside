@@ -26,6 +26,7 @@ import TermsOfService from './pages/TermsOfService';
 import Contact from './pages/Contact';
 import About from './pages/About';
 import FAQ from './pages/FAQ';
+import DataDeletion from './pages/DataDeletion';
 import AdminHeroManager from './pages/admin/AdminHeroManager';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -160,6 +161,7 @@ function App() {
                       <Route path="/dashboard" element={<StylistDashboard />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<TermsOfService />} />
+                      <Route path="/data-deletion" element={<DataDeletion />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/faq" element={<FAQ />} />

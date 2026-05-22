@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
     useEffect(() => {
@@ -57,6 +58,16 @@ export default function PrivacyPolicy() {
                         <li>Request the correction or deletion of your data.</li>
                         <li>Opt-out of marketing communications.</li>
                     </ul>
+                    
+                    <div className="mt-6 p-6 bg-gray-50 border border-gray-100 rounded-xl">
+                        <h3 className="font-bold text-lg mb-2">Account & Data Deletion</h3>
+                        <p className="mb-4 text-sm text-gray-600">
+                            If you wish to permanently delete your account and all associated personal data from our platform, you can initiate a deletion request.
+                        </p>
+                        <Link to="/data-deletion" className="inline-block bg-crown-dark text-white font-medium py-2 px-6 rounded-lg hover:bg-black transition-colors">
+                            Request Data Deletion
+                        </Link>
+                    </div>
                 </section>
 
                 <section className="mb-8">
