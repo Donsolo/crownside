@@ -1,5 +1,12 @@
 {
   "appId": "com.crownside.app",
   "appName": "crownside",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#D4AF37"
+    }
+  }
 }

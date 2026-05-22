@@ -13,6 +13,7 @@
     "@capacitor/android": "^8.3.4",
     "@capacitor/browser": "^8.0.3",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/status-bar": "^8.0.2",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@stripe/react-stripe-js": "^5.4.1",
