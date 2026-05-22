@@ -101,9 +101,10 @@ function App() {
   // Initialize native status bar if applicable
   React.useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
-      StatusBar.setBackgroundColor({ color: '#D4AF37' }).catch(() => {});
-      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      // In Edge-to-Edge mode, overlay must be true so our Navbar draws behind it
+      StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+      // Style.Light means DARK text/icons, which will show up perfectly against our white Navbar!
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
     }
   }, []);
 
